@@ -1,0 +1,125 @@
+﻿<UserControl x:Class="Oms.Client.Views.OrderBlotterView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+      xmlns:behaviors="clr-namespace:Oms.Client.Controls.Behaviors"
+      xmlns:selectors="clr-namespace:Oms.Client.Selectors"
+      xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+      xmlns:cal="http://www.caliburnproject.org"
+      mc:Ignorable="d" 
+>
+    <UserControl.Resources>
+        <CollectionViewSource Source="{Binding OrderAdapters}" x:Key="cvs">
+        <CollectionViewSource.SortDescriptions>
+            <componentModel:SortDescription PropertyName="Id"/>
+        </CollectionViewSource.SortDescriptions>
+        <CollectionViewSource.GroupDescriptions>
+            <PropertyGroupDescription PropertyName="GroupId"/>
+        </CollectionViewSource.GroupDescriptions>
+    </CollectionViewSource>
+
+    <selectors:ItemGroupStyleSelector x:Key="GroupStyleSelector">
+        <selectors:ItemGroupStyleSelector.OrphanStyle>
+            <Style TargetType="{x:Type GroupItem}">
+                <Setter Property="Margin" Value="0 0 0 5"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type GroupItem}">
+                            <ItemsPresenter Margin="22 0 0 0"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </selectors:ItemGroupStyleSelector.OrphanStyle>
+        <selectors:ItemGroupStyleSelector.GroupStyle>
+            <Style TargetType="{x:Type GroupItem}">
+                <Setter Property="Margin" Value="0 0 0 5"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type GroupItem}">
+                            <Expander>
+                                <Expander.Header>
+                                    <GridViewRowPresenter
+                                                Columns="{Binding Columns, ElementName=MyGridView, Mode=OneWay}"
+                                                Content="{Binding Items, Converter={StaticResource OrderAdapterSummaryConverter}, Mode=OneWay}">
+                                        <GridViewRowPresenter.ContextMenu>
+                                            <ContextMenu>
+                                                    <MenuItem Header="Disband Group">
+                                                        <i:Interaction.Triggers>
+                                                            <i:EventTrigger EventName="Click">
+
+                                                                <cal:ActionMessage MethodName="UnGroupOrders" cal:Action.TargetWithoutContext="{Binding PlacementTarget.DataContext}">
+                                                                    <cal:Parameter Value="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}, Mode=OneWay}" />
+                                                                </cal:ActionMessage>
+                                                            </i:EventTrigger>
+                                                        </i:Interaction.Triggers>
+                                                    </MenuItem>
+                                            </ContextMenu>
+                                        </GridViewRowPresenter.ContextMenu>
+                                    </GridViewRowPresenter>
+                                </Expander.Header>
+                                <ItemsPresenter Margin="22 0 0 0"/>
+                            </Expander>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </selectors:ItemGroupStyleSelector.GroupStyle>
+    </selectors:ItemGroupStyleSelector>
+
+    </UserControl.Resources>
+    <DockPanel>
+
+        <Button DockPanel.Dock="Top" Content="Exit" x:Name="Exit"/>
+
+        <ListView x:Name="MyListView"
+            ItemsSource="{Binding Source={StaticResource cvs}}"
+            VirtualizingPanel.IsVirtualizing="True"
+            VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+            VirtualizingPanel.VirtualizationMode="Standard"
+            VirtualizingPanel.CacheLengthUnit="Page"
+            
+            VirtualizingPanel.CacheLength="2">
+            <i:Interaction.Behaviors>
+                <behaviors:SortingBehavior/>
+            </i:Interaction.Behaviors>
+            <ListView.View>
+                <GridView x:Name="MyGridView">
+                    <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" />
+                    <GridViewColumn Header="Price" DisplayMemberBinding="{Binding Price}" />
+                    <GridViewColumn Header="Quantity" DisplayMemberBinding="{Binding Quantity}" />
+                    <GridViewColumn Header="GroupId" DisplayMemberBinding="{Binding GroupId}" />
+                </GridView>
+            </ListView.View>
+            <ListView.GroupStyle>
+                <GroupStyle ContainerStyleSelector="{StaticResource GroupStyleSelector}"/>
+            </ListView.GroupStyle>
+            <ListView.ContextMenu>
+                <ContextMenu >
+                    <MenuItem Header="Group">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Click">
+                                <cal:ActionMessage MethodName="GroupOrders">
+                                    <cal:Parameter Value="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}, Mode=OneWay}" />
+                                </cal:ActionMessage>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </MenuItem>
+                    <MenuItem Header="UnGroup">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Click">
+                                <cal:ActionMessage MethodName="UnGroupOrders">
+                                    <cal:Parameter Value="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}, Mode=OneWay}" />
+                                </cal:ActionMessage>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </MenuItem>
+                </ContextMenu>
+            </ListView.ContextMenu>
+        </ListView>
+    </DockPanel>
+</UserControl>

@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using log4net;
+using Microsoft.Practices.Unity;
+using Oms.Transport.Wcf;
 
 namespace Oms.Server.Core.Services
 {
@@ -25,13 +27,14 @@ namespace Oms.Server.Core.Services
         private readonly Task _serviceTask;
         private readonly CancellationTokenSource _tokenSource;
 
-        public TransportService()
+        public TransportService(IUnityContainer unityContainer)
         {
             _tokenSource = new CancellationTokenSource();
             _serviceTask = new Task(
                 () =>
                 {
-                    using (var serviceHost = new ServiceHost(typeof(OrderServiceContract)))
+                    //using (var serviceHost = new UnityServiceHost(unityContainer, typeof(OrderManagementService)))
+                    using (var serviceHost = new ServiceHost(typeof(OrderManagementService)))
                     {
                         serviceHost.Open();
                         Console.WriteLine("WCF Service Started");

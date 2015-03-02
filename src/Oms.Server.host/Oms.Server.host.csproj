@@ -68,6 +68,10 @@
       <Project>{DDF6934E-37CF-4084-9721-FE93F807D9BA}</Project>
       <Name>Oms.Server.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Oms.Transport\Oms.Transport.csproj">
+      <Project>{6D8E04EE-5FC8-4290-A741-095047228550}</Project>
+      <Name>Oms.Transport</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
