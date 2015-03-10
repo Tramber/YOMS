@@ -43,6 +43,9 @@
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="MahApps.Metro">
+      <HintPath>..\packages\MahApps.Metro.1.1.2.0\lib\net45\MahApps.Metro.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Expression.Interactions, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Unofficial.Blend.Interactivity.1.0.0\lib\net45\Microsoft.Expression.Interactions.dll</HintPath>
     </Reference>
@@ -51,6 +54,7 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.ComponentModel.Composition.Registration" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
       <Private>True</Private>
@@ -69,8 +73,9 @@
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Caliburn.Micro.2.0.1\lib\net45\System.Windows.Interactivity.dll</HintPath>
+      <HintPath>..\packages\Unofficial.Blend.Interactivity.1.0.0\lib\net45\System.Windows.Interactivity.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -109,31 +114,50 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Coroutines\ShowShellCoroutine.cs" />
+    <Compile Include="Framework\Caliburn\MetroWindowManager.cs" />
+    <Compile Include="Framework\Controls\DynamicStyle.cs" />
+    <Compile Include="Framework\Controls\ExpanderEx.cs" />
+    <Compile Include="Framework\Caliburn\ShowShellCoroutine.cs" />
+    <Compile Include="Framework\Selectors\SimpleDataTemplateSelector.cs" />
+    <Compile Include="Framework\ShaderEffects\GrayscaleEffect.cs" />
+    <Compile Include="Framework\ShaderEffects\ShaderEffectBase.cs" />
+    <Compile Include="Framework\ShaderEffects\ShaderEffectUtility.cs" />
+    <Compile Include="Framework\Themes\BlueTheme.cs" />
+    <Compile Include="Framework\Themes\DarkTheme.cs" />
+    <Compile Include="Framework\Themes\ITheme.cs" />
+    <Compile Include="Framework\Themes\IThemeManager.cs" />
+    <Compile Include="Framework\Themes\LightTheme.cs" />
+    <Compile Include="Framework\Themes\ThemeManager.cs" />
     <Compile Include="MefBootstrapper.cs" />
-    <Compile Include="Controls\Behaviors\MultiSelectBehavior.cs" />
-    <Compile Include="Controls\Observables\BindableCollection.cs" />
-    <Compile Include="Controls\Behaviors\Sorting.cs" />
-    <Compile Include="Controls\Behaviors\SortingAdorner.cs" />
-    <Compile Include="Controls\Behaviors\SortingBehavior.cs" />
-    <Compile Include="Converters\DebugConverter.cs" />
+    <Compile Include="Framework\Behaviors\MultiSelectBehavior.cs" />
+    <Compile Include="Framework\Observables\BindableCollection.cs" />
+    <Compile Include="Framework\Behaviors\Sorting.cs" />
+    <Compile Include="Framework\Behaviors\SortingAdorner.cs" />
+    <Compile Include="Framework\Behaviors\SortingBehavior.cs" />
+    <Compile Include="Framework\Converters\DebugConverter.cs" />
     <Compile Include="Model\OrderAdapter.cs" />
-    <Compile Include="Converters\ModelSummaryConverter.cs" />
-    <Compile Include="Selectors\ItemGroupStyleSelector.cs" />
-    <Compile Include="Selectors\OrderAdapterListTemplateSelector.cs" />
-    <Compile Include="Service References\Proxy\Reference.cs">
+    <Compile Include="Framework\Converters\ModelSummaryConverter.cs" />
+    <Compile Include="Framework\Selectors\ItemGroupStyleSelector.cs" />
+    <Compile Include="Framework\Selectors\OrderAdapterListTemplateSelector.cs" />
+    <Compile Include="Service References\PO\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
+    <Compile Include="Services\OrderServiceProxy.cs" />
     <Compile Include="ViewModels\IOrderBlotter.cs" />
+    <Compile Include="ViewModels\IOrderEditor.cs" />
     <Compile Include="ViewModels\IShell.cs" />
     <Compile Include="ViewModels\OrderBlotterViewModel.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ViewModels\OrderEditorViewModel.cs" />
     <Compile Include="ViewModels\ShellViewModel.cs" />
+    <Compile Include="Views\OrderEditorView.xaml.cs">
+      <DependentUpon>OrderEditorView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ShellView.xaml.cs">
       <DependentUpon>ShellView.xaml</DependentUpon>
     </Compile>
@@ -141,7 +165,67 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Styles\Themes\AvalonDock\BlueTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\AvalonDock\Brushes.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\AvalonDock\DarkTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\AvalonDock\LightTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\AvalonDock\Theme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\VS2013\BlueTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\VS2013\Controls\Menu.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\VS2013\Controls\Toolbar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\VS2013\Controls\Tooltip.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\VS2013\Controls\Window.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\VS2013\Controls\WindowCommands.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\VS2013\DarkTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Styles\Themes\VS2013\LightTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Views\OrderBlotterView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\OrderEditorView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -168,6 +252,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Framework\ShaderEffects\GrayscaleEffect.ps" />
     <None Include="packages.config" />
     <None Include="Properties\DataSources\Oms.Transport.Contracts.Dto.OrderDto.datasource" />
     <None Include="Properties\Settings.settings">
@@ -175,19 +260,27 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-    <None Include="Service References\Proxy\Oms.Transport.Contracts.Dto.xsd">
+    <None Include="Service References\PO\Arrays.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="Service References\Proxy\service.wsdl" />
-    <None Include="Service References\Proxy\service.xsd">
+    <None Include="Service References\PO\Oms.Transport.Contracts.Dto.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="Service References\Proxy\service1.xsd">
+    <None Include="Service References\PO\Oms.Transport.Contracts.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\PO\service.wsdl" />
+    <None Include="Service References\PO\service.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\PO\service1.xsd">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
@@ -203,19 +296,59 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadataStorage Include="Service References\Proxy\" />
+    <WCFMetadataStorage Include="Service References\PO\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\Proxy\configuration91.svcinfo" />
+    <None Include="Service References\PO\configuration91.svcinfo" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\Proxy\configuration.svcinfo" />
+    <None Include="Service References\PO\configuration.svcinfo" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\Proxy\Reference.svcmap">
+    <None Include="Service References\PO\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockAnchorableBottom.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockAnchorableLeft.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockAnchorableRight.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockAnchorableTop.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentAsAnchorableBottom.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentAsAnchorableLeft.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentAsAnchorableRight.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentAsAnchorableTop.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentBottom.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentInside.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentLeft.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentRight.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockDocumentTop.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockPaneEmpty.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\DockPaneLargeEmpty.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\HTabGroup.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\Locked.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinAutoHide.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinAutoHide_Black.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinAutoHide_Dark.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinAutoHide_White.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinClose.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinClose_Black.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinClose_Dark.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinClose_White.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinDocMenu.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinDocMenu_Black.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinMaximize.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinMaximize_Black.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinMaximize_Dark.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinMenu.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinMenu_Black.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinMenu_Dark.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinMenu_White.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinRestore.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinRestore_Black.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\PinRestore_Dark.png" />
+    <Resource Include="Styles\Themes\AvalonDock\Images\VTabGroup.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

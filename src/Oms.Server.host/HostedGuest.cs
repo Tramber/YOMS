@@ -4,6 +4,7 @@ using System.Threading;
 using System.Web;
 using log4net;
 using Microsoft.Practices.Unity;
+using Oms.Server.Core.Contracts;
 using Oms.Server.Core.Services;
 using Oms.Transport.Contracts;
 
@@ -30,7 +31,8 @@ namespace Oms.Server.host
         {
             _container
                 .RegisterType<ITransportService, TransportService>(new ContainerControlledLifetimeManager())
-                .RegisterType<IOrderServiceContract, OrderServiceContract>();
+                .RegisterType<IOrderServiceContract, OrderServiceContract>()
+                .RegisterType<IOrderManagementService, OrderManagementService>();
         }
 
         public void Stop()

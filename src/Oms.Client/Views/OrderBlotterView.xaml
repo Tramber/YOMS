@@ -4,10 +4,11 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-      xmlns:behaviors="clr-namespace:Oms.Client.Controls.Behaviors"
-      xmlns:selectors="clr-namespace:Oms.Client.Selectors"
-      xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+             xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
       xmlns:cal="http://www.caliburnproject.org"
+      xmlns:selectors="clr-namespace:Oms.Client.Framework.Selectors"
+      xmlns:behaviors="clr-namespace:Oms.Client.Framework.Behaviors"
+      xmlns:controls="clr-namespace:Oms.Client.Framework.Controls"
       mc:Ignorable="d" 
 >
     <UserControl.Resources>
@@ -19,7 +20,11 @@
             <PropertyGroupDescription PropertyName="GroupId"/>
         </CollectionViewSource.GroupDescriptions>
     </CollectionViewSource>
-
+        
+        <Style TargetType="Expander" x:Key="ExpanderRowGroupStyle">
+            
+        </Style>
+        
     <selectors:ItemGroupStyleSelector x:Key="GroupStyleSelector">
         <selectors:ItemGroupStyleSelector.OrphanStyle>
             <Style TargetType="{x:Type GroupItem}">
@@ -41,7 +46,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type GroupItem}">
-                            <Expander>
+                                <Expander Style="{StaticResource ExpanderRowGroupStyle}">
                                 <Expander.Header>
                                     <GridViewRowPresenter
                                                 Columns="{Binding Columns, ElementName=MyGridView, Mode=OneWay}"
@@ -51,7 +56,6 @@
                                                     <MenuItem Header="Disband Group">
                                                         <i:Interaction.Triggers>
                                                             <i:EventTrigger EventName="Click">
-
                                                                 <cal:ActionMessage MethodName="UnGroupOrders" cal:Action.TargetWithoutContext="{Binding PlacementTarget.DataContext}">
                                                                     <cal:Parameter Value="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}, Mode=OneWay}" />
                                                                 </cal:ActionMessage>
@@ -72,11 +76,8 @@
     </selectors:ItemGroupStyleSelector>
 
     </UserControl.Resources>
-    <DockPanel>
 
-        <Button DockPanel.Dock="Top" Content="Exit" x:Name="Exit"/>
-
-        <ListView x:Name="MyListView"
+    <ListView x:Name="MyListView"
             ItemsSource="{Binding Source={StaticResource cvs}}"
             VirtualizingPanel.IsVirtualizing="True"
             VirtualizingPanel.IsVirtualizingWhenGrouping="True"
@@ -84,42 +85,41 @@
             VirtualizingPanel.CacheLengthUnit="Page"
             
             VirtualizingPanel.CacheLength="2">
-            <i:Interaction.Behaviors>
-                <behaviors:SortingBehavior/>
-            </i:Interaction.Behaviors>
-            <ListView.View>
-                <GridView x:Name="MyGridView">
-                    <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" />
-                    <GridViewColumn Header="Price" DisplayMemberBinding="{Binding Price}" />
-                    <GridViewColumn Header="Quantity" DisplayMemberBinding="{Binding Quantity}" />
-                    <GridViewColumn Header="GroupId" DisplayMemberBinding="{Binding GroupId}" />
-                </GridView>
-            </ListView.View>
-            <ListView.GroupStyle>
-                <GroupStyle ContainerStyleSelector="{StaticResource GroupStyleSelector}"/>
-            </ListView.GroupStyle>
-            <ListView.ContextMenu>
-                <ContextMenu >
-                    <MenuItem Header="Group">
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="Click">
-                                <cal:ActionMessage MethodName="GroupOrders">
-                                    <cal:Parameter Value="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}, Mode=OneWay}" />
-                                </cal:ActionMessage>
-                            </i:EventTrigger>
-                        </i:Interaction.Triggers>
-                    </MenuItem>
-                    <MenuItem Header="UnGroup">
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="Click">
-                                <cal:ActionMessage MethodName="UnGroupOrders">
-                                    <cal:Parameter Value="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}, Mode=OneWay}" />
-                                </cal:ActionMessage>
-                            </i:EventTrigger>
-                        </i:Interaction.Triggers>
-                    </MenuItem>
-                </ContextMenu>
-            </ListView.ContextMenu>
-        </ListView>
-    </DockPanel>
+        <i:Interaction.Behaviors>
+            <behaviors:SortingBehavior/>
+        </i:Interaction.Behaviors>
+        <ListView.View>
+            <GridView x:Name="MyGridView">
+                <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" />
+                <GridViewColumn Header="Price" DisplayMemberBinding="{Binding Price}" />
+                <GridViewColumn Header="Quantity" DisplayMemberBinding="{Binding Quantity}" />
+                <GridViewColumn Header="GroupId" DisplayMemberBinding="{Binding GroupId}" />
+            </GridView>
+        </ListView.View>
+        <ListView.GroupStyle>
+            <GroupStyle ContainerStyleSelector="{StaticResource GroupStyleSelector}"/>
+        </ListView.GroupStyle>
+        <ListView.ContextMenu>
+            <ContextMenu >
+                <MenuItem Header="Group">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <cal:ActionMessage MethodName="GroupOrders">
+                                <cal:Parameter Value="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}, Mode=OneWay}" />
+                            </cal:ActionMessage>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </MenuItem>
+                <MenuItem Header="UnGroup">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <cal:ActionMessage MethodName="UnGroupOrders">
+                                <cal:Parameter Value="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}, Mode=OneWay}" />
+                            </cal:ActionMessage>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </MenuItem>
+            </ContextMenu>
+        </ListView.ContextMenu>
+    </ListView>
 </UserControl>

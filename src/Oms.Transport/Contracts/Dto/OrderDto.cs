@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Oms.Transport.Contracts.Dto
@@ -6,6 +7,7 @@ namespace Oms.Transport.Contracts.Dto
     [DataContract]
     public class OrderDto
     {
+       
         [DataMember]
         public int Id { get; set; }
 

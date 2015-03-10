@@ -30,20 +30,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net">
-      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Practices.Unity">
-      <HintPath>..\packages\Unity.3.5.1404.0\lib\net45\Microsoft.Practices.Unity.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Practices.Unity.Configuration">
-      <HintPath>..\packages\Unity.3.5.1404.0\lib\net45\Microsoft.Practices.Unity.Configuration.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Practices.Unity.RegistrationByConvention">
-      <HintPath>..\packages\Unity.3.5.1404.0\lib\net45\Microsoft.Practices.Unity.RegistrationByConvention.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -70,15 +56,9 @@
     <Compile Include="Contracts\Dto\OrderDtoValidityType.cs" />
     <Compile Include="Contracts\Dto\UserDto.cs" />
     <Compile Include="Contracts\IOrderServiceContract.cs" />
+    <Compile Include="Contracts\ItemOperationResponse.cs" />
+    <Compile Include="Contracts\ItemOperationType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Wcf\UnityContextInitializer.cs" />
-    <Compile Include="Wcf\UnityContractBehavior.cs" />
-    <Compile Include="Wcf\UnityInstanceContextExtension.cs" />
-    <Compile Include="Wcf\UnityInstanceProvider.cs" />
-    <Compile Include="Wcf\UnityServiceHost.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,6 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:converters="clr-namespace:Oms.Client.Converters">
+                    xmlns:converters="clr-namespace:Oms.Client.Framework.Converters">
     <converters:DebugConverter x:Key="DebugConverter"/>
     <converters:OrderAdapterSummaryConverter x:Key="OrderAdapterSummaryConverter"/>
 </ResourceDictionary>

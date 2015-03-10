@@ -15,18 +15,25 @@ namespace Oms.Transport.Contracts
         OrderDto[] GetOrders();
 
         [OperationContract]
-        void CreateOrder(OrderDto order);
+        void CreateOrders(OrderDto[] orderDtoList);
+
+        [OperationContract]
+        void CancelOrders(int[] orderIdList);
+
+        [OperationContract]
+        void UpdateOrders(OrderDto[] orderDtoList);
 
         [OperationContract(IsOneWay = true, IsInitiating = true)]
-        void SubscribeOrders();
+        void SubscribeToEvents();
 
         [OperationContract(IsOneWay = true, IsInitiating = true)]
-        void UnsubcribeOrders();
+        void UnsubscribeToEvents();
     }
 
     public interface IOrderServiceContractCallback
     {
         [OperationContract]
-        void Orders_OnNext(OrderDto orderDto);
+        void OrderListUpdated(ItemOperationType operationType, OrderDto[] orderDtoList);
     }
 }
+

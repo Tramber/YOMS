@@ -60,12 +60,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Contracts\ITransportService.cs" />
     <Compile Include="DtoMapperExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\IOrderManagementService.cs" />
     <Compile Include="Services\OrderManagementService.cs" />
-    <Compile Include="Services\OrderServiceContract.cs" />
-    <Compile Include="Services\TransportService.cs" />
+    <Compile Include="Contracts\OrderServiceContract.cs" />
+    <Compile Include="Contracts\TransportService.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Oms.Framework\Oms.Framework.csproj">

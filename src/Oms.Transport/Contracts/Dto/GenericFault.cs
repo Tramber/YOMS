@@ -5,11 +5,6 @@ namespace Oms.Transport.Contracts.Dto
     [DataContract]
     public class GenericFault
     {
-        public GenericFault(string errorMessage)
-        {
-            this.ErrorMessage = errorMessage;
-        }
-
         [DataMember]
         public string ErrorMessage { get; set; }
 

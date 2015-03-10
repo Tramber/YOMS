@@ -6,6 +6,17 @@
          <ResourceDictionary>
              <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Styles/Converters.xaml"/>
+
+                
+                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colors.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/blue.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/basedark.xaml" />-->
+                
+
+                <ResourceDictionary Source="Styles/Themes/AvalonDock/DarkTheme.xaml"/>
+                 <ResourceDictionary Source="Styles/Themes/VS2013/DarkTheme.xaml"/>
                 <ResourceDictionary>
                     <client:MefBootstrapper x:Key="bootstrapper" />
                 </ResourceDictionary>

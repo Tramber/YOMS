@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Caliburn.Micro;
+using Oms.Client.Framework.Caliburn;
 using Oms.Client.ViewModels;
 
 namespace Oms.Client
@@ -31,7 +32,8 @@ namespace Oms.Client
 
             var batch = new CompositionBatch();
 
-            batch.AddExportedValue<IWindowManager>(new WindowManager());
+           batch.AddExportedValue<IWindowManager>(new MetroWindowManager());
+           // batch.AddExportedValue<IWindowManager>(new WindowManager());
             batch.AddExportedValue<IEventAggregator>(new EventAggregator());
             batch.AddExportedValue(container);
 
@@ -63,5 +65,7 @@ namespace Oms.Client
         {
             DisplayRootViewFor<IShell>();
         }
+
+        
     }
 }

@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Caliburn.Micro;
-using Oms.Client.Controls;
+using Oms.Client.Framework.Observables;
 using Oms.Client.Model;
 
 namespace Oms.Client.ViewModels
@@ -19,7 +19,7 @@ namespace Oms.Client.ViewModels
     [Export(typeof(IOrderBlotter))]
     public class OrderBlotterViewModel : Screen, IOrderBlotter
     {
-        private readonly Controls.Observables.BindableCollectionEx<OrderAdapter> _orderAdapters = new Controls.Observables.BindableCollectionEx<OrderAdapter>();
+        private readonly BindableCollectionEx<OrderAdapter> _orderAdapters = new BindableCollectionEx<OrderAdapter>();
         private volatile int lastFreeGroupId = 4000;
 
         protected override void OnInitialize()
@@ -93,7 +93,7 @@ namespace Oms.Client.ViewModels
             }
         }
 
-        public Controls.Observables.BindableCollectionEx<OrderAdapter> OrderAdapters
+        public BindableCollectionEx<OrderAdapter> OrderAdapters
         {
             get { return _orderAdapters; }
         }
