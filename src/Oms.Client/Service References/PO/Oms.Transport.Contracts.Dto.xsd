@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/Oms.Transport.Contracts.Dto" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/Oms.Transport.Contracts.Dto" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="ArrayOfOrderDto">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="OrderDto" nillable="true" type="tns:OrderDto" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfOrderDto" nillable="true" type="tns:ArrayOfOrderDto" />
+  <xs:complexType name="OrderDto">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Asset" nillable="true" type="tns:AssetDto" />
+      <xs:element minOccurs="0" name="CreationDate" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Creator" nillable="true" type="tns:UserDto" />
+      <xs:element minOccurs="0" name="ExpiryDate" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Id" type="xs:int" />
+      <xs:element minOccurs="0" name="OrderType" type="tns:OrderDtoType" />
+      <xs:element minOccurs="0" name="Owner" nillable="true" type="tns:UserDto" />
+      <xs:element minOccurs="0" name="Price" type="xs:double" />
+      <xs:element minOccurs="0" name="Quantity" type="xs:double" />
+      <xs:element minOccurs="0" name="Validity" type="tns:OrderDtoValidityType" />
+      <xs:element minOccurs="0" name="Version" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Way" type="tns:OrderDtoWay" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="OrderDto" nillable="true" type="tns:OrderDto" />
+  <xs:complexType name="AssetDto">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="BloombergTicker" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CreationDate" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Creator" nillable="true" type="tns:UserDto" />
+      <xs:element minOccurs="0" name="Currency" type="tns:CurrencyDto" />
+      <xs:element minOccurs="0" name="Id" type="xs:int" />
+      <xs:element minOccurs="0" name="IsActive" type="xs:boolean" />
+      <xs:element minOccurs="0" name="IsinCode" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Origin" type="tns:AssetOriginDtoType" />
+      <xs:element minOccurs="0" name="Type" type="tns:AssetDtoType" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="AssetDto" nillable="true" type="tns:AssetDto" />
+  <xs:complexType name="UserDto">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="FirstName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Fund" nillable="true" type="tns:FundDto" />
+      <xs:element minOccurs="0" name="Id" type="xs:int" />
+      <xs:element minOccurs="0" name="LastName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Login" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="UserDto" nillable="true" type="tns:UserDto" />
+  <xs:complexType name="FundDto">
+    <xs:sequence />
+  </xs:complexType>
+  <xs:element name="FundDto" nillable="true" type="tns:FundDto" />
+  <xs:simpleType name="CurrencyDto">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="USD" />
+      <xs:enumeration value="EUR" />
+      <xs:enumeration value="GBP" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="CurrencyDto" nillable="true" type="tns:CurrencyDto" />
+  <xs:simpleType name="AssetOriginDtoType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="User" />
+      <xs:enumeration value="Sophis" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="AssetOriginDtoType" nillable="true" type="tns:AssetOriginDtoType" />
+  <xs:simpleType name="AssetDtoType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Equity" />
+      <xs:enumeration value="Bond" />
+      <xs:enumeration value="Future" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="AssetDtoType" nillable="true" type="tns:AssetDtoType" />
+  <xs:simpleType name="OrderDtoType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Market" />
+      <xs:enumeration value="Limit" />
+      <xs:enumeration value="Stop" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="OrderDtoType" nillable="true" type="tns:OrderDtoType" />
+  <xs:simpleType name="OrderDtoValidityType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Day" />
+      <xs:enumeration value="EndOfDay" />
+      <xs:enumeration value="Gtc" />
+      <xs:enumeration value="Gtd" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="OrderDtoValidityType" nillable="true" type="tns:OrderDtoValidityType" />
+  <xs:simpleType name="OrderDtoWay">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Buy" />
+      <xs:enumeration value="Sell" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="OrderDtoWay" nillable="true" type="tns:OrderDtoWay" />
+</xs:schema>
