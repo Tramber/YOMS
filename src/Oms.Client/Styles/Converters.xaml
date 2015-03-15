@@ -3,4 +3,5 @@
                     xmlns:converters="clr-namespace:Oms.Client.Framework.Converters">
     <converters:DebugConverter x:Key="DebugConverter"/>
     <converters:OrderAdapterSummaryConverter x:Key="OrderAdapterSummaryConverter"/>
+    <converters:CollectionToVisibilityConverter x:Key="CollectionToVisibilityConverter"/>
 </ResourceDictionary>

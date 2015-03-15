@@ -6,9 +6,22 @@
              xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock"
              xmlns:cal="http://www.caliburnproject.org"
              xmlns:selectors="clr-namespace:Oms.Client.Framework.Selectors"
+             xmlns:views="clr-namespace:Oms.Client.Views"
+             xmlns:viewModels="clr-namespace:Oms.Client.ViewModels"
              mc:Ignorable="d">
 
-    <xcad:DockingManager
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+    
+        <StackPanel Orientation="Horizontal">
+            <Button x:Name="CreateOrder" Content="Create Order"/>
+            <Button x:Name="CreateNotification" Content="Create Notification"/>
+        </StackPanel>
+
+    <xcad:DockingManager Grid.Row="1"
         AnchorablesSource="{Binding Path=Tools}"
         DocumentsSource="{Binding Path=Documents}"
         ActiveContent="{Binding Path=ActiveItem, Mode=TwoWay}">
@@ -38,4 +51,20 @@
             </xcad:LayoutRoot>
     </xcad:DockingManager>
 
+        <ListBox Background="Transparent" Grid.Row="1" ItemsSource="{Binding Notifications}"
+                 
+                 HorizontalAlignment="Right" VerticalAlignment="Bottom" BorderThickness="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <ContentControl cal:View.Model="{Binding}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Margin" Value="0 2 0 0"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+    </Grid>
 </UserControl>

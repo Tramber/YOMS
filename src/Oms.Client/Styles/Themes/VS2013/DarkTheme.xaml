@@ -103,4 +103,7 @@
     <SolidColorBrush x:Key="EnvironmentToolTipBackground" Color="#424245" />
     <SolidColorBrush x:Key="EnvironmentToolTipBorder" Color="#4D4D50" />
     <SolidColorBrush x:Key="EnvironmentToolTipText" Color="#F1F1F1" />
+
+    <!-- My values -->
+    <SolidColorBrush x:Key="WindowBackground" Color="#FF2D2D30"/>
 </ResourceDictionary>

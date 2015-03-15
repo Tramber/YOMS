@@ -12,16 +12,15 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using MahApps.Metro.Controls;
 
 namespace Oms.Client.Views
 {
     /// <summary>
-    /// Interaction logic for OrderEditorView.xaml
+    /// Interaction logic for NotificationView.xaml
     /// </summary>
-    public partial class OrderEditorView : MetroWindow
+    public partial class NotificationView : UserControl
     {
-        public OrderEditorView()
+        public NotificationView()
         {
             InitializeComponent();
         }
