@@ -4,8 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d">
-    <Border BorderBrush="#FFFFBE00" BorderThickness="0 5 0 0">
-        <Border BorderThickness="1" BorderBrush="#FFFFBE00" Padding="3" Background="#FF3E3E42">
+    <Border BorderBrush="#FFFFBE00" BorderThickness="5,0,0,0" CornerRadius="5 0 0 5">
+        <Border BorderThickness="7 1 1 1" BorderBrush="#FFFFBE00" Padding="3" Background="#FF3E3E42" CornerRadius="0 5 5 0">
             <DockPanel DataContext="{Binding Notification}" Width="200" Height="40">
                 <TextBlock Text="{Binding Title}" DockPanel.Dock="Top" FontWeight="Bold" Foreground="White" />
                 <TextBlock Text="{Binding Description}" Foreground="White"/>
