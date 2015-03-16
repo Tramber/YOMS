@@ -1,0 +1,51 @@
+﻿<controls:MetroWindow x:Class="Oms.Client.Views.OrderEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:controls1="clr-namespace:Oms.Client.Framework.Controls"
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:behaviors="clr-namespace:Oms.Client.Framework.Behaviors"
+             mc:Ignorable="d" 
+             Height="530" Width="934" Background="#FF2D2D30">
+    <controls:MetroWindow.Resources>
+        <BorderGapMaskConverter x:Key="BorderGapMaskConverter"/>
+
+
+    </controls:MetroWindow.Resources>
+
+    <controls:MetroWindow.RightWindowCommands>
+        <controls:WindowCommands>
+            <Button Content="Settings"/>
+        </controls:WindowCommands>
+    </controls:MetroWindow.RightWindowCommands>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="27*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="134*"/>
+            <ColumnDefinition Width="329*"/>
+        </Grid.ColumnDefinitions>
+
+
+        <ComboBox Height="23" Margin="10,10,0,0" IsEditable="True" StaysOpenOnEdit="True"
+            VerticalAlignment="Top" Width="248" BorderBrush="#FF3E3E42" 
+                  IsDropDownOpen="{Binding SearchResults.Count, Mode=OneWay, Converter={StaticResource CollectionToVisibilityConverter}}"
+                  ItemsSource="{Binding SearchResults, Mode=OneWay}" 
+                  IsTextSearchEnabled="False" 
+                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+            <i:Interaction.Behaviors>
+                <behaviors:AutoCompleteBehavior/>
+            </i:Interaction.Behaviors>
+        </ComboBox>
+
+        <ItemsControl Grid.Column="1" 
+                 ItemsSource="{Binding LogData}"
+                 Width="638" Margin="15,10,5,10" Background="#FF252526" Foreground="White" BorderBrush="#FF3E3E42"/>
+        <Button Content="Search" x:Name="Search" HorizontalAlignment="Right" Margin="0,66,5,0" VerticalAlignment="Top" Width="75" Background="#FF333337" Foreground="White" BorderBrush="#FF3E3E42"/>
+        <Button Content="Close" x:Name="Close" HorizontalAlignment="Right" Margin="0,469,5,0" VerticalAlignment="Top" Width="75" Background="#FF333337" Foreground="White" BorderBrush="#FF3E3E42"/>
+    </Grid>
+
+</controls:MetroWindow>
