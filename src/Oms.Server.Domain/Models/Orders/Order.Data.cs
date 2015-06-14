@@ -1,11 +1,18 @@
 ﻿using System;
 using Oms.Server.Domain.Interfaces.Models;
+using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Instruments;
 
 namespace Oms.Server.Domain.Models.Orders
 {
     public partial class Order : IOrderTransientData, IOrderDealingData
     {
+
+        public OrderStateMachine.State OrderState
+        {
+            get { return CurrentData.OrderState; }
+        }
+
         public double Quantity
         {
             get { return CurrentData.Quantity; }
@@ -41,9 +48,9 @@ namespace Oms.Server.Domain.Models.Orders
             get { return CurrentData.ExpiryDate; }
         }
 
-        public double? RemainingQuantity
+        public Fund Fund
         {
-            get { return CurrentData.RemainingQuantity; }
+            get { return CurrentData.Fund; }
         }
     }
 }

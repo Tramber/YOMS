@@ -17,7 +17,7 @@ namespace Oms.Server.Domain.Models.Orders
 
         public int Id { get; set; }
 
-        public IList<EventLog<string>> EventLogs { get; internal set; }
+        public IList<EventLog<OrderStateMachine.Trigger>> EventLogs { get; internal set; }
 
         public User Owner { get; internal set; }
 

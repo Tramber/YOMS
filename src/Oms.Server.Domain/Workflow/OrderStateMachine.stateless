@@ -1,0 +1,67 @@
+<!--  
+Stateless Designer statemachine.
+For more information: http://statelessdesigner.codeplex.com/
+-->
+<statemachine xmlns="http://statelessdesigner.codeplex.com/Schema">
+  <settings>
+    <itemname>OrderStateMachine</itemname>
+    <namespace>Oms.Server.Domain.Workflow</namespace>
+    <class>public partial</class>
+  </settings>
+  <triggers>     
+    <trigger>Undefined</trigger>
+    <trigger>Initialize</trigger>
+    <trigger>ResumeSnapshot</trigger>
+    <trigger>Create</trigger>
+    <trigger>Cancel</trigger>
+    <trigger>Delete</trigger>
+    <trigger>Recall</trigger>
+    <trigger>StartBooking</trigger>
+    <trigger>AddTrade</trigger>
+    <trigger>CancelTrade</trigger>
+    <trigger>SendRequest</trigger>
+    <trigger>SendReject</trigger>
+    <trigger>SendAccept</trigger>
+    <trigger>MarketSend</trigger>
+    <trigger>MarketCancel</trigger>
+    <trigger>TradeBooked</trigger>
+  </triggers>
+  <states>     
+    <state start="yes">Undefined</state>
+    <state>Draft</state>
+    <state>Accepting</state>
+    <state>Working</state>
+    <state>Dealing</state>
+    <state>Validating</state>
+    <state>Booking</state>
+    <state>Terminated</state>
+  </states>
+  <transitions>
+    <transition trigger="SendRequest" from="Draft" to="Accepting" />
+    <transition trigger="SendReject" from="Accepting" to="Draft" />
+    <transition trigger="SendReject" from="Accepting" to="Terminated" />
+    <transition trigger="SendAccept" from="Accepting" to="Working" />
+    <transition trigger="Cancel" from="Accepting" to="Terminated" />
+    <transition trigger="Cancel" from="Working" to="Terminated" />
+    <transition trigger="Cancel" from="Dealing" to="Terminated" />
+    <transition trigger="Cancel" from="Validating" to="Terminated" />
+    <transition trigger="Delete" from="Draft" to="Terminated" />
+    <transition trigger="Recall" from="Accepting" to="Draft" />
+    <transition trigger="StartBooking" from="Validating" to="Booking" />
+    <transition trigger="AddTrade" from="Working" to="Dealing" />
+    <transition trigger="AddTrade" from="Working" to="Validating" />
+    <transition trigger="AddTrade" from="Dealing" to="Dealing" />
+    <transition trigger="AddTrade" from="Dealing" to="Validating" />
+    <transition trigger="AddTrade" from="Terminated" to="Dealing" />
+    <transition trigger="CancelTrade" from="Dealing" to="Dealing" />
+    <transition trigger="CancelTrade" from="Validating" to="Dealing" />
+    <transition trigger="CancelTrade" from="Validating" to="Validating" />
+    <transition trigger="CancelTrade" from="Booking" to="Booking" />
+    <transition trigger="CancelTrade" from="Booking" to="Dealing" />
+    <transition trigger="MarketSend" from="Working" to="Dealing" />
+    <transition trigger="MarketSend" from="Dealing" to="Dealing" />
+    <transition trigger="MarketCancel" from="Dealing" to="Dealing" />
+    <transition trigger="TradeBooked" from="Booking" to="Booking" />
+    <transition trigger="TradeBooked" from="Booking" to="Terminated" />
+    </transitions>
+</statemachine>
