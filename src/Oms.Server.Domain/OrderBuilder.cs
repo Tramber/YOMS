@@ -4,11 +4,13 @@ using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Models.Funds;
-using Oms.Server.Domain.Models.Generics;
 using Oms.Server.Domain.Models.Instruments;
 using Oms.Server.Domain.Models.Orders;
+using Oms.Server.Domain.Models.Trades;
 using Oms.Server.Domain.Models.Users;
+using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain
 {
@@ -17,6 +19,8 @@ namespace Oms.Server.Domain
         private OrderTransientData transientData = new OrderTransientData();
         private OrderInitialReferentialData initialReferentialData;
         private OrderCoreData coreData;
+        private Queue<Trade> trades = new Queue<Trade>();
+        private OrderStateMachine.State? orderStateOverride;
 
         public OrderBuilder()
         {   
@@ -68,15 +72,35 @@ namespace Oms.Server.Domain
             return this;
         }
 
+        public OrderBuilder WithTrade(Trade trade)
+        {
+            trades.Enqueue(trade);
+            return this;
+        }
+
+        public OrderBuilder WithOrderState(OrderStateMachine.State orderState)
+        {
+            orderStateOverride = orderState;
+            return this;
+        }
+
         public Order Build(bool isDraft = false)
         {
             var order = new Order();
             coreData.InitialReferentialData = initialReferentialData;
-            var triggerContext = new TriggerContext
+            var tradeCount = trades.Count;
+            while (trades.Count > 0)
             {
-                Date = coreData.CreationDate,
-                User = coreData.Creator,
-            };
+                var trade = trades.Dequeue();
+                trade.Id = tradeCount - trades.Count;
+                order.AddTrade(new TriggerContext(null, coreData.CreationDate.AddSeconds(-(trades.Count + 2))), trades.Dequeue());
+            }
+            var triggerContext = new TriggerContext(coreData.Creator, coreData.CreationDate);
+            if (orderStateOverride.HasValue)
+            {
+                order.ResumeSnapshot(orderStateOverride.Value, coreData, transientData);
+                return order;
+            }
             var result = isDraft
                 ? order.Create(triggerContext, coreData, transientData)
                 : order.SendRequest(triggerContext, coreData, transientData);

@@ -1,4 +1,4 @@
-﻿namespace Oms.Server.Domain.Models.Generics
+﻿namespace Oms.Server.Domain.Framework
 {
     public class GenericResult
     {
@@ -18,6 +18,11 @@
         public static GenericResult Failure(string errorMessage, int errorCode = DefaultErrorCode)
         {
             return new GenericResult(errorMessage, errorCode == NoErrorCode ? DefaultErrorCode : errorCode);
+        }
+
+        public static GenericResult FailureFormat(string format, params object [] arguments)
+        {
+            return new GenericResult(string.Format(format, arguments), DefaultErrorCode);
         }
 
         public static GenericResult Success()

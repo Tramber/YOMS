@@ -37,6 +37,8 @@ For more information: http://statelessdesigner.codeplex.com/
     <state>Terminated</state>
   </states>
   <transitions>
+    <transition trigger="Create" from="Undefined" to="Draft" />
+    <transition trigger="SendRequest" from="Undefined" to="Accepting" />
     <transition trigger="SendRequest" from="Draft" to="Accepting" />
     <transition trigger="SendReject" from="Accepting" to="Draft" />
     <transition trigger="SendReject" from="Accepting" to="Terminated" />

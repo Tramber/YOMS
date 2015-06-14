@@ -1,4 +1,4 @@
-﻿namespace Oms.Server.Domain.Models.Generics
+﻿namespace Oms.Server.Domain.Framework
 {
     public static class GenericResultExtentions
     {

@@ -2,15 +2,21 @@
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Instruments;
+using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain.Models.Orders
 {
-    public partial class Order : IOrderTransientData, IOrderDealingData
+    public partial class Order : IOrderTransientData, IOrderDealingData, IOrderComputedData
     {
 
         public OrderStateMachine.State OrderState
         {
-            get { return CurrentData.OrderState; }
+            get { return StateMachine.GetState; }
+        }
+
+        public OrderStateMachine.Trigger? PendingTrigger
+        {
+            get { return CurrentData.PendingTrigger; }
         }
 
         public double Quantity
@@ -51,6 +57,21 @@ namespace Oms.Server.Domain.Models.Orders
         public Fund Fund
         {
             get { return CurrentData.Fund; }
+        }
+
+        OrderStateMachine.Trigger IOrderComputedData.OrderState
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public OrderStatus OrderStatus
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public double RemainingQuantity
+        {
+            get { throw new NotImplementedException(); }
         }
     }
 }

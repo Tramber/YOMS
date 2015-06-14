@@ -1,4 +1,5 @@
 ﻿using Oms.Server.Domain.Models.Orders;
+using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain.Models.EventLogs
 {
@@ -8,7 +9,7 @@ namespace Oms.Server.Domain.Models.EventLogs
         {
         }
 
-        public OrderStateEventLog(Interfaces.Models.ITriggerContext context, OrderStateMachine.Trigger trigger, TriggerStatus status)
+        public OrderStateEventLog(Interfaces.Models.ITriggerContext context, OrderStateMachine.Trigger trigger, TriggerStatus status, int? relatedEventLogId = null)
             : base(context, trigger, status)
         {
         }

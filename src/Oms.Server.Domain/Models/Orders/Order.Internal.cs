@@ -7,6 +7,7 @@ using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Instruments;
 using Oms.Server.Domain.Models.Users;
+using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain.Models.Orders
 {
@@ -14,20 +15,30 @@ namespace Oms.Server.Domain.Models.Orders
     {
         private OrderData _currentDataDoNotUseDirectly;
         private OrderStateMachine _stateMachineDoNotUserDirectly;
+        private const double Epsilon = 0.000001;
 
         private OrderData CurrentData
         {
             get
             {
                 if (_currentDataDoNotUseDirectly == null)
-                    _currentDataDoNotUseDirectly = ComputeCurrentData();
+                    RefreshCurrentData();
                 return _currentDataDoNotUseDirectly;
             }
         }
-        private OrderData ComputeCurrentData(OrderData orderData = null)
+
+        private void RefreshCurrentData(OrderData orderData = null)
         {
-            _stateMachineDoNotUserDirectly = null;
-            return orderData ?? new OrderData();
+            if (orderData == null)
+            {
+                _stateMachineDoNotUserDirectly = null;
+                _currentDataDoNotUseDirectly = new OrderData();
+            }
+            else
+            {
+                _currentDataDoNotUseDirectly = orderData;
+                StateMachine.Initialize(CurrentData.OrderState);
+            }
         }
 
         private OrderStateMachine StateMachine
@@ -41,6 +52,38 @@ namespace Oms.Server.Domain.Models.Orders
                 }
                 return _stateMachineDoNotUserDirectly;
             }
+        }
+
+        private OrderStatus ComputeOrderStatus(OrderData orderData)
+        {
+            switch (orderData.OrderState)
+            {
+                case OrderStateMachine.State.Terminated:
+                    return IsFilled(orderData) ? OrderStatus.CancelledFilled : OrderStatus.Cancelled;
+                case OrderStateMachine.State.Booking:
+                case OrderStateMachine.State.Validating:
+                    if (orderData.RemainingQuantity < Epsilon)
+                        return OrderStatus.OverFilled;
+                    if(IsFilled(orderData))
+                        return OrderStatus.Filled;
+                    goto case OrderStateMachine.State.Dealing;
+                case OrderStateMachine.State.Dealing:
+                case OrderStateMachine.State.Working:
+                    if(orderData.RemainingQuantity >= Epsilon)
+                        return OrderStatus.PartiallyFilled;
+                    goto case OrderStateMachine.State.Accepting; 
+                case OrderStateMachine.State.Accepting:
+                    return OrderStatus.New;
+                case OrderStateMachine.State.Draft:
+                    return OrderStatus.Pending;
+                default:
+                    return OrderStatus.Undefined;
+            }
+        }
+
+        private bool IsFilled(OrderData orderData)
+        {
+            return Math.Abs(workingData.Quantity - workingData.RemainingQuantity) < Epsilon;
         }
 
         private class OrderData : IOrderTransientData, IOrderDealingData, ICloneable
@@ -69,6 +112,7 @@ namespace Oms.Server.Domain.Models.Orders
             {
                 if (dealingData != null)
                 {
+                    //TODO fill with dealing information
                 }
                 return this;
             }
@@ -77,10 +121,16 @@ namespace Oms.Server.Domain.Models.Orders
             {
                 var result = new OrderData().SetDealingData(this).SetTransientData(this);
                 result.OrderState = this.OrderState;
+                result.PendingTrigger = this.PendingTrigger;
+                result.RemainingQuantity = this.RemainingQuantity;
+                result.OrderStatus = this.OrderStatus;
                 return result;
             }
 
-            object ICloneable.Clone() { return Clone(); }
+            object ICloneable.Clone()
+            {
+                return Clone();
+            }
 
             public double Quantity { get; set; }
             public double Price { get; set; }
@@ -92,6 +142,9 @@ namespace Oms.Server.Domain.Models.Orders
             public OrderStateMachine.State OrderState { get; set; }
             public string StateMachineErrorMessage { get; set; }
             public Fund Fund { get; set; }
+            public OrderStateMachine.Trigger? PendingTrigger { get; set; }
+            public double RemainingQuantity { get; set; }
+            public OrderStatus OrderStatus { get; set; }
         }
     }
 }

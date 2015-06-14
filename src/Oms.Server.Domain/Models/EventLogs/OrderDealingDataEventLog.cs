@@ -1,5 +1,6 @@
 ﻿using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.Orders;
+using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain.Models.EventLogs
 {

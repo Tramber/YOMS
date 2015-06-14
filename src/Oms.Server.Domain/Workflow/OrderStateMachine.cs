@@ -63,6 +63,8 @@ namespace Oms.Server.Domain.Workflow
     public EntryExitDelegate OnBookingExit = null;
     public EntryExitDelegate OnTerminatedEntry = null;
     public EntryExitDelegate OnTerminatedExit = null;
+    public GuardClauseDelegate GuardClauseFromUndefinedToDraftUsingTriggerCreate = null;
+    public GuardClauseDelegate GuardClauseFromUndefinedToAcceptingUsingTriggerSendRequest = null;
     public GuardClauseDelegate GuardClauseFromDraftToAcceptingUsingTriggerSendRequest = null;
     public GuardClauseDelegate GuardClauseFromDraftToTerminatedUsingTriggerDelete = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToDraftUsingTriggerSendReject = null;
@@ -97,6 +99,8 @@ namespace Oms.Server.Domain.Workflow
       stateMachine.Configure(State.Undefined)
         .OnEntry(() => { if (OnUndefinedEntry != null) OnUndefinedEntry(); })
         .OnExit(() => { if (OnUndefinedExit != null) OnUndefinedExit(); })
+        .PermitIf(Trigger.Create, State.Draft , () => { if (GuardClauseFromUndefinedToDraftUsingTriggerCreate != null) return GuardClauseFromUndefinedToDraftUsingTriggerCreate(); return true; } )
+        .PermitIf(Trigger.SendRequest, State.Accepting , () => { if (GuardClauseFromUndefinedToAcceptingUsingTriggerSendRequest != null) return GuardClauseFromUndefinedToAcceptingUsingTriggerSendRequest(); return true; } )
       ;
       stateMachine.Configure(State.Draft)
         .OnEntry(() => { if (OnDraftEntry != null) OnDraftEntry(); })

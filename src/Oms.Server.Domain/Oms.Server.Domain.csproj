@@ -55,14 +55,15 @@
     <Compile Include="Models\EventLogs\OrderDataEventLog.cs" />
     <Compile Include="Models\EventLogs\OrderDealingDataEventLog.cs" />
     <Compile Include="Models\EventLogs\OrderStateEventLog.cs" />
-    <Compile Include="Models\Generics\GenericResult.cs" />
-    <Compile Include="Models\Generics\GenericResultExtentions.cs" />
+    <Compile Include="Framework\GenericResult.cs" />
+    <Compile Include="Framework\GenericResultExtentions.cs" />
+    <Compile Include="Interfaces\Models\IOrderComputedData.cs" />
     <Compile Include="Models\Orders\Order.Command.cs" />
     <Compile Include="Models\Orders\Order.Internal.cs" />
     <Compile Include="Models\Orders\OrderCoreData.cs" />
     <Compile Include="Models\Orders\OrderDealingData.cs" />
     <Compile Include="Models\Orders\OrderExtensions.cs" />
-    <Compile Include="Models\Orders\OrderStateMachine.cs" />
+    <Compile Include="Models\Orders\OrderStatus.cs" />
     <Compile Include="Models\Orders\OrderTransientData.cs" />
     <Compile Include="Models\Funds\FundCodeType.cs" />
     <Compile Include="Models\Instruments\InstrumentCodeType.cs" />
@@ -92,12 +93,13 @@
     <Compile Include="Models\Funds\Fund.cs" />
     <Compile Include="Models\Users\FundManager.cs" />
     <Compile Include="Models\Users\User.cs" />
-    <Compile Include="Models\Generics\TriggerContext.cs" />
+    <Compile Include="Framework\TriggerContext.cs" />
     <Compile Include="Workflow\OrderStateMachine.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>OrderStateMachine.stateless</DependentUpon>
     </Compile>
+    <Compile Include="Workflow\OrderStateMachine.Custom.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Orders\Order.Data.cs" />

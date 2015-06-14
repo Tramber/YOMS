@@ -5,6 +5,7 @@ using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Users;
+using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain.Models.Orders
 {
@@ -12,7 +13,7 @@ namespace Oms.Server.Domain.Models.Orders
     {
         public Order()
         {
-            
+            EventLogs = new List<EventLog<OrderStateMachine.Trigger>>();
         }
 
         public int Id { get; set; }
