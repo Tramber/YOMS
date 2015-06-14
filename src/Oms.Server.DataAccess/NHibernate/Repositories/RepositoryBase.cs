@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NHibernate.Criterion;
 using Oms.Server.Domain;
 using Oms.Server.Domain.Interfaces;
+using Oms.Server.Domain.Interfaces.Repository;
 
 namespace Oms.Server.DataAccess.NHibernate.Repositories
 {

@@ -59,21 +59,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NHibernate\Mapping\FundManagerMap.cs" />
-    <Compile Include="NHibernate\Mapping\FundMap.cs" />
-    <Compile Include="NHibernate\Mapping\OrderGroupMap.cs" />
-    <Compile Include="NHibernate\Mapping\OrderMap.cs" />
-    <Compile Include="NHibernate\Mapping\AssetMap.cs" />
-    <Compile Include="NHibernate\Mapping\UserMap.cs" />
+    <Compile Include="NHibernate\AutomappingConfiguration.cs" />
     <Compile Include="NHibernate\NHibernateHelper.cs" />
     <Compile Include="NHibernate\Repositories\RepositoryFacade.cs" />
     <Compile Include="NHibernate\Repositories\OrderRepository.cs" />
     <Compile Include="NHibernate\Repositories\RepositoryBase.cs" />
-    <Compile Include="NHibernate\Repositories\AssetRepository.cs" />
+    <Compile Include="NHibernate\Repositories\InstrumentRepository.cs" />
     <Compile Include="NHibernate\Repositories\UserRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="NHibernate\Conventions\" />
+    <Folder Include="NHibernate\Mapping\" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Oms.Server.Domain\Oms.Server.Domain.csproj">
       <Project>{266b6b47-ebaf-4a5d-8816-4803641a36f9}</Project>

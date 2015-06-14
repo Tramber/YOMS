@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Oms.Server.Domain.Interfaces;
+using Oms.Server.Domain.Interfaces.Repository;
 
 namespace Oms.Server.DataAccess.NHibernate.Repositories
 {
@@ -13,13 +14,13 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
         {
             Users = new UserRepository();
             Orders = new OrderRepository();
-            Assets = new AssetRepository();
+            Instruments = new InstrumentRepository();
         }
 
         public IUserRepository Users { get; private set; }
 
         public IOrderRepository Orders { get; private set; }
 
-        public IAssetRepository Assets { get; private set; }
+        public IInstrumentRepository Instruments { get; private set; }
     }
 }

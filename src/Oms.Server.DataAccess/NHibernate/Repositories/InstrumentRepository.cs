@@ -5,22 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 using Oms.Server.Domain.Interfaces;
 using Oms.Server.Domain.Interfaces.Repository;
-using Oms.Server.Domain.Models.Users;
+using Oms.Server.Domain.Models.Instruments;
 
 namespace Oms.Server.DataAccess.NHibernate.Repositories
 {
-    internal class UserRepository : RepositoryBase<User>, IUserRepository
+    internal class InstrumentRepository : RepositoryBase<Instrument>, IInstrumentRepository
     {
-        public User GetUserById(int id)
+        public Instrument GetAssetById(int id)
         {
             return base.GetById(id);
         }
 
-        public IList<User> GetUserByLogin(string login)
+        public IList<Instrument> GetAssetByKind(InstrumentType instrumentType)
         {
-            return base.GetByColumn("Login", login);
+            return base.GetByColumn("Type", instrumentType);
         }
-        public IList<User> GetUserList()
+
+        public IList<Instrument> GetAssetList()
         {
             return base.GetByColumn("IsActive", true);
         }

@@ -1,49 +1,13 @@
 ﻿using System;
-using Oms.Server.Domain.Assets;
-using Oms.Server.Domain.Orders;
-using Oms.Server.Domain.Users;
+using Oms.Server.Domain.Models.Instruments;
+using Oms.Server.Domain.Models.Orders;
+using Oms.Server.Domain.Models.Users;
 using Oms.Transport.Contracts.Dto;
 
 namespace Oms.Server.Core
 {
     public static class DtoMapperExtensions
     {
-        public static Order ToDomain(this OrderDto orderDto)
-        {
-            return new Order
-            {
-                Id = orderDto.Id,
-                Price = orderDto.Price,
-                Quantity = orderDto.Quantity,
-                //Asset = orderDto.Asset.ToDomain(),
-                //CreationDate = orderDto.CreationDate,
-                //Creator = orderDto.Creator.ToDomain(),
-                //ExpiryDate = orderDto.ExpiryDate,
-                //OrderType = orderDto.OrderType.ToMappingEnum<OrderType>(),
-                //OrderValidity = orderDto.Validity.ToMappingEnum<OrderValidityType>(),
-                //Owner = orderDto.Owner.ToDomain(),
-                //Version = orderDto.Version,
-                //Way = orderDto.Way.ToMappingEnum<OrderWay>()
-            };
-        }
-
-        public static Asset ToDomain(this AssetDto assetDto)
-        {
-            return new Asset
-            {
-                BloombergTicker = assetDto.BloombergTicker,
-                CreationDate = assetDto.CreationDate,
-                Creator = assetDto.Creator.ToDomain(),
-                Currency = assetDto.Currency.ToMappingEnum<Currency>(),
-                Id = assetDto.Id,
-                IsinCode = assetDto.IsinCode,
-                IsActive = assetDto.IsActive,
-                Name = assetDto.Name,
-                Origin = assetDto.Origin.ToMappingEnum<AssetOriginType>(),
-                Type = assetDto.Type.ToMappingEnum<AssetType>()
-            };
-        }
-
         public static User ToDomain(this UserDto userDto)
         {
             return new User
@@ -70,7 +34,7 @@ namespace Oms.Server.Core
                 Id = order.Id,
                 Price = order.Price,
                 Quantity = order.Quantity,
-                //Asset = order.Asset.ToDto(),
+                //Instrument = order.Instrument.ToDto(),
                 //CreationDate = order.CreationDate,
                 //Creator = order.Creator.ToDto(),
                 //ExpiryDate = order.ExpiryDate,
@@ -82,20 +46,19 @@ namespace Oms.Server.Core
             };
         }
 
-        public static AssetDto ToDto(this Asset asset)
+        public static AssetDto ToDto(this Instrument instrument)
         {
             return new AssetDto
             {
-                BloombergTicker = asset.BloombergTicker,
-                CreationDate = asset.CreationDate,
-                Creator = asset.Creator.ToDto(),
-                Currency = asset.Currency.ToMappingEnum<CurrencyDto>(),
-                Id = asset.Id,
-                IsinCode = asset.IsinCode,
-                IsActive = asset.IsActive,
-                Name = asset.Name,
-                Origin = asset.Origin.ToMappingEnum<AssetOriginDtoType>(),
-                Type = asset.Type.ToMappingEnum<AssetDtoType>()
+                BloombergTicker = instrument.BloombergTicker,
+                CreationDate = instrument.CreationDate,
+                Creator = instrument.Creator.ToDto(),
+                Currency = instrument.Currency.ToMappingEnum<CurrencyDto>(),
+                Id = instrument.Id,
+                IsinCode = instrument.IsinCode,
+                IsActive = instrument.IsActive,
+                Name = instrument.Name,
+                Type = instrument.Type.ToMappingEnum<AssetDtoType>()
             };
         }
 

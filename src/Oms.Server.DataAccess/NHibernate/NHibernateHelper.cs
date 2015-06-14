@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FluentNHibernate.Automapping;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
 using FluentNHibernate.Conventions.Helpers;
 using NHibernate;
 using NHibernate.Tool.hbm2ddl;
-using Oms.Server.DataAccess.NHibernate.Mapping;
 
 namespace Oms.Server.DataAccess.NHibernate
 {
@@ -22,8 +22,8 @@ namespace Oms.Server.DataAccess.NHibernate
         {
             _configuration = Fluently.Configure()
                 .Database(SQLiteConfiguration.Standard.UsingFile(@"c:\mydb.db"))
-                .Mappings(m => m.FluentMappings.AddFromAssemblyOf<OrderMap>()
-                .Conventions.Add(DefaultLazy.Never()));
+                .Mappings(m => m.AutoMappings.Add(new AutoPersistenceModel()));
+            //    .Conventions.Add(DefaultLazy.Never()));
 
             _sessionFactory = _configuration
                 .ExposeConfiguration(v => new SchemaExport(v).Create(false, false))

@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Oms.Server.Domain.Interfaces;
-using Oms.Server.Domain.Orders;
+using Oms.Server.Domain.Interfaces.Repository;
+using Oms.Server.Domain.Models.Orders;
 
 namespace Oms.Server.DataAccess.NHibernate.Repositories
 {
