@@ -16,7 +16,7 @@ namespace Oms.Server.Domain.Interfaces.Models
 
         double Price { get; }
 
-        OrderWay Way { get; }
+        Side Side { get; }
 
         Instrument Instrument { get; }
 

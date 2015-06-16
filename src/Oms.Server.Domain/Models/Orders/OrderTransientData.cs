@@ -11,7 +11,7 @@ namespace Oms.Server.Domain.Models.Orders
 
         public double Price { get; set; }
 
-        public OrderWay Way { get; set; }
+        public Side Side { get; set; }
 
         public Instrument Instrument { get; set; }
 

@@ -1,6 +1,6 @@
 namespace Oms.Server.Domain.Models.Orders
 {
-    public enum OrderWay
+    public enum Side
     {
         Buy,
         Sell

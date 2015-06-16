@@ -2,7 +2,7 @@ using System;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.Users;
 
-namespace Oms.Server.Domain.Framework
+namespace Oms.Server.Domain.Models.EventLogs
 {
     public class TriggerContext : ITriggerContext
     {

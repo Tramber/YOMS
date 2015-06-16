@@ -8,7 +8,14 @@ using Oms.Server.Domain.Models.Trades;
 
 namespace Oms.Server.Domain.Interfaces.Models
 {
-    public interface IOrderDealingData
+
+    public interface IOrderRoutingData
     {
+        
+    }
+
+    public interface IOrderDealingData : IOrderRoutingData
+    {
+        Trade Trade { get; }
     }
 }

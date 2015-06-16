@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Oms.Server.Domain.Interfaces.Models;
+using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Instruments;
+using Oms.Server.Domain.Models.Trades;
 using Oms.Server.Domain.Models.Users;
 using Oms.Server.Domain.Workflow;
 
@@ -32,6 +34,7 @@ namespace Oms.Server.Domain.Models.Orders
             if (orderData == null)
             {
                 _stateMachineDoNotUserDirectly = null;
+                //TODO compute all the data with eventlogs
                 _currentDataDoNotUseDirectly = new OrderData();
             }
             else
@@ -52,6 +55,14 @@ namespace Oms.Server.Domain.Models.Orders
                 }
                 return _stateMachineDoNotUserDirectly;
             }
+        }
+
+        private double ComputeRemainingQuantity()
+        {
+            return EventLogs.OfType<DataEventLog<OrderStateMachine.Trigger, OrderDealingData>>()
+                .Select(e => e.Data.Trade)
+                .Where(t => t.TradeStatus != TradeStatus.Cancelled)
+                .Sum(t => t.Side == Side ? t.ExecutionQuantity : -t.ExecutionQuantity);
         }
 
         private OrderStatus ComputeOrderStatus(OrderData orderData)
@@ -86,7 +97,7 @@ namespace Oms.Server.Domain.Models.Orders
             return Math.Abs(workingData.Quantity - workingData.RemainingQuantity) < Epsilon;
         }
 
-        private class OrderData : IOrderTransientData, IOrderDealingData, ICloneable
+        private class OrderData : IOrderTransientData, IOrderRoutingData, ICloneable
         {
             public OrderData()
             {
@@ -98,7 +109,7 @@ namespace Oms.Server.Domain.Models.Orders
                 {
                     Quantity = transientData.Quantity;
                     Price = transientData.Price;
-                    Way = transientData.Way;
+                    Side = transientData.Side;
                     Instrument = transientData.Instrument;
                     OrderType = transientData.OrderType;
                     OrderValidity = transientData.OrderValidity;
@@ -108,18 +119,17 @@ namespace Oms.Server.Domain.Models.Orders
                 return this;
             }
 
-            public OrderData SetDealingData(IOrderDealingData dealingData)
+            public OrderData SetRoutingData(IOrderRoutingData routingData)
             {
-                if (dealingData != null)
+                if (routingData != null)
                 {
-                    //TODO fill with dealing information
                 }
                 return this;
             }
 
             public OrderData Clone()
             {
-                var result = new OrderData().SetDealingData(this).SetTransientData(this);
+                var result = new OrderData().SetRoutingData(this).SetTransientData(this);
                 result.OrderState = this.OrderState;
                 result.PendingTrigger = this.PendingTrigger;
                 result.RemainingQuantity = this.RemainingQuantity;
@@ -134,7 +144,7 @@ namespace Oms.Server.Domain.Models.Orders
 
             public double Quantity { get; set; }
             public double Price { get; set; }
-            public OrderWay Way { get; set; }
+            public Side Side { get; set; }
             public Instrument Instrument { get; set; }
             public OrderType OrderType { get; set; }
             public OrderValidityType OrderValidity { get; set; }

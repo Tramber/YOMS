@@ -6,9 +6,8 @@ using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain.Models.Orders
 {
-    public partial class Order : IOrderTransientData, IOrderDealingData, IOrderComputedData
+    public partial class Order : IOrderTransientData, IOrderComputedData, IOrderRoutingData
     {
-
         public OrderStateMachine.State OrderState
         {
             get { return StateMachine.GetState; }
@@ -29,9 +28,9 @@ namespace Oms.Server.Domain.Models.Orders
             get { return CurrentData.Price; }
         }
 
-        public OrderWay Way
+        public Side Side
         {
-            get { return CurrentData.Way; }
+            get { return CurrentData.Side; }
         }
 
         public Instrument Instrument

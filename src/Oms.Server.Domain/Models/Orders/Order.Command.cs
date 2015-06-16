@@ -76,29 +76,38 @@ namespace Oms.Server.Domain.Models.Orders
 
         public GenericResult AddTrade(ITriggerContext context, Trade trade)
         {
-            //TODO Recompute remaining
-            return HandleCommand(OrderStateMachine.Trigger.AddTrade, context);
+            return UpdateTrade(context, trade, OrderStateMachine.Trigger.AddTrade);
         }
 
-        public GenericResult CancelTrade(ITriggerContext context, int tradeId)
+        public GenericResult CancelTrade(ITriggerContext context, Trade trade)
         {
-            //TODO Recompute remaining
-            return HandleCommand(OrderStateMachine.Trigger.CancelTrade, context);
+            return UpdateTrade(context, trade, OrderStateMachine.Trigger.Delete);
         }
 
-        public GenericResult MarketSend(ITriggerContext context, IOrderDealingData dealingData)
+        private GenericResult UpdateTrade(ITriggerContext context, Trade trade, OrderStateMachine.Trigger tradeTrigger)
+        {
+            if (!StateMachine.CanFireTrigger(tradeTrigger))
+            {
+                return GenericResult.FailureFormat("It's not possible to cancel the Trade {0} while the order is in state {1} ({2})", trade.Id, OrderState, OrderStatus);
+            }
+            var tradeResult = tradeTrigger.ForwardCommand(trade);
+            if (tradeResult.IsFailure()) return tradeResult;
+            return HandleCommand(OrderStateMachine.Trigger.CancelTrade, context, null, new OrderDealingData(trade));
+        }
+
+        public GenericResult MarketSend(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.MarketSend, context);
         }
 
-        public GenericResult MarketCancel(ITriggerContext context, IOrderDealingData dealingData)
+        public GenericResult MarketCancel(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.MarketCancel, context);
         }
 
-        public GenericResult TradeBooked(ITriggerContext context, int tradeId)
+        public GenericResult TradeBooked(ITriggerContext context, Trade trade)
         {
-            return HandleCommand(OrderStateMachine.Trigger.TradeBooked, context);
+            return HandleCommand(OrderStateMachine.Trigger.TradeBooked, context, null, new OrderDealingData(trade));
         }
 
         public GenericResult ResumeSnapshot(OrderStateMachine.State orderState, IOrderCoreData coreData, IOrderTransientData transientData)
@@ -120,7 +129,7 @@ namespace Oms.Server.Domain.Models.Orders
             IOrderCoreData coreData = null,
             TriggerStatus status = TriggerStatus.Accepted)
         {
-            workingData = CurrentData.Clone().SetDealingData(dealingData).SetTransientData(transientData);
+            workingData = CurrentData.Clone().SetRoutingData(dealingData).SetTransientData(transientData);
             var hasSucceeded = status == TriggerStatus.Pending ? StateMachine.CanFireTrigger(trigger) : StateMachine.TryFireTrigger(trigger);
             var result = hasSucceeded ? GenericResult.Success() : GenericResult.Failure(string.Concat(workingData.StateMachineErrorMessage, String.Format("Workflow do not allow you to {0} from {1}", trigger, OrderState)));
             if (hasSucceeded)
@@ -131,7 +140,11 @@ namespace Oms.Server.Domain.Models.Orders
                     EventLogs.Add(new OrderDataEventLog(context, trigger, status, transientData));
                 }
                 else if (dealingData != null)
+                {
                     EventLogs.Add(new OrderDealingDataEventLog(context, trigger, status, dealingData));
+                    if (dealingData.Trade != null)
+                        workingData.RemainingQuantity = ComputeRemainingQuantity();
+                }
                 else
                     EventLogs.Add(new OrderStateEventLog(context, trigger, status));
                 workingData.OrderStatus = ComputeOrderStatus(workingData);

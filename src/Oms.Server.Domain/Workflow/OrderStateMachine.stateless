@@ -25,6 +25,7 @@ For more information: http://statelessdesigner.codeplex.com/
     <trigger>MarketSend</trigger>
     <trigger>MarketCancel</trigger>
     <trigger>TradeBooked</trigger>
+    <trigger>UpdateTrade</trigger>
   </triggers>
   <states>     
     <state start="yes">Undefined</state>

@@ -82,8 +82,9 @@
     <Compile Include="Models\Orders\Order.Core.cs" />
     <Compile Include="Models\Orders\OrderBasket.cs" />
     <Compile Include="Models\Orders\OrderType.cs" />
-    <Compile Include="Models\Orders\OrderWay.cs" />
+    <Compile Include="Models\Orders\Side.cs" />
     <Compile Include="Models\Orders\OrderValidityType.cs" />
+    <Compile Include="Models\Trades\TradeStatus.cs" />
     <Compile Include="OrderBuilder.cs" />
     <Compile Include="Models\Orders\OrderInitialReferentialData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -93,7 +94,7 @@
     <Compile Include="Models\Funds\Fund.cs" />
     <Compile Include="Models\Users\FundManager.cs" />
     <Compile Include="Models\Users\User.cs" />
-    <Compile Include="Framework\TriggerContext.cs" />
+    <Compile Include="Models\EventLogs\TriggerContext.cs" />
     <Compile Include="Workflow\OrderStateMachine.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -103,7 +104,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Orders\Order.Data.cs" />
-    <None Include="Models\Orders\packages.config" />
+    <None Include="packages.config" />
     <None Include="Workflow\OrderStateMachine.stateless">
       <Generator>StatelessCodeGenerator</Generator>
       <LastGenOutput>OrderStateMachine.cs</LastGenOutput>

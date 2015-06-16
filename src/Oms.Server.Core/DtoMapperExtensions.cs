@@ -42,7 +42,7 @@ namespace Oms.Server.Core
                 //Validity = order.OrderValidity.ToMappingEnum<OrderDtoValidityType>(),
                 //Owner = order.Owner.ToDto(),
                 //Version = order.Version,
-                //Way = order.Way.ToMappingEnum<OrderDtoWay>()
+                //Side = order.Side.ToMappingEnum<OrderDtoWay>()
             };
         }
 

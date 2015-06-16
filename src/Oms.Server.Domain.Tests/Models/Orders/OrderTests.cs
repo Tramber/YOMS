@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Oms.Server.Domain.Framework;
+using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Instruments;
 using Oms.Server.Domain.Models.Orders;
@@ -64,7 +65,7 @@ namespace Oms.Server.Domain.Tests.Models.Orders
             Assert.That(acceptResult.IsSuccess(), result.ErrorMessage);
             Assert.That(order.PendingTrigger, Is.Null);
             return order.OrderState;
-
         }
+
     }
 }

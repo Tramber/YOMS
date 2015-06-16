@@ -31,6 +31,7 @@ namespace Oms.Server.Domain.Workflow
       MarketSend,
       MarketCancel,
       TradeBooked,
+      UpdateTrade,
     }
 
     public enum State

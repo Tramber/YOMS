@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Oms.Server.Domain.Framework;
+using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Instruments;
 using Oms.Server.Domain.Models.Orders;

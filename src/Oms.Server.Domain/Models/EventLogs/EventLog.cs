@@ -1,9 +1,10 @@
 ﻿using System;
 using Oms.Server.Domain.Interfaces.Models;
+using Oms.Server.Domain.Interfaces.Repository;
 
 namespace Oms.Server.Domain.Models.EventLogs
 {
-    public abstract class EventLog<TTrigger>
+    public abstract class EventLog<TTrigger> : IIdentifiable
     {
         public EventLog()
         {
@@ -25,5 +26,6 @@ namespace Oms.Server.Domain.Models.EventLogs
 
         public Guid? TransactionId { get; internal set; }
 
+        public int Id { get; set; }
     }
 }
