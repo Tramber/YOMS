@@ -14,13 +14,15 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
         {
             Users = new UserRepository();
             Orders = new OrderRepository();
-            Instruments = new InstrumentRepository();
+            Securities = new InstrumentRepository();
+            Funds = new FundRepository();
         }
 
         public IUserRepository Users { get; private set; }
 
         public IOrderRepository Orders { get; private set; }
 
-        public IInstrumentRepository Instruments { get; private set; }
+        public IInstrumentRepository Securities { get; private set; }
+        public IFundRepository Funds { get; private set; }
     }
 }

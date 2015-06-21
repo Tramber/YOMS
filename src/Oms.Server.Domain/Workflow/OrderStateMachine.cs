@@ -32,6 +32,7 @@ namespace Oms.Server.Domain.Workflow
       MarketCancel,
       TradeBooked,
       UpdateTrade,
+      Update,
     }
 
     public enum State
@@ -68,11 +69,13 @@ namespace Oms.Server.Domain.Workflow
     public GuardClauseDelegate GuardClauseFromUndefinedToAcceptingUsingTriggerSendRequest = null;
     public GuardClauseDelegate GuardClauseFromDraftToAcceptingUsingTriggerSendRequest = null;
     public GuardClauseDelegate GuardClauseFromDraftToTerminatedUsingTriggerDelete = null;
+    public GuardClauseDelegate GuardClauseFromDraftToDraftUsingTriggerUpdate = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToDraftUsingTriggerSendReject = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToTerminatedUsingTriggerSendReject = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToWorkingUsingTriggerSendAccept = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToTerminatedUsingTriggerCancel = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToDraftUsingTriggerRecall = null;
+    public GuardClauseDelegate GuardClauseFromAcceptingToWorkingUsingTriggerUpdate = null;
     public GuardClauseDelegate GuardClauseFromWorkingToTerminatedUsingTriggerCancel = null;
     public GuardClauseDelegate GuardClauseFromWorkingToDealingUsingTriggerAddTrade = null;
     public GuardClauseDelegate GuardClauseFromWorkingToValidatingUsingTriggerAddTrade = null;
@@ -108,6 +111,7 @@ namespace Oms.Server.Domain.Workflow
         .OnExit(() => { if (OnDraftExit != null) OnDraftExit(); })
         .PermitIf(Trigger.SendRequest, State.Accepting , () => { if (GuardClauseFromDraftToAcceptingUsingTriggerSendRequest != null) return GuardClauseFromDraftToAcceptingUsingTriggerSendRequest(); return true; } )
         .PermitIf(Trigger.Delete, State.Terminated , () => { if (GuardClauseFromDraftToTerminatedUsingTriggerDelete != null) return GuardClauseFromDraftToTerminatedUsingTriggerDelete(); return true; } )
+        .PermitReentryIf(Trigger.Update , () => { if (GuardClauseFromDraftToDraftUsingTriggerUpdate != null) return GuardClauseFromDraftToDraftUsingTriggerUpdate(); return true; } )
       ;
       stateMachine.Configure(State.Accepting)
         .OnEntry(() => { if (OnAcceptingEntry != null) OnAcceptingEntry(); })
@@ -117,6 +121,7 @@ namespace Oms.Server.Domain.Workflow
         .PermitIf(Trigger.SendAccept, State.Working , () => { if (GuardClauseFromAcceptingToWorkingUsingTriggerSendAccept != null) return GuardClauseFromAcceptingToWorkingUsingTriggerSendAccept(); return true; } )
         .PermitIf(Trigger.Cancel, State.Terminated , () => { if (GuardClauseFromAcceptingToTerminatedUsingTriggerCancel != null) return GuardClauseFromAcceptingToTerminatedUsingTriggerCancel(); return true; } )
         .PermitIf(Trigger.Recall, State.Draft , () => { if (GuardClauseFromAcceptingToDraftUsingTriggerRecall != null) return GuardClauseFromAcceptingToDraftUsingTriggerRecall(); return true; } )
+        .PermitIf(Trigger.Update, State.Working , () => { if (GuardClauseFromAcceptingToWorkingUsingTriggerUpdate != null) return GuardClauseFromAcceptingToWorkingUsingTriggerUpdate(); return true; } )
       ;
       stateMachine.Configure(State.Working)
         .OnEntry(() => { if (OnWorkingEntry != null) OnWorkingEntry(); })

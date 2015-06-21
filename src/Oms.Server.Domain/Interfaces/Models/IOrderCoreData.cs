@@ -11,21 +11,18 @@ namespace Oms.Server.Domain.Interfaces.Models
 {
     public interface IOrderCoreData
     {
-        User Owner { get; }
+        IUser Owner { get; }
 
-        User Creator { get; }
+        IUser Creator { get; }
 
         DateTime CreationDate { get; }
 
-        OrderBasket InitialOrderBasket { get; }
-
-        OrderBasket OrderBasket { get; }
+        IOrderBasket OrderBasket { get; }
 
         IOrderInitialReferentialData InitialReferentialData { get; }
 
-        string OrderClientRef { get; }
+        string ClientOrderRef { get; }
 
-        string ApplicationOrigin { get; }
-
+        bool IsAutoAccepted { get; }
     }
 }

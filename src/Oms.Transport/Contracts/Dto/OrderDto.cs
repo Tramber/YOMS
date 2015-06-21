@@ -15,16 +15,16 @@ namespace Oms.Transport.Contracts.Dto
         public double Quantity { get; set; }
 
         [DataMember]
-        public double Price { get; set; }
+        public double? PriceLimit { get; set; }
 
         [DataMember]
         public OrderDtoWay Way { get; set; }
 
         [DataMember]
-        public AssetDto Asset { get; set; }
+        public SecurityDto Security { get; set; }
 
         [DataMember]
-        public UserDto Owner { get; set; }
+        public UserDto Owner{ get; set; }
 
         [DataMember]
         public UserDto Creator { get; set; }
@@ -43,6 +43,18 @@ namespace Oms.Transport.Contracts.Dto
 
         [DataMember]
         public DateTime? ExpiryDate { get; set; }
+
+        [DataMember]
+        public string ClientOrderRef { get; set; }
+
+        [DataMember]
+        public FundDto Fund { get; set; }
+
+        [DataMember]
+        public double? PriceStop { get; set; }
+
+        [DataMember]
+        public DateTime? SettlementDate { get; set; }
     }
 }
 

@@ -14,7 +14,7 @@ namespace Oms.Server.DataAccess.NHibernate.Mapping
     {
         public void Override(AutoMapping<Order> mapping)
         {
-            foreach (var propertyInfo in typeof(IOrderTransientData).GetProperties()
+            foreach (var propertyInfo in typeof(IOrderEditableData).GetProperties()
                 .Union(typeof(IOrderRoutingData).GetProperties())
                 .Union(typeof(IOrderComputedData).GetProperties()))
             {

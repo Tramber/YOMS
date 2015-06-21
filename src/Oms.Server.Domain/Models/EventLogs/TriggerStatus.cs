@@ -2,8 +2,10 @@
 {
     public enum TriggerStatus
     {
+        Done,
         Accepted,
         Pending,
-        Rejected
+        Rejected,
+        Failed,
     }
 }

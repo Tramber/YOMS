@@ -16,9 +16,9 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
             return base.GetById(id);
         }
 
-        public IList<User> GetUserByLogin(string login)
+        public User GetUserByLogin(string login)
         {
-            return base.GetByColumn("Login", login);
+            return base.GetByColumn("Login", login).FirstOrDefault();
         }
         public IList<User> GetUserList()
         {

@@ -1,5 +1,5 @@
 ﻿using Oms.Server.Domain.Models.Funds;
-using Oms.Server.Domain.Models.Instruments;
+using Oms.Server.Domain.Models.Securities;
 
 namespace Oms.Server.Domain.Interfaces.Models
 {
@@ -7,7 +7,7 @@ namespace Oms.Server.Domain.Interfaces.Models
     {
         string InstrumentCode { get; }
 
-        InstrumentCodeType InstrumentCodeType { get; }
+        SecurityCodeType SecurityCodeType { get; }
 
         string FundCode { get; }
 

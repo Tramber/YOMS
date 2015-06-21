@@ -1,11 +1,12 @@
 ﻿using System.Security.Principal;
 using Oms.Server.Domain.Framework;
+using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Domain.Models.Orders;
 
 namespace Oms.Server.Domain.Models.Trades
 {
-    public class Trade : IIdentifiable
+    public class Trade : ITrade
     {
         public int Id { get; set; }
 
@@ -13,16 +14,27 @@ namespace Oms.Server.Domain.Models.Trades
 
         public double ExecutionAmountNet { get; set; }
 
-        public TradeStatus TradeStatus { get; set; }
+        public TradeState TradeState { get; set; }
 
         public Side Side { get; set; }
+        public IOrder Order { get; set; }
 
-        public GenericResult Cancel()
+        public GenericResult Cancel(ITriggerContext context)
         {
             return GenericResult.Success();
         }
 
-        public GenericResult Update()
+        public GenericResult Update(ITriggerContext context)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public GenericResult Create(ITriggerContext context, ITradeEditableData editableData)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public GenericResult Update(ITriggerContext context, ITradeEditableData editableData)
         {
             throw new System.NotImplementedException();
         }

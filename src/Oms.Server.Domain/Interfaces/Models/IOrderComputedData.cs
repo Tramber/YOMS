@@ -5,7 +5,7 @@ namespace Oms.Server.Domain.Interfaces.Models
 {
     public interface IOrderComputedData
     {
-        OrderStateMachine.Trigger OrderState { get; }
+        OrderStateMachine.State OrderState { get; }
 
         OrderStatus OrderStatus { get; }
 

@@ -10,17 +10,15 @@ namespace Oms.Server.Domain.Models.EventLogs
         {
         }
 
-        public TriggerContext(User user, DateTime? date = null, string plateformOrigin = null, string message = null)
+        public TriggerContext(IUser user, DateTime? date = null, string plateformOrigin = null)
         {
             User = user;
             Date = date ?? DateTime.Now;
-            Message = message;
             PlateformOrigin = plateformOrigin;
         }
 
-        public User User { get; internal set; }
+        public IUser User { get; internal set; }
         public DateTime Date { get; internal set; }
-        public string Message { get; internal set; }
         public string PlateformOrigin { get; internal set; }
     }
 }

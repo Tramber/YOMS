@@ -9,22 +9,18 @@ namespace Oms.Server.Domain.Workflow
 {
     public partial class OrderStateMachine
     {
-        private StateMachine<State, Trigger>.TriggerWithParameters<State> initializeTrigger;
+        private readonly StateMachine<State, Trigger>.TriggerWithParameters<State> _initializeTrigger = new StateMachine<State, Trigger>.TriggerWithParameters<State>(Trigger.Initialize);
 
-        internal OrderStateMachine(bool fastInitializationAllowed)
-            : this()
+        public static OrderStateMachine CreateInitializable()
         {
-            initializeTrigger = new StateMachine<State, Trigger>.TriggerWithParameters<State>(Trigger.Initialize);
-            if (fastInitializationAllowed)
-            {
-                stateMachine.Configure(State.Undefined)
-                    .PermitDynamic(initializeTrigger, state => state);
-            }
+            var result = new OrderStateMachine();
+            result.stateMachine.Configure(State.Undefined).PermitDynamic(result._initializeTrigger, state => state);
+            return result;
         }
 
         public void Initialize(State state)
         {
-            stateMachine.Fire(initializeTrigger, state);
+            stateMachine.Fire(_initializeTrigger, state);
         }
 
         public bool CanFireTrigger(Trigger trigger)

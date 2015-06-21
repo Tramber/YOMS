@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Oms.Server.Domain.Framework;
@@ -15,29 +18,38 @@ namespace Oms.Server.Domain.Models.Orders
 {
     partial class Order
     {
-        private OrderData workingData;
+        private OrderData _workingData;
 
-        public GenericResult Create(ITriggerContext context, IOrderCoreData coreData, IOrderTransientData transientData)
+        public GenericResult Create(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
-            return HandleCommand(OrderStateMachine.Trigger.Create, context, transientData, null, coreData);
+            return HandleCommand(OrderStateMachine.Trigger.Create, context, editableData, null, coreData);
         }
 
-        public GenericResult Cancel(ITriggerContext context, bool? isAccepted = null)
+        public GenericResult SendRequest(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
-            //TODO (BL) most of the behavior is generic here, it could be moved elsewhere
-            const OrderStateMachine.Trigger trigger = OrderStateMachine.Trigger.Cancel;
-            if (isAccepted == null)
-            {
-                if(this.PendingTrigger != null)
-                    return GenericResult.FailureFormat("There is already a {0} action pending. You could not ask for {1}", this.PendingTrigger, trigger);
-                return HandleCommand(trigger, context, null, null, null, TriggerStatus.Pending);
-            }
-            var status = isAccepted.Value ? TriggerStatus.Accepted : TriggerStatus.Rejected;
-            if (PendingTrigger == null)
-                return GenericResult.FailureFormat("There is no pending action, it cannot be {0}", status);
-            if (PendingTrigger.Value != OrderStateMachine.Trigger.Cancel)
-                return GenericResult.FailureFormat("There is no pending {0} action, it cannot be {0}", trigger, status);
-            return HandleCommand(trigger, context, null, null, null, status);
+            return HandleCommand(OrderStateMachine.Trigger.SendRequest, context, editableData, null, coreData);
+        }
+
+        public GenericResult Update(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
+        {
+            return HandleCommand(OrderStateMachine.Trigger.Update, context, editableData, null, coreData);
+        }
+
+        #region Simple Order State actions
+
+        public GenericResult Cancel(ITriggerContext context)
+        {
+            return HandleCommand(OrderStateMachine.Trigger.Create, context);
+        }
+
+        public GenericResult AcceptPending(ITriggerContext context, IOrderEditableData editableData = null, IOrderDealingData dealingData = null)
+        {
+            return HandlePendingReplyCommand(true, context, editableData, dealingData);
+        }
+
+        public GenericResult RejectPending(ITriggerContext context, IOrderEditableData editableData = null, IOrderDealingData dealingData = null)
+        {
+            return HandlePendingReplyCommand(false, context, editableData, dealingData);
         }
 
         public GenericResult Delete(ITriggerContext context)
@@ -51,7 +63,6 @@ namespace Oms.Server.Domain.Models.Orders
 
         public GenericResult StartBooking(ITriggerContext context)
         {
-            //TODO DomainEvent SendToBooking
             return HandleCommand(OrderStateMachine.Trigger.StartBooking, context);
         }
 
@@ -60,9 +71,9 @@ namespace Oms.Server.Domain.Models.Orders
             return HandleCommand(OrderStateMachine.Trigger.SendRequest, context);
         }
 
-        internal GenericResult SendRequest(TriggerContext context, OrderCoreData coreData, OrderTransientData transientData)
+        internal GenericResult SendRequest(TriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
-            return HandleCommand(OrderStateMachine.Trigger.SendRequest, context, transientData, null, coreData);
+            return HandleCommand(OrderStateMachine.Trigger.SendRequest, context, editableData, null, coreData);
         }
 
         public GenericResult SendReject(ITriggerContext context)
@@ -73,93 +84,163 @@ namespace Oms.Server.Domain.Models.Orders
         {
             return HandleCommand(OrderStateMachine.Trigger.SendAccept, context);
         }
+        #endregion
 
-        public GenericResult AddTrade(ITriggerContext context, Trade trade)
+        #region Market send actions
+
+        public GenericResult MarketSend(ITriggerContext context, IOrderDealingData dealingData)
         {
-            return UpdateTrade(context, trade, OrderStateMachine.Trigger.AddTrade);
+            return HandleCommand(OrderStateMachine.Trigger.MarketSend, context, dealingData: dealingData);
         }
 
-        public GenericResult CancelTrade(ITriggerContext context, Trade trade)
+        public GenericResult MarketCancel(ITriggerContext context, IOrderDealingData dealingData)
         {
-            return UpdateTrade(context, trade, OrderStateMachine.Trigger.Delete);
+            return HandleCommand(OrderStateMachine.Trigger.MarketCancel, context, dealingData: dealingData);
         }
 
-        private GenericResult UpdateTrade(ITriggerContext context, Trade trade, OrderStateMachine.Trigger tradeTrigger)
+        #endregion
+
+        #region Trade actions
+        public GenericResult TradeBooked(ITriggerContext context, ITrade trade)
         {
-            if (!StateMachine.CanFireTrigger(tradeTrigger))
+            return HandleTradeCommand(OrderStateMachine.Trigger.TradeBooked, context, trade);
+        }
+
+        public GenericResult AddTrade(ITriggerContext context, ITrade trade)
+        {
+            return HandleTradeCommand(OrderStateMachine.Trigger.AddTrade, context, trade);
+        }
+
+        public GenericResult CancelTrade(ITriggerContext context, ITrade trade)
+        {
+            return HandleTradeCommand(OrderStateMachine.Trigger.AddTrade, context, trade);
+        }
+        #endregion
+
+        private static bool IsTriggerHandlePending(OrderStateMachine.Trigger trigger)
+        {
+            //TODO handle if the context.user has a bypass
+            return trigger == OrderStateMachine.Trigger.Cancel || trigger == OrderStateMachine.Trigger.Update;
+        }
+
+        private GenericResult HandlePendingReplyCommand(
+            bool isAccept,
+            ITriggerContext context,
+            IOrderEditableData editableData = null,
+            IOrderDealingData dealingData = null,
+            IOrderCoreData coreData = null)
+        {
+            if (PendingTrigger == null)
+                return GenericResult.FailureFormat("There is no pending command to {0}", isAccept ? "accept" : "reject");
+            return HandleCommand(PendingTrigger.Value, context, editableData, dealingData, coreData, isAccept ? TriggerStatus.Accepted : TriggerStatus.Rejected);
+        }
+
+        private GenericResult EnforceTriggerStatus(OrderStateMachine.Trigger trigger, ref TriggerStatus triggerStatus)
+        {
+            if (IsTriggerHandlePending(trigger))
             {
-                return GenericResult.FailureFormat("It's not possible to cancel the Trade {0} while the order is in state {1} ({2})", trade.Id, OrderState, OrderStatus);
+                if (_workingData.PendingTrigger != null)
+                {
+                    if(triggerStatus.IsPending())
+                        return GenericResult.FailureFormat("There is already a {0} pending command. You must handle it before", _workingData.PendingTrigger);
+                    if(trigger != _workingData.PendingTrigger)
+                        return GenericResult.FailureFormat("There is a {0} pending not a {1}. You cannot {0} it", _workingData.PendingTrigger, trigger, triggerStatus);
+                    _workingData.SetPendingTrigger(null);
+                } else triggerStatus = TriggerStatus.Pending;
             }
-            var tradeResult = tradeTrigger.ForwardCommand(trade);
-            if (tradeResult.IsFailure()) return tradeResult;
-            return HandleCommand(OrderStateMachine.Trigger.CancelTrade, context, null, new OrderDealingData(trade));
-        }
-
-        public GenericResult MarketSend(ITriggerContext context)
-        {
-            return HandleCommand(OrderStateMachine.Trigger.MarketSend, context);
-        }
-
-        public GenericResult MarketCancel(ITriggerContext context)
-        {
-            return HandleCommand(OrderStateMachine.Trigger.MarketCancel, context);
-        }
-
-        public GenericResult TradeBooked(ITriggerContext context, Trade trade)
-        {
-            return HandleCommand(OrderStateMachine.Trigger.TradeBooked, context, null, new OrderDealingData(trade));
-        }
-
-        public GenericResult ResumeSnapshot(OrderStateMachine.State orderState, IOrderCoreData coreData, IOrderTransientData transientData)
-        {
-            this.InsertDataFrom(coreData);
-            EventLogs.Add(new OrderDataEventLog(new TriggerContext(), OrderStateMachine.Trigger.ResumeSnapshot, TriggerStatus.Accepted, transientData));
-            var snapshotData = this.CurrentData.Clone().SetTransientData(transientData);
-            snapshotData.OrderState = orderState;
-            snapshotData.OrderStatus = ComputeOrderStatus(snapshotData);
-            RefreshCurrentData(snapshotData);
+            else if (triggerStatus.IsPending() || triggerStatus.IsPendingReply())
+            {
+                return GenericResult.FailureFormat("The command {0} could not be {1}. No pending required", trigger, triggerStatus); 
+            }
             return GenericResult.Success();
         }
+
 
         private GenericResult HandleCommand(
             OrderStateMachine.Trigger trigger, 
             ITriggerContext context,
-            IOrderTransientData transientData = null,
+            IOrderEditableData editableData = null,
             IOrderDealingData dealingData = null,
             IOrderCoreData coreData = null,
-            TriggerStatus status = TriggerStatus.Accepted)
+            TriggerStatus status = TriggerStatus.Done)
         {
-            workingData = CurrentData.Clone().SetRoutingData(dealingData).SetTransientData(transientData);
-            var hasSucceeded = status == TriggerStatus.Pending ? StateMachine.CanFireTrigger(trigger) : StateMachine.TryFireTrigger(trigger);
-            var result = hasSucceeded ? GenericResult.Success() : GenericResult.Failure(string.Concat(workingData.StateMachineErrorMessage, String.Format("Workflow do not allow you to {0} from {1}", trigger, OrderState)));
-            if (hasSucceeded)
+            Contract.Requires(context != null, "context != null" );
+
+            _workingData = CurrentData.Clone()
+                .SetRoutingData(dealingData)
+                .SetEditableData(editableData)
+                .SetTrigger(trigger)
+                .SetPendingTrigger(status.IsPendingReply() && _workingData.PendingTrigger == trigger ? null : _workingData.PendingTrigger);
+            var result = EnforceTriggerStatus(trigger, ref status);
+            if (result.IsFailure())
             {
-                if (transientData != null)
+                return result;
+            }
+            if (status == TriggerStatus.Rejected)
+            {
+                result = GenericResult.Success();
+            }
+            else
+            {
+                var triggerSucceeded = status == TriggerStatus.Pending ? _stateMachine.CanFireTrigger(trigger) : _stateMachine.TryFireTrigger(trigger);
+                result = triggerSucceeded ? GenericResult.Success() : GenericResult.Failure(string.Concat(_workingData.StateMachineErrorMessage, String.Format("The commmand {0} is not allowed when the _order is in {1} state", trigger, OrderState)));
+            }
+            if (result.IsSuccess())
+            {
+                _workingData.SetOrderState(_stateMachine.GetState);
+                if (editableData != null)
                 {
                     if (coreData != null) this.InsertDataFrom(coreData);
-                    EventLogs.Add(new OrderDataEventLog(context, trigger, status, transientData));
+                    EventLogs.Add(new OrderParameterEventLog<IOrderEditableData>(context, trigger, status, _workingData.OrderState, this, editableData));
                 }
                 else if (dealingData != null)
                 {
-                    EventLogs.Add(new OrderDealingDataEventLog(context, trigger, status, dealingData));
+                    EventLogs.Add(new OrderParameterEventLog<IOrderDealingData>(context, trigger, status, _workingData.OrderState, this, dealingData));
                     if (dealingData.Trade != null)
-                        workingData.RemainingQuantity = ComputeRemainingQuantity();
+                        _workingData.SetExecutionQuantity(ComputeExecutionQuantity(_workingData.Side));
                 }
                 else
-                    EventLogs.Add(new OrderStateEventLog(context, trigger, status));
-                workingData.OrderStatus = ComputeOrderStatus(workingData);
-                if (status == TriggerStatus.Pending)
-                {
-                    workingData.PendingTrigger = trigger;
-                }
-                else if(workingData.PendingTrigger != null && workingData.PendingTrigger.Value == trigger)
-                {
-                    workingData.PendingTrigger = null;
-                }
-                RefreshCurrentData(workingData);
-                workingData = null;
+                    EventLogs.Add(new OrderEventLog(context, trigger, status, _workingData.OrderState, this));
+                _workingData.SetOrderStatus(ComputeOrderStatus(_workingData));
+                RefreshCurrentData(_workingData);
             }
+            _workingData = null;
             return result;
+        }
+
+        private GenericResult HandleTradeCommand(
+            OrderStateMachine.Trigger trigger,
+            ITriggerContext context,
+            ITrade trade,
+            ITradeEditableData editableData = null
+            )
+        {
+            Contract.Requires(context != null, "context != null");
+
+            _workingData = CurrentData.Clone();
+            if (!_stateMachine.CanFireTrigger(trigger))
+            {
+                return GenericResult.FailureFormat(String.Format("The commmand {0} is not allowed when the _order is in {1} state", trigger, OrderState));
+            }
+            GenericResult result;
+            switch (trigger)
+            {
+                case OrderStateMachine.Trigger.AddTrade:
+                    trade = new Trade {Order = this};
+                    result = trade.Create(context, editableData);
+                    break;
+                case OrderStateMachine.Trigger.TradeBooked:
+                    //TODO handle the booking done
+                    result = GenericResult.Success();
+                    break;
+                case OrderStateMachine.Trigger.CancelTrade:
+                    result = trade.Cancel(context);
+                    break;
+                case OrderStateMachine.Trigger.UpdateTrade:
+                default:
+                    return GenericResult.FailureFormat("The trade command {0} is not implemented", trigger);
+            }
+            return result.IsSuccess() ? HandleCommand(trigger, context, dealingData: new OrderDealingEventParameter(trade)) : result;
         }
     }
 }

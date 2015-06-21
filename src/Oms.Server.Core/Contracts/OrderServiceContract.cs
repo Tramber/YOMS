@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
@@ -6,6 +7,8 @@ using Oms.Framework.Threading;
 using Oms.Server.Core.Services;
 using Oms.Transport.Contracts;
 using Oms.Transport.Contracts.Dto;
+using Oms.Transport.Contracts.Messages;
+using Oms.Transport.Contracts.Messages.Orders;
 
 namespace Oms.Server.Core.Contracts
 {
@@ -21,27 +24,25 @@ namespace Oms.Server.Core.Contracts
             _orderManagementService = orderManagementService;
         }
 
-        public OrderDto[] GetOrders()
+        public EditionResponse<OrderDto> Handle(OrderEditionRequest request)
         {
-            return new OrderDto[0];
+            var response = _orderManagementService.HandleRequest(request);
+            return null;
+            //sendTaskQueue.AddTask(() => SendOrderChange(ItemOperationType.Add, response.));
         }
 
-        public async void CreateOrders(OrderDto[] orderDtoList)
+        public Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderRequest request)
         {
-            var operationResponse = await _orderManagementService.CreateOrders(orderDtoList.ToList());
-            await sendTaskQueue.AddTask(() => SendOrderChange(operationResponse.OperationType, operationResponse.ItemList));
+            var response = _orderManagementService.HandleRequest(request);
+            return null;
+            //sendTaskQueue.AddTask(() => SendOrderChange(ItemOperationType.Add, response.));
         }
 
-        public async void CancelOrders(int[] orderIdList)
+        public Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderMarketRequest request)
         {
-            var operationResponse = await _orderManagementService.CancelOrders(orderIdList.ToList());
-            await sendTaskQueue.AddTask(() => SendOrderChange(operationResponse.OperationType, operationResponse.ItemList));
-        }
-
-        public async void UpdateOrders(OrderDto[] orderDtoList)
-        {
-            var operationResponse = await _orderManagementService.UpdateOrders(orderDtoList.ToList());
-            await sendTaskQueue.AddTask(() => SendOrderChange(operationResponse.OperationType, operationResponse.ItemList));
+            var response = _orderManagementService.HandleRequest(request);
+            return null;
+            //sendTaskQueue.AddTask(() => SendOrderChange(ItemOperationType.Add, response.));
         }
 
         public void SubscribeToEvents()
@@ -65,4 +66,7 @@ namespace Oms.Server.Core.Contracts
             }
         }
     }
+
+
+          
 }

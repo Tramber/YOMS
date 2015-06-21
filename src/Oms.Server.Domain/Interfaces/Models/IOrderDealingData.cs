@@ -16,6 +16,6 @@ namespace Oms.Server.Domain.Interfaces.Models
 
     public interface IOrderDealingData : IOrderRoutingData
     {
-        Trade Trade { get; }
+        ITrade Trade { get; }
     }
 }

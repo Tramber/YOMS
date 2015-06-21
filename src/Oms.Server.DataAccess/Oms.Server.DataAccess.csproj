@@ -63,6 +63,7 @@
     <Compile Include="NHibernate\AutomappingConfiguration.cs" />
     <Compile Include="NHibernate\Mapping\OrderAutoMappingOverride.cs" />
     <Compile Include="NHibernate\NHibernateHelper.cs" />
+    <Compile Include="NHibernate\Repositories\FundRepository.cs" />
     <Compile Include="NHibernate\Repositories\RepositoryFacade.cs" />
     <Compile Include="NHibernate\Repositories\OrderRepository.cs" />
     <Compile Include="NHibernate\Repositories\RepositoryBase.cs" />

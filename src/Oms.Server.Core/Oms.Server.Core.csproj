@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FluentValidation">
+      <HintPath>..\packages\FluentValidation.5.6.2.0\lib\Net45\FluentValidation.dll</HintPath>
+    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
@@ -65,12 +68,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Contracts\ITransportService.cs" />
-    <Compile Include="DtoMapperExtensions.cs" />
+    <Compile Include="Extensions\DtoMapperExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\IOrderManagementService.cs" />
-    <Compile Include="Services\OrderManagementService.cs" />
+    <Compile Include="Services\Acceptance\AcceptanceService.cs" />
+    <Compile Include="Services\Acceptance\IAcceptanceService.cs" />
+    <Compile Include="Services\Booking\IBookingService.cs" />
+    <Compile Include="Services\OrderManagement\IOrderManagementService.cs" />
+    <Compile Include="Services\OrderManagement\OrderManagementService.cs" />
     <Compile Include="Contracts\OrderServiceContract.cs" />
     <Compile Include="Contracts\TransportService.cs" />
+    <Compile Include="Services\Validation\IValidationService.cs" />
+    <Compile Include="Services\Validation\OrderCoreValidator.cs" />
+    <Compile Include="Services\Validation\OrderEditableValidator.cs" />
+    <Compile Include="Services\Validation\OrderValidator.cs" />
+    <Compile Include="Services\Validation\ValidationService.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Oms.Framework\Oms.Framework.csproj">

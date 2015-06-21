@@ -6,7 +6,7 @@ namespace Oms.Server.Domain.Interfaces.Repository
     public interface IUserRepository : IRepository<User>
     {
         User GetUserById(int id);
-        IList<User> GetUserByLogin(string login);
+        User GetUserByLogin(string login);
         IList<User> GetUserList();
     }
 }

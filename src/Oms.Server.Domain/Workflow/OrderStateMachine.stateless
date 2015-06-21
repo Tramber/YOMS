@@ -26,6 +26,7 @@ For more information: http://statelessdesigner.codeplex.com/
     <trigger>MarketCancel</trigger>
     <trigger>TradeBooked</trigger>
     <trigger>UpdateTrade</trigger>
+    <trigger>Update</trigger>
   </triggers>
   <states>     
     <state start="yes">Undefined</state>
@@ -66,5 +67,9 @@ For more information: http://statelessdesigner.codeplex.com/
     <transition trigger="MarketCancel" from="Dealing" to="Dealing" />
     <transition trigger="TradeBooked" from="Booking" to="Booking" />
     <transition trigger="TradeBooked" from="Booking" to="Terminated" />
-    </transitions>
+
+<transition trigger="Update" from="Accepting" to="Working" />
+<transition trigger="Update" from="Draft" to="Draft" /> 
+
+   </transitions>
 </statemachine>

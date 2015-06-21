@@ -5,6 +5,8 @@ using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using Oms.Transport.Contracts.Dto;
+using Oms.Transport.Contracts.Messages;
+using Oms.Transport.Contracts.Messages.Orders;
 
 namespace Oms.Transport.Contracts
 {
@@ -12,16 +14,13 @@ namespace Oms.Transport.Contracts
     public interface IOrderServiceContract
     {
         [OperationContract]
-        OrderDto[] GetOrders();
+        EditionResponse<OrderDto> Handle(OrderEditionRequest request);
 
         [OperationContract]
-        void CreateOrders(OrderDto[] orderDtoList);
+        Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderRequest request);
 
         [OperationContract]
-        void CancelOrders(int[] orderIdList);
-
-        [OperationContract]
-        void UpdateOrders(OrderDto[] orderDtoList);
+        Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderMarketRequest request);
 
         [OperationContract(IsOneWay = true, IsInitiating = true)]
         void SubscribeToEvents();

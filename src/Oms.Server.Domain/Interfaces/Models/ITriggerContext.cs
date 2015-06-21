@@ -10,11 +10,9 @@ namespace Oms.Server.Domain.Interfaces.Models
 {
     public interface ITriggerContext
     {
-        User User { get; }
+        IUser User { get; }
 
         DateTime Date { get; }
-
-        string Message { get; }
 
         string PlateformOrigin { get; } 
     }

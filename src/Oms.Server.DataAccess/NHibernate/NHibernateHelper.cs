@@ -45,9 +45,8 @@ namespace Oms.Server.DataAccess.NHibernate
             _configuration = Fluently.Configure()
                 .Database(GetDatabaseConfigurer)
                 .Mappings(m => m.AutoMappings.Add(AutoMap.AssemblyOf<Order>(new AutomappingConfiguration())
-                //.IgnoreBase(typeof(EventLog<>))
-                //.IgnoreBase(typeof(DataEventLog<,>))
-                .IgnoreBase<EventLog<OrderStateMachine.Trigger>>()
+                .IgnoreBase(typeof(EventLog<,,>))
+                .IgnoreBase(typeof(OrderParameterEventLog<>))
                 .Conventions.Add(
                     DefaultLazy.Never()
                 )));

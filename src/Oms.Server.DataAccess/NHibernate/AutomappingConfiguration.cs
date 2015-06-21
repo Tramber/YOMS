@@ -4,13 +4,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FluentNHibernate;
 using FluentNHibernate.Automapping;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Funds;
-using Oms.Server.Domain.Models.Instruments;
 using Oms.Server.Domain.Models.Orders;
+using Oms.Server.Domain.Models.Securities;
 using Oms.Server.Domain.Models.Trades;
 using Oms.Server.Domain.Models.Users;
 using Oms.Server.Domain.Workflow;
@@ -32,15 +33,15 @@ namespace Oms.Server.DataAccess.NHibernate
                 typeof (Trade),
                 typeof (User),
                 typeof (Fund),
-                typeof (Instrument),
-                typeof (DataEventLog<OrderStateMachine.Trigger, OrderTransientData>),
-                typeof (DataEventLog<OrderStateMachine.Trigger, OrderDealingData>),
-                //typeof (EventLog<OrderStateMachine.Trigger>),
+                typeof (Security),
                 typeof (TriggerContext),
-                typeof(OrderDataEventLog),
-                typeof(OrderStateEventLog),
-                typeof(OrderDealingDataEventLog),
-                typeof(EventLog),
+                typeof (OrderEventLog),
+                typeof (OrderParameterEventLog<OrderDealingEventParameter>),
+                typeof (OrderParameterEventLog<OrderEditableEventParameter>),
+                typeof (TradeEventLog),
+                typeof (TradeParameterEventLog<TradeEditableEventParameter>),
+                typeof (OrderDealingEventParameter),
+                typeof (OrderEditableEventParameter),
             };
 
             _componentTypes = new HashSet<Type>
@@ -50,12 +51,7 @@ namespace Oms.Server.DataAccess.NHibernate
 
             _isDiscriminatedTypes = new HashSet<Type>
             {
-                typeof (OrderDataEventLog),
-                typeof (DataEventLog<OrderStateMachine.Trigger, OrderTransientData>),
-                typeof (DataEventLog<OrderStateMachine.Trigger, OrderDealingData>),
-                typeof (OrderDataEventLog),
-                typeof (OrderStateEventLog),
-                typeof (OrderDealingDataEventLog),
+                typeof (OrderEventLog),
             };
         }
 
@@ -76,12 +72,7 @@ namespace Oms.Server.DataAccess.NHibernate
 
         public override bool IsDiscriminated(Type type)
         {
-            return _isDiscriminatedTypes.Contains(type);
-        }
-
-        public override bool IsConcreteBaseType(Type type)
-        {
-            return type == typeof (EventLog) || type == typeof (EventLog<OrderStateMachine.Trigger>);
+            return type.IsSubclassOf(typeof(OrderEventLog)) || type.IsSubclassOf(typeof(TradeEventLog));
         }
     }
 }

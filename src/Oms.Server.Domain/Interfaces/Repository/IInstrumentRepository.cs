@@ -1,12 +1,12 @@
 using System.Collections.Generic;
-using Oms.Server.Domain.Models.Instruments;
+using Oms.Server.Domain.Models.Securities;
 
 namespace Oms.Server.Domain.Interfaces.Repository
 {
-    public interface IInstrumentRepository : IRepository<Instrument>
+    public interface IInstrumentRepository : IRepository<Security>
     {
-        Instrument GetAssetById(int id);
-        IList<Instrument> GetAssetByKind(InstrumentType instrumentType);
-        IList<Instrument> GetAssetList();
+        Security GetById(int id);
+        IList<Security> GetAssetByKind(SecurityType securityType);
+        IList<Security> GetAssetList();
     }
 }

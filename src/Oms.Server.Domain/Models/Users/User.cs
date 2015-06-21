@@ -1,9 +1,9 @@
 ﻿using Oms.Server.Domain.Interfaces;
-using Oms.Server.Domain.Interfaces.Repository;
+using Oms.Server.Domain.Interfaces.Models;
 
 namespace Oms.Server.Domain.Models.Users
 {
-    public class User : IIdentifiable
+    public class User : IUser
     {
         public int Id { get; set; }
         public string FirstName { get; set; }

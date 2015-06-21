@@ -10,13 +10,12 @@ namespace Oms.Server.Domain.Models.Orders
 {
     public class OrderCoreData : IOrderCoreData
     {
-        public User Owner { get; set; }
-        public User Creator { get; set; }
+        public IUser Owner { get; set; }
+        public IUser Creator { get; set; }
         public DateTime CreationDate { get; set; }
-        public OrderBasket InitialOrderBasket { get; set; }
-        public OrderBasket OrderBasket { get; set; }
+        public IOrderBasket OrderBasket { get; set; }
         public IOrderInitialReferentialData InitialReferentialData { get; set; }
-        public string OrderClientRef { get; set; }
-        public string ApplicationOrigin { get; set; }
+        public string ClientOrderRef { get; set; }
+        public bool IsAutoAccepted { get; set; }
     }
 }

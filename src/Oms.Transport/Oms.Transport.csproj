@@ -42,14 +42,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Contracts\Dto\AssetDtoType.cs" />
+    <Compile Include="Contracts\Dto\SecurityDtoType.cs" />
     <Compile Include="Contracts\Dto\AssetOriginDtoType.cs" />
-    <Compile Include="Contracts\Dto\BusinessLogicFault.cs" />
     <Compile Include="Contracts\Dto\CurrencyDto.cs" />
     <Compile Include="Contracts\Dto\FundDto.cs" />
-    <Compile Include="Contracts\Dto\GenericFault.cs" />
     <Compile Include="Contracts\Dto\OrderDto.cs" />
-    <Compile Include="Contracts\Dto\AssetDto.cs" />
+    <Compile Include="Contracts\Dto\SecurityDto.cs" />
     <Compile Include="Contracts\Dto\OrderDtoType.cs" />
     <Compile Include="Contracts\Dto\OrderDtoWay.cs" />
     <Compile Include="Contracts\Dto\OrderGroupDto.cs" />
@@ -58,7 +56,25 @@
     <Compile Include="Contracts\IOrderServiceContract.cs" />
     <Compile Include="Contracts\ItemOperationResponse.cs" />
     <Compile Include="Contracts\ItemOperationType.cs" />
+    <Compile Include="Contracts\Messages\BatchResponse.cs" />
+    <Compile Include="Contracts\Messages\EditionRequest.cs" />
+    <Compile Include="Contracts\Messages\EditionCommand.cs" />
+    <Compile Include="Contracts\Messages\EditionResponse.cs" />
+    <Compile Include="Contracts\Dto\GenericResultDto.cs" />
+    <Compile Include="Contracts\Messages\Request.cs" />
+    <Compile Include="Contracts\Messages\Orders\OrderMarketRequest.cs" />
+    <Compile Include="Contracts\Messages\Orders\OrderMarketCommand.cs" />
+    <Compile Include="Contracts\Messages\Orders\OrderEditionRequest.cs" />
+    <Compile Include="Contracts\Messages\Orders\OrderRequest.cs" />
+    <Compile Include="Contracts\Messages\Orders\OrderStateCommand.cs" />
+    <Compile Include="Contracts\Messages\TransactionMode.cs" />
+    <Compile Include="Contracts\Dto\TradeDto.cs" />
+    <Compile Include="Contracts\Messages\Trades\TradeEditionRequest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Contracts\Messages\Funds\" />
+    <Folder Include="Contracts\Messages\Securities\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
