@@ -12,6 +12,7 @@ using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Trades;
+using Oms.Server.Domain.Validation;
 using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain.Models.Orders
@@ -22,17 +23,17 @@ namespace Oms.Server.Domain.Models.Orders
 
         public GenericResult Create(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
-            return HandleCommand(OrderStateMachine.Trigger.Create, context, editableData, null, coreData);
+            return HandleEditionCommand(OrderStateMachine.Trigger.Create, context, editableData, coreData);
         }
 
         public GenericResult SendRequest(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
-            return HandleCommand(OrderStateMachine.Trigger.SendRequest, context, editableData, null, coreData);
+            return HandleEditionCommand(OrderStateMachine.Trigger.SendRequest, context, editableData, coreData);
         }
 
         public GenericResult Update(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
-            return HandleCommand(OrderStateMachine.Trigger.Update, context, editableData, null, coreData);
+            return HandleEditionCommand(OrderStateMachine.Trigger.Update, context, editableData, coreData);
         }
 
         #region Simple Order State actions
@@ -40,6 +41,21 @@ namespace Oms.Server.Domain.Models.Orders
         public GenericResult Cancel(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.Create, context);
+        }
+
+        public GenericResult HandleEditionCommand(OrderStateMachine.Trigger trigger,
+            ITriggerContext context,
+            IOrderEditableData editableData = null,
+            IOrderCoreData coreData = null,
+            TriggerStatus status = TriggerStatus.Done)
+        {
+            var resultCore = OrderValidator.OrderCoreValidator.IsValid(coreData);
+            if (resultCore.IsSuccess())
+            {
+                var resultEditable = OrderValidator.OrderEditableValidator.IsValid(editableData);
+                return resultEditable.IsSuccess() ? HandleCommand(trigger, context, editableData, null, coreData, status) : resultEditable;
+             }
+            return resultCore;
         }
 
         public GenericResult AcceptPending(ITriggerContext context, IOrderEditableData editableData = null, IOrderDealingData dealingData = null)
@@ -170,7 +186,7 @@ namespace Oms.Server.Domain.Models.Orders
                 .SetRoutingData(dealingData)
                 .SetEditableData(editableData)
                 .SetTrigger(trigger)
-                .SetPendingTrigger(status.IsPendingReply() && _workingData.PendingTrigger == trigger ? null : _workingData.PendingTrigger);
+                .SetPendingTrigger(status.IsPendingReply() && this.PendingTrigger == trigger ? null : this.PendingTrigger);
             var result = EnforceTriggerStatus(trigger, ref status);
             if (result.IsFailure())
             {
@@ -183,7 +199,7 @@ namespace Oms.Server.Domain.Models.Orders
             else
             {
                 var triggerSucceeded = status == TriggerStatus.Pending ? _stateMachine.CanFireTrigger(trigger) : _stateMachine.TryFireTrigger(trigger);
-                result = triggerSucceeded ? GenericResult.Success() : GenericResult.Failure(string.Concat(_workingData.StateMachineErrorMessage, String.Format("The commmand {0} is not allowed when the _order is in {1} state", trigger, OrderState)));
+                result = triggerSucceeded ? GenericResult.Success() : GenericResult.Failure(string.Concat(_workingData.StateMachineErrorMessage, String.Format("The commmand {0} is not allowed when the order is in {1} state", trigger, OrderState)));
             }
             if (result.IsSuccess())
             {

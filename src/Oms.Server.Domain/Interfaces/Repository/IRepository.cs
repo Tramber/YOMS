@@ -11,5 +11,7 @@ namespace Oms.Server.Domain.Interfaces.Repository
         void Update(T entity);
         void Update(IEnumerable<T> entities);
         T GetById(int id);
+
+        IEnumerable<T> GetById(IEnumerable<int> idList);
     }
 }

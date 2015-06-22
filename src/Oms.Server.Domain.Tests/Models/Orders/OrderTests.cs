@@ -27,7 +27,6 @@ namespace Oms.Server.Domain.Tests.Models.Orders
                 .WithFund(new Fund())
                 .WithSecurity(new Security())
                 .WithInitialReferentialData("instCode", SecurityCodeType.Isin, "fundCode", FundCodeType.Other,"folioCode")
-
                 .Build().OrderState;
         }
 

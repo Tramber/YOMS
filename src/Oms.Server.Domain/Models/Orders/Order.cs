@@ -8,6 +8,7 @@ using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Trades;
 using Oms.Server.Domain.Models.Users;
+using Oms.Server.Domain.Validation;
 using Oms.Server.Domain.Workflow;
 using Stateless;
 
@@ -18,6 +19,7 @@ namespace Oms.Server.Domain.Models.Orders
         private OrderData _currentDataDoNotUseDirectly;
         private readonly OrderStateMachine _stateMachine;
         private const double Epsilon = 0.000001;
+        private static readonly OrderValidator OrderValidator = new OrderValidator();
 
         public Order()
         {

@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using Oms.Server.Domain.Interfaces.Models;
 
-namespace Oms.Server.Core.Services.Validation
+namespace Oms.Server.Domain.Validation
 {
     public class OrderEditableValidator : AbstractValidator<IOrderEditableData>
     {

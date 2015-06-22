@@ -21,7 +21,7 @@ namespace Oms.Server.Domain
         protected OrderCoreData _orderCoreData = new OrderCoreData();
         protected OrderEditableEventParameter _editableData = new OrderEditableEventParameter();
 
-        public OrderBuilder WithCoreData(User creator, User owner, OrderBasket orderBasket, string orderClientRef)
+        public OrderBuilder WithCoreData(IUser creator, IUser owner, OrderBasket orderBasket, string orderClientRef)
         {
             _orderCoreData.Creator = creator;
             _orderCoreData.CreationDate = DateTime.Now;
@@ -95,7 +95,7 @@ namespace Oms.Server.Domain
             return _editableData;
         }
 
-        public Order Build()
+        public virtual Order Build()
         {
             return new Order();
         }

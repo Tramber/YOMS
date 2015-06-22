@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using log4net.Core;
-using Oms.Server.Domain.Framework;
+﻿using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 
-namespace Oms.Server.Core.Services.Validation
+namespace Oms.Server.Domain.Validation
 {
     interface IValidationService
     {

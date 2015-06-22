@@ -70,7 +70,6 @@ namespace Oms.Server.Domain.Workflow
     public GuardClauseDelegate GuardClauseFromDraftToAcceptingUsingTriggerSendRequest = null;
     public GuardClauseDelegate GuardClauseFromDraftToTerminatedUsingTriggerDelete = null;
     public GuardClauseDelegate GuardClauseFromDraftToDraftUsingTriggerUpdate = null;
-    public GuardClauseDelegate GuardClauseFromAcceptingToDraftUsingTriggerSendReject = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToTerminatedUsingTriggerSendReject = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToWorkingUsingTriggerSendAccept = null;
     public GuardClauseDelegate GuardClauseFromAcceptingToTerminatedUsingTriggerCancel = null;
@@ -116,7 +115,6 @@ namespace Oms.Server.Domain.Workflow
       stateMachine.Configure(State.Accepting)
         .OnEntry(() => { if (OnAcceptingEntry != null) OnAcceptingEntry(); })
         .OnExit(() => { if (OnAcceptingExit != null) OnAcceptingExit(); })
-        .PermitIf(Trigger.SendReject, State.Draft , () => { if (GuardClauseFromAcceptingToDraftUsingTriggerSendReject != null) return GuardClauseFromAcceptingToDraftUsingTriggerSendReject(); return true; } )
         .PermitIf(Trigger.SendReject, State.Terminated , () => { if (GuardClauseFromAcceptingToTerminatedUsingTriggerSendReject != null) return GuardClauseFromAcceptingToTerminatedUsingTriggerSendReject(); return true; } )
         .PermitIf(Trigger.SendAccept, State.Working , () => { if (GuardClauseFromAcceptingToWorkingUsingTriggerSendAccept != null) return GuardClauseFromAcceptingToWorkingUsingTriggerSendAccept(); return true; } )
         .PermitIf(Trigger.Cancel, State.Terminated , () => { if (GuardClauseFromAcceptingToTerminatedUsingTriggerCancel != null) return GuardClauseFromAcceptingToTerminatedUsingTriggerCancel(); return true; } )

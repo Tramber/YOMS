@@ -42,7 +42,6 @@ For more information: http://statelessdesigner.codeplex.com/
     <transition trigger="Create" from="Undefined" to="Draft" />
     <transition trigger="SendRequest" from="Undefined" to="Accepting" />
     <transition trigger="SendRequest" from="Draft" to="Accepting" />
-    <transition trigger="SendReject" from="Accepting" to="Draft" />
     <transition trigger="SendReject" from="Accepting" to="Terminated" />
     <transition trigger="SendAccept" from="Accepting" to="Working" />
     <transition trigger="Cancel" from="Accepting" to="Terminated" />

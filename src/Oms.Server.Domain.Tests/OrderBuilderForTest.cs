@@ -21,13 +21,13 @@ namespace Oms.Server.Domain.Tests
 
 
 
-        public OrderBuilder WithTrade(Trade trade)
+        public OrderBuilderForTest WithTrade(Trade trade)
         {
             trades.Enqueue(trade);
             return this;
         }
 
-        public OrderBuilder WithOrderState(OrderStateMachine.State orderState)
+        public OrderBuilderForTest WithOrderState(OrderStateMachine.State orderState)
         {
             _orderStateOverride = orderState;
             return this;
@@ -56,7 +56,7 @@ namespace Oms.Server.Domain.Tests
             }
         }
 
-        public new Order Build()
+        public override Order Build()
         {
             var order = new Order();
             AddDataEvent(order);

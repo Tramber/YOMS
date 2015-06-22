@@ -109,6 +109,17 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
                 return session.Get<T>(id);
             }
         }
+
+        public IEnumerable<T> GetById(IEnumerable<int> idList)
+        {
+            using (var session = NHibernateHelper.Instance.OpenSession())
+            {
+                foreach (var id in idList)
+                {
+                    yield return session.Get<T>(id);
+                }
+            }
+        }
     }
 
 }
