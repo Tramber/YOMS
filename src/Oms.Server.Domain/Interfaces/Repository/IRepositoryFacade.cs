@@ -4,7 +4,7 @@
     {
         IUserRepository Users { get; }
         IOrderRepository Orders { get; }
-        IInstrumentRepository Securities { get; }
+        ISecurityRepository Securities { get; }
         IFundRepository Funds { get; }
     }
 }

@@ -99,7 +99,7 @@
     <Compile Include="Interfaces\Repository\IOrderRepository.cs" />
     <Compile Include="Interfaces\Repository\IRepository.cs" />
     <Compile Include="Interfaces\Repository\IRepositoryFacade.cs" />
-    <Compile Include="Interfaces\Repository\IInstrumentRepository.cs" />
+    <Compile Include="Interfaces\Repository\ISecurityRepository.cs" />
     <Compile Include="Interfaces\Repository\IUserRepository.cs" />
     <Compile Include="Models\Orders\Order.cs" />
     <Compile Include="Models\Orders\OrderBasket.cs" />

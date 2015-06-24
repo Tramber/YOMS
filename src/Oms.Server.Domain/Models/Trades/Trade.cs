@@ -1,7 +1,9 @@
-﻿using System.Security.Principal;
+﻿using System.Collections.Generic;
+using System.Security.Principal;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Interfaces.Repository;
+using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Orders;
 
 namespace Oms.Server.Domain.Models.Trades
@@ -9,6 +11,8 @@ namespace Oms.Server.Domain.Models.Trades
     public class Trade : ITrade
     {
         public int Id { get; set; }
+
+        public IList<TradeEventLog> EventLogs { get; set; } 
 
         public double ExecutionQuantity { get; set; }
 

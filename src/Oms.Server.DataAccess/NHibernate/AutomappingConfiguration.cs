@@ -46,7 +46,10 @@ namespace Oms.Server.DataAccess.NHibernate
 
             _componentTypes = new HashSet<Type>
             {
-                typeof (TriggerContext)
+                typeof (TriggerContext),
+                typeof (OrderDealingEventParameter),
+                typeof (OrderEditableEventParameter),
+                typeof (TradeEditableEventParameter)
             };
 
             _isDiscriminatedTypes = new HashSet<Type>

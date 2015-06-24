@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FluentNHibernate.Automapping;
 using FluentNHibernate.Automapping.Alterations;
 using Oms.Server.Domain.Interfaces.Models;
+using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Orders;
 
 namespace Oms.Server.DataAccess.NHibernate.Mapping
@@ -20,6 +21,8 @@ namespace Oms.Server.DataAccess.NHibernate.Mapping
             {
                ((IPropertyIgnorer)mapping).IgnoreProperty(propertyInfo.Name);
             }
+
+            mapping.HasMany<OrderEventLog>(x => x.EventLogs).AsSet().Cascade.AllDeleteOrphan();
         }
     }
 }

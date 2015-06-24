@@ -14,5 +14,6 @@ namespace Oms.Server.Domain.Models.Securities
         public bool IsActive { get; set; }
         public DateTime CreationDate { get; set; }
         public IUser Creator { get; set; }
+        public string SophisCode { get; set; }
     }
 }
