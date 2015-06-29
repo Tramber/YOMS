@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.Composition;
 using Caliburn.Micro;
 using Oms.Client.Services.Notifications;
 
-namespace Oms.Client.ViewModels
+namespace Oms.Client.Modules.Notification
 {
     [Export(typeof(INotificationViewModel))]
     public class NotificationViewModel : Screen, INotificationViewModel

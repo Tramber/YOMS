@@ -47,6 +47,20 @@ namespace Oms.Client.Framework.Converters
             base.Quantity = orders.Select(o => o.Quantity).Sum();
             base.Id = orders.Count;
         }
+
+        private bool _isExpanded;
+
+        public bool IsExpanded
+        {
+            get { return _isExpanded; }
+            set
+            {
+                if (_isExpanded == value)
+                    return;
+                _isExpanded = value;
+                base.NotifyOfPropertyChange(() => this.IsExpanded);
+            }
+        }
     }
 
 

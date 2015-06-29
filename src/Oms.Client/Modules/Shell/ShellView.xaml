@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Oms.Client.Views.ShellView"
+﻿<UserControl x:Class="Oms.Client.Modules.Shell.ShellView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -6,8 +6,6 @@
              xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock"
              xmlns:cal="http://www.caliburnproject.org"
              xmlns:selectors="clr-namespace:Oms.Client.Framework.Selectors"
-             xmlns:views="clr-namespace:Oms.Client.Views"
-             xmlns:viewModels="clr-namespace:Oms.Client.ViewModels"
              mc:Ignorable="d">
 
     <Grid>

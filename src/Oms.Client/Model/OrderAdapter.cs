@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Instrumentation;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace Oms.Client.Model
 
         public OrderDtoWay Way { get; set; }
 
-        public AssetDto Asset { get; set; }
+        public SecurityDto Security { get; set; }
 
         public UserDto Owner { get; set; }
 

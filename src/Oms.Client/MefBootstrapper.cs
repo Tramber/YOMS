@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Caliburn.Micro;
 using Oms.Client.Framework.Caliburn;
-using Oms.Client.ViewModels;
+using Oms.Client.Modules.Shell;
 
 namespace Oms.Client
 {

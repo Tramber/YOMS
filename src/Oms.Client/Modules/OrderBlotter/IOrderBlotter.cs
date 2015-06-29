@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace Oms.Client.ViewModels
+namespace Oms.Client.Modules.OrderBlotter
 {
     public interface IOrderBlotter
     {

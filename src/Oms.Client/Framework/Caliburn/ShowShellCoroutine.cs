@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.Composition;
 using Caliburn.Micro;
-using Oms.Client.ViewModels;
+using Oms.Client.Modules.Shell;
 
 namespace Oms.Client.Framework.Coroutines
 {

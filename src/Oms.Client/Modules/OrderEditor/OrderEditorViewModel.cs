@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Linq;
-using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Caliburn.Micro;
-using System.ComponentModel;
 using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using Caliburn.Micro;
 using Oms.Client.Framework.Observables;
 
-namespace Oms.Client.ViewModels
+namespace Oms.Client.Modules.OrderEditor
 {
     [Export(typeof (IOrderEditor))]
     public class OrderEditorViewModel : Screen, IOrderEditor

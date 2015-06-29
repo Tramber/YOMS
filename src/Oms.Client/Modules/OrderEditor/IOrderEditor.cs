@@ -1,4 +1,4 @@
-﻿namespace Oms.Client.ViewModels
+﻿namespace Oms.Client.Modules.OrderEditor
 {
     public interface IOrderEditor
     {

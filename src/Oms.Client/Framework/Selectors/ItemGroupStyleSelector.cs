@@ -14,9 +14,9 @@ namespace Oms.Client.Framework.Selectors
         public override Style SelectStyle(object item, DependencyObject container)
         {
             var list = item as CollectionViewGroup;
-            
-            return 
-                list == null || list.Items.OfType<OrderAdapter>().Any(o => o.GroupId != 0) ? GroupStyle : OrphanStyle;
+            return GroupStyle;
+            // return 
+            //     list == null || list.Items.OfType<OrderAdapter>().Any(o => o.GroupId != 0) ? GroupStyle : OrphanStyle;
         }
     }
        

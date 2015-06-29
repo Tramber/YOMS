@@ -125,7 +125,13 @@
     <Compile Include="Framework\Controls\DynamicStyle.cs" />
     <Compile Include="Framework\Controls\ExpanderEx.cs" />
     <Compile Include="Framework\Caliburn\ShowShellCoroutine.cs" />
+    <Compile Include="Framework\Controls\Filters\FilterExtension.cs" />
+    <Compile Include="Framework\Controls\HeaderPersister\HeaderAdorner.cs" />
+    <Compile Include="Framework\Controls\HeaderPersister\HeaderPersister.cs" />
+    <Compile Include="Framework\Controls\MyGridRowPresenter.cs" />
+    <Compile Include="Framework\Controls\VisualTreeHelpers.cs" />
     <Compile Include="Framework\Converters\CollectionToVisibilityConverter.cs" />
+    <Compile Include="Framework\Observables\FastSearch.cs" />
     <Compile Include="Framework\Selectors\SimpleDataTemplateSelector.cs" />
     <Compile Include="Framework\ShaderEffects\GrayscaleEffect.cs" />
     <Compile Include="Framework\ShaderEffects\ShaderEffectBase.cs" />
@@ -138,7 +144,7 @@
     <Compile Include="Framework\Themes\ThemeManager.cs" />
     <Compile Include="MefBootstrapper.cs" />
     <Compile Include="Framework\Behaviors\MultiSelectBehavior.cs" />
-    <Compile Include="Framework\Observables\BindableCollection.cs" />
+    <Compile Include="Framework\Observables\BindableCollectionEx.cs" />
     <Compile Include="Framework\Behaviors\Sorting.cs" />
     <Compile Include="Framework\Behaviors\SortingAdorner.cs" />
     <Compile Include="Framework\Behaviors\SortingBehavior.cs" />
@@ -159,25 +165,25 @@
     <Compile Include="Services\Notifications\NotificationServiceExtensions.cs" />
     <Compile Include="Services\Notifications\NotificationType.cs" />
     <Compile Include="Services\OrderServiceProxy.cs" />
-    <Compile Include="ViewModels\INotificationViewModel.cs" />
-    <Compile Include="ViewModels\IOrderBlotter.cs" />
-    <Compile Include="ViewModels\IOrderEditor.cs" />
-    <Compile Include="ViewModels\IShell.cs" />
-    <Compile Include="ViewModels\NotificationViewModel.cs" />
-    <Compile Include="ViewModels\OrderBlotterViewModel.cs" />
+    <Compile Include="Modules\Notification\INotificationViewModel.cs" />
+    <Compile Include="Modules\OrderBlotter\IOrderBlotter.cs" />
+    <Compile Include="Modules\OrderEditor\IOrderEditor.cs" />
+    <Compile Include="Modules\Shell\IShell.cs" />
+    <Compile Include="Modules\Notification\NotificationViewModel.cs" />
+    <Compile Include="Modules\OrderBlotter\OrderBlotterViewModel.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ViewModels\OrderEditorViewModel.cs" />
-    <Compile Include="ViewModels\ShellViewModel.cs" />
-    <Compile Include="Views\NotificationView.xaml.cs">
+    <Compile Include="Modules\OrderEditor\OrderEditorViewModel.cs" />
+    <Compile Include="Modules\Shell\ShellViewModel.cs" />
+    <Compile Include="Modules\Notification\NotificationView.xaml.cs">
       <DependentUpon>NotificationView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\OrderEditorView.xaml.cs">
+    <Compile Include="Modules\OrderEditor\OrderEditorView.xaml.cs">
       <DependentUpon>OrderEditorView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\ShellView.xaml.cs">
+    <Compile Include="Modules\Shell\ShellView.xaml.cs">
       <DependentUpon>ShellView.xaml</DependentUpon>
     </Compile>
     <Page Include="Styles\Converters.xaml">
@@ -240,19 +246,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Views\NotificationView.xaml">
+    <Page Include="Modules\Notification\NotificationView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\OrderBlotterView.xaml">
+    <Page Include="Modules\OrderBlotter\OrderBlotterView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\OrderEditorView.xaml">
+    <Page Include="Modules\OrderEditor\OrderEditorView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\ShellView.xaml">
+    <Page Include="Modules\Shell\ShellView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -382,6 +388,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
+  <Import Project="$(XamlSpyInstallPath)MSBuild\FirstFloor.XamlSpy.WPF.targets" Condition="'$(XamlSpyInstallPath)' != '' and '$(Configuration)' == 'DEBUG'" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

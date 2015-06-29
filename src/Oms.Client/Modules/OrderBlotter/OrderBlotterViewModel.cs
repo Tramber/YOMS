@@ -2,18 +2,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
+using System.Windows.Data;
 using Caliburn.Micro;
 using Oms.Client.Framework.Observables;
 using Oms.Client.Model;
 
-namespace Oms.Client.ViewModels
+namespace Oms.Client.Modules.OrderBlotter
 {
 
     [Export(typeof(IOrderBlotter))]
@@ -21,10 +18,21 @@ namespace Oms.Client.ViewModels
     {
         private readonly BindableCollectionEx<OrderAdapter> _orderAdapters = new BindableCollectionEx<OrderAdapter>();
         private volatile int lastFreeGroupId = 4000;
+        private string _filterText;
+        private FastSearch<OrderAdapter> fastSearch = new FastSearch<OrderAdapter>();
+
+        private readonly CollectionViewSource _orderViewSource = new CollectionViewSource();
 
         protected override void OnInitialize()
         {
             base.OnInitialize();
+            _orderViewSource.Source = _orderAdapters;
+            _orderViewSource.Filter += (sender, args) => args.Accepted = fastSearch.Predicate((OrderAdapter)args.Item);
+            _orderViewSource.GroupDescriptions.Add(new PropertyGroupDescription("GroupId"));
+            _orderViewSource.SortDescriptions.Add(new SortDescription("Id", ListSortDirection.Ascending));
+            _orderViewSource.IsLiveFilteringRequested = true;
+            _orderViewSource.IsLiveGroupingRequested = true;
+            _orderViewSource.IsLiveSortingRequested = true;
             CreateOrders();
         }
 
@@ -61,7 +69,7 @@ namespace Oms.Client.ViewModels
 
         private void RefreshOrders(List<OrderAdapter> orders)
         {
-            OrderAdapters.Refresh(orders);
+            _orderAdapters.Refresh(orders);
         }
 
         public void GroupOrders(IList list)
@@ -93,9 +101,23 @@ namespace Oms.Client.ViewModels
             }
         }
 
-        public BindableCollectionEx<OrderAdapter> OrderAdapters
+        public string FilterText
         {
-            get { return _orderAdapters; }
+            get { return _filterText; }
+            set
+            {
+                if (_filterText == value) return;
+                fastSearch.Clear();
+                fastSearch.AddPredicate(_filterText);
+                _filterText = value;
+                this.NotifyOfPropertyChange(() => FilterText);
+
+            }
+        }
+
+        public CollectionViewSource OrderViewSource
+        {
+            get { return _orderViewSource; }
         }
     }
 }

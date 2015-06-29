@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Composition;
+﻿using System.ComponentModel.Composition;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Caliburn.Micro;
 using Oms.Client.Framework.Observables;
-using Oms.Client.Framework.Themes;
-using Oms.Client.Services;
+using Oms.Client.Modules.Notification;
+using Oms.Client.Modules.OrderBlotter;
+using Oms.Client.Modules.OrderEditor;
 using Oms.Client.Services.Notifications;
 
-namespace Oms.Client.ViewModels
+namespace Oms.Client.Modules.Shell
 {
     [Export(typeof(IShell))]
     public class ShellViewModel : Conductor<IScreen>.Collection.OneActive, IShell, IHandle<INotification>
