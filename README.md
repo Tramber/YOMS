@@ -16,6 +16,8 @@ Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence
 | `Oms.Client` | WPF client (Caliburn.Micro, MahApps.Metro, MEF); Windows only |
 | `Oms.Framework` | Shared utilities |
 
+See [`docs/architecture.md`](docs/architecture.md) for the architecture, request flow and order workflow.
+
 ## Build and test
 
 ```
