@@ -1,9 +1,9 @@
-﻿using System;
-using Oms.Server.Domain.Interfaces.Models;
+﻿using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Interfaces.Repository;
 
 namespace Oms.Server.Domain.Models.EventLogs
 {
+    /// <summary>One entry of an entity history: the trigger that was fired, its status, the resulting state and who did it and when.</summary>
     public abstract class EventLog<TTrigger, TTState, TEntity> : IIdentifiable
     {
         internal EventLog()

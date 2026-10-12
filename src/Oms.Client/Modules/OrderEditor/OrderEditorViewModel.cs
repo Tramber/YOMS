@@ -12,6 +12,7 @@ using Oms.Client.Services;
 
 namespace Oms.Client.Modules.OrderEditor
 {
+    /// <summary>Order entry dialog. For now it demonstrates a search-as-you-type pipeline over a fixed list of phrases.</summary>
     public partial class OrderEditorViewModel : ObservableObject, IRequestClose
     {
         [ObservableProperty]
@@ -27,7 +28,7 @@ namespace Oms.Client.Modules.OrderEditor
 
         public OrderEditorViewModel()
         {
-            var ui = SynchronizationContext.Current;
+            var ui = SynchronizationContext.Current ?? new SynchronizationContext();
             var searchTextChanged = Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
                     ev => PropertyChanged += ev,
                     ev => PropertyChanged -= ev)
@@ -55,6 +56,7 @@ namespace Oms.Client.Modules.OrderEditor
                 .Subscribe(results => SearchResults = results);
         }
 
+        /// <summary>The search terms that were used, in order.</summary>
         public ObservableCollection<string> LogData { get; } = new ObservableCollection<string>();
 
         public event EventHandler CloseRequested;

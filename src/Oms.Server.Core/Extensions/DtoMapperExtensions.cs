@@ -4,12 +4,14 @@ using Oms.Transport.Contracts.Dto;
 
 namespace Oms.Server.Core.Extensions
 {
+    /// <summary>Maps domain objects to the DTOs sent to the clients.</summary>
     public static class DtoMapperExtensions
     {
+        /// <summary>Converts an enum value to the enum of the same member name. Throws <see cref="NotSupportedException"/> when the target has no such member.</summary>
         public static TEnum ToMappingEnum<TEnum>(this Enum origin) where TEnum : struct
         {
             TEnum destination;
-            if(Enum.TryParse(origin.ToString(), true, out destination))
+            if(!Enum.TryParse(origin.ToString(), true, out destination))
                 throw new NotSupportedException();
             return destination;
         }

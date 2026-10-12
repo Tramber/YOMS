@@ -1,31 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
-using Oms.Server.Domain.Interfaces;
 using Oms.Server.Domain.Interfaces.Models;
-using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Domain.Models.EventLogs;
-using Oms.Server.Domain.Models.Trades;
-using Oms.Server.Domain.Models.Users;
 using Oms.Server.Domain.Validation;
 using Oms.Server.Domain.Workflow;
-using Stateless;
 
 namespace Oms.Server.Domain.Models.Orders
 {
     public partial class Order : IOrder
     {
         private OrderData _currentDataDoNotUseDirectly;
-        private readonly OrderStateMachine _stateMachine;
+        private readonly OrderStateMachine _stateMachine = OrderStateMachine.CreateInitializable();
         private const double Epsilon = 0.000001;
         private static readonly OrderValidator OrderValidator = new OrderValidator();
-
-        public Order()
-        {
-            EventLogs = new List<OrderEventLog>();
-            _stateMachine = OrderStateMachine.CreateInitializable();
-        }
 
         private OrderData CurrentData
         {
@@ -64,12 +51,16 @@ namespace Oms.Server.Domain.Models.Orders
             {
                 if(orderedEventLogs.Any(e => e.Trigger == lastPendingEvent.Trigger && e.Context.Date >= lastPendingEvent.Context.Date && e.TriggerStatus.IsPendingReply()));
             }
+            if (lastValidEvent == null)
+            {
+                return new OrderData();
+            }
             var result = lastEditableEvent == null ? new OrderData() : new OrderData()
                 .SetEditableData(lastEditableEvent.Parameters)
-                .SetRoutingData(lastDealEvent == null ? null : lastDealEvent.Parameters)
+                .SetRoutingData(lastDealEvent?.Parameters)
                 .SetOrderState(lastValidEvent.State)
                 .SetTrigger(lastValidEvent.Trigger)
-                .SetPendingTrigger(lastPendingEvent == null ? (OrderStateMachine.Trigger?)null:lastPendingEvent.Trigger);
+                .SetPendingTrigger(lastPendingEvent?.Trigger);
             return result.SetOrderStatus(ComputeOrderStatus(result));
         }
 

@@ -1,8 +1,6 @@
 using System;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Interfaces.Repository;
-using Oms.Server.Domain.Models.Funds;
-using Oms.Server.Domain.Models.Securities;
 
 namespace Oms.Server.Domain.Models.EventLogs
 {

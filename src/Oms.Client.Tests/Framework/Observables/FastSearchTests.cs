@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using Oms.Client.Framework.Observables;
 using Oms.Client.Model;
@@ -39,6 +36,35 @@ namespace Oms.Client.Tests.Framework.Observables
             var fastSearch = new FastSearch<OrderAdapter>();
             fastSearch.AddPredicate(filterSearch);
             return orders.Count(s => fastSearch.Predicate(s));
+        }
+
+        [Test]
+        public void Should_not_match_when_a_nested_value_is_missing()
+        {
+            var fastSearch = new FastSearch<OrderAdapter>();
+            fastSearch.AddPredicate("Security.IsinCode = \"MyIsinCode1\"");
+
+            Assert.That(fastSearch.Predicate(new OrderAdapter()), Is.False);
+        }
+
+        [Test]
+        public void Should_match_everything_without_predicates_and_after_clear()
+        {
+            var fastSearch = new FastSearch<OrderAdapter>();
+            fastSearch.AddPredicate("IsinCode = \"MyIsinCode1\"");
+            fastSearch.Clear();
+
+            Assert.That(orders.All(fastSearch.Predicate), Is.True);
+        }
+
+        [Test]
+        public void Should_require_every_predicate_to_match()
+        {
+            var fastSearch = new FastSearch<OrderAdapter>();
+            fastSearch.AddPredicate(o => o.Security.IsinCode == "MyIsinCode1");
+            fastSearch.AddPredicate(o => o.Security.IsinCode == "MyIsinCode2");
+
+            Assert.That(orders.Any(fastSearch.Predicate), Is.False);
         }
     }
 }

@@ -1,21 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Orders;
 using Oms.Server.Domain.Models.Securities;
-using Oms.Server.Domain.Models.Trades;
-using Oms.Server.Domain.Models.Users;
-using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.Domain
 {
+    /// <summary>Collects the data of an order to create. Build the core and editable data for the order commands, or <see cref="Build"/> for an empty order.</summary>
     public class OrderBuilder
     {
         protected OrderCoreData _orderCoreData = new OrderCoreData();
@@ -85,11 +77,13 @@ namespace Oms.Server.Domain
             return this;
         }
 
+        /// <summary>The core data (creator, owner, basket, client reference, initial referential data) set so far.</summary>
         public OrderCoreData BuildOrderCoreData()
         {
             return _orderCoreData;
         }
 
+        /// <summary>The editable data (fund, security, prices, dates) set so far.</summary>
         public IOrderEditableData BuildOrderEditableData()
         {
             return _editableData;

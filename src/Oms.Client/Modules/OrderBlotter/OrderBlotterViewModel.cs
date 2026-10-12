@@ -12,6 +12,7 @@ using Oms.Transport.Contracts.Dto;
 
 namespace Oms.Client.Modules.OrderBlotter
 {
+    /// <summary>Grid of orders, grouped by <c>GroupId</c> and sortable. Starts with sample data until the server pushes real orders.</summary>
     public partial class OrderBlotterViewModel : DocumentViewModel
     {
         private readonly ObservableCollection<OrderAdapter> _orders = new ObservableCollection<OrderAdapter>();
@@ -41,6 +42,7 @@ namespace Oms.Client.Modules.OrderBlotter
 
         public override string DisplayName => "Order Blotter";
 
+        /// <summary>The grouped, sorted and filtered rows bound to the grid.</summary>
         public DataGridCollectionView OrdersView { get; }
 
         /// <summary>Accepts <c>Property = "value"</c> (nested paths allowed, e.g. <c>Security.IsinCode = "X"</c>); anything else shows all rows.</summary>
@@ -62,6 +64,7 @@ namespace Oms.Client.Modules.OrderBlotter
             OrdersView.Refresh();
         }
 
+        /// <summary>Adds the orders pushed by the server. Call it on the UI thread.</summary>
         public void AddOrders(OrderDto[] dtos)
         {
             foreach (var dto in dtos)

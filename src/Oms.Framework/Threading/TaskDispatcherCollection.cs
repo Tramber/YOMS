@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Oms.Framework.Threading
 {
+    /// <summary>Runs queued actions on a fixed number of worker tasks. The collection type decides the order: queue (FIFO), stack (LIFO) or bag (unordered).</summary>
     public abstract class TaskDispatcherCollection<T> : ITaskDispatcher where T : IProducerConsumerCollection<TaskDispatcherWorkItem>, new()
     {
         private readonly BlockingCollection<TaskDispatcherWorkItem> _taskList = new BlockingCollection<TaskDispatcherWorkItem>(new T());
@@ -17,6 +15,7 @@ namespace Oms.Framework.Threading
                 Task.Factory.StartNew(Consume);
         }
 
+        /// <summary>Stops accepting tasks. The workers finish what is already queued.</summary>
         public void Dispose()
         {
             _taskList.CompleteAdding();
@@ -27,6 +26,7 @@ namespace Oms.Framework.Threading
             return AddTask(action, null);
         }
 
+        /// <summary>Queues the action. The returned task completes when it has run, faults if it throws, and is cancelled if the token is cancelled before it starts.</summary>
         public Task AddTask(Action action, CancellationToken? cancelToken)
         {
             var tcs = new TaskCompletionSource<object>();

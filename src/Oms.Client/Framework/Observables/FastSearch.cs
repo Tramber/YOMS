@@ -2,20 +2,31 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Oms.Client.Model;
 
 namespace Oms.Client.Framework.Observables
 {
+    /// <summary>Row filter made of predicates that must all match.</summary>
     public class FastSearch<T>
     {
         private readonly List<Predicate<T>> _predicates = new List<Predicate<T>>(); 
 
+        /// <summary>True when the item matches every predicate, or when there are none.</summary>
         public bool Predicate(T item)
         {
-            return _predicates.Count == 0 || _predicates.All(p => p(item));
+            return _predicates.Count == 0 || _predicates.All(p => Matches(p, item));
+        }
+
+        // A null on the way down a nested path (Security.IsinCode with no Security) is a non-match, not an error.
+        private static bool Matches(Predicate<T> predicate, T item)
+        {
+            try
+            {
+                return predicate(item);
+            }
+            catch (NullReferenceException)
+            {
+                return false;
+            }
         }
 
         public void AddPredicate(Expression<Predicate<T>> predicateExpression)
@@ -23,6 +34,7 @@ namespace Oms.Client.Framework.Observables
             _predicates.Add(predicateExpression.Compile());
         }
 
+        /// <summary>Adds a predicate written as <c>Property = "value"</c>; nested paths such as <c>Security.IsinCode</c> are allowed. Throws when the text is not in that form or the value cannot be converted to the property type.</summary>
         public void AddPredicate(string expressionString)
         {
             var param = expressionString.Split(' ');

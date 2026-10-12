@@ -3,6 +3,10 @@ using Oms.Server.Domain.Interfaces.Models;
 
 namespace Oms.Server.Domain.Models.Securities
 {
+    /// <summary>
+    /// Represents a financial security with properties such as Id, Name, ISIN code, Bloomberg ticker, currency, type, active status, creation date,
+    /// creator, and Sophis code.
+    /// </summary>
     public class Security : ISecurity
     {
         public int Id { get; set; }

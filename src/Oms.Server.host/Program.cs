@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Oms.Server.Core.Contracts;
 using Oms.Server.DataAccess.NHibernate.Repositories;
 using Oms.Server.Domain.Interfaces.Repository;

@@ -6,6 +6,7 @@ using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
 using Oms.Transport.Contracts.Messages.Orders;
 
+/// <summary>SignalR entry point of the server, mapped at <see cref="OrderHubMethods.Path"/>. Forwards requests to the order service and pushes order changes to the subscribers.</summary>
 public class OrderHub : Hub
 {
     public const string SubscribersGroup = "order-subscribers";

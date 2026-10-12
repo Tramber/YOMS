@@ -1,5 +1,6 @@
 ﻿namespace Oms.Server.Domain.Framework
 {
+    /// <summary>Outcome of a domain command: success, or failure with an error message and code. Use <see cref="Success"/> and <see cref="Failure"/> to create one.</summary>
     public class GenericResult
     {
         public const int NoErrorCode = 0;
