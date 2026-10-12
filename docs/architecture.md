@@ -6,7 +6,7 @@ YOMS is a small Order Management System: clients submit orders, the server runs 
 
 ```mermaid
 flowchart LR
-    Client["Oms.Client<br/>WPF"] -- "SignalR /orders" --> Host["Oms.Server.host<br/>OrderHub"]
+    Client["Oms.Client<br/>Avalonia"] -- "SignalR /orders" --> Host["Oms.Server.host<br/>OrderHub"]
     Host --> Contract["Oms.Server.Core<br/>OrderServiceContract"]
     Contract --> Mgmt["OrderManagementService"]
     Mgmt --> Domain["Oms.Server.Domain<br/>Order, state machine, validation"]
@@ -23,7 +23,7 @@ flowchart LR
 | `Oms.Server.DataAccess` | NHibernate/FluentNHibernate automapping and repositories behind `IRepositoryFacade`. Runs on SQLite through `MicrosoftDataSqliteDriver`. |
 | `Oms.Server.Core` | Application layer: `OrderManagementService` maps request commands to domain operations, `DtoMapperExtensions` maps domain to DTOs. |
 | `Oms.Server.host` | ASP.NET Core process, DI registration and the SignalR `OrderHub`. |
-| `Oms.Client` | WPF UI (CommunityToolkit.Mvvm, Microsoft DI, MahApps.Metro, AvalonDock). |
+| `Oms.Client` | Cross-platform Avalonia UI (CommunityToolkit.Mvvm, Microsoft DI). |
 | `Oms.Framework` | Task dispatcher queues/bags and other shared utilities. |
 
 ## Request flow
@@ -81,4 +81,4 @@ Where two transitions share a trigger (for example `AddTrade` from `Working`), g
 
 ## Known gaps
 
-See `AGENTS.md`. In short: unfinished service responses and notifications, 4 failing domain tests, an unexercised WPF client and untested SignalR round trip.
+See `AGENTS.md`. In short: unfinished service responses and notifications, 4 failing domain tests, a client that has only been smoke-tested and untested SignalR round trip.

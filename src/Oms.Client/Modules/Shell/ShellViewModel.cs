@@ -1,4 +1,7 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -7,6 +10,8 @@ using Oms.Client.Modules.OrderBlotter;
 using Oms.Client.Modules.OrderEditor;
 using Oms.Client.Services;
 using Oms.Client.Services.Notifications;
+using Oms.Transport.Contracts;
+using Oms.Transport.Contracts.Dto;
 
 namespace Oms.Client.Modules.Shell
 {
@@ -14,40 +19,66 @@ namespace Oms.Client.Modules.Shell
     {
         private readonly IWindowService _windowService;
         private readonly INotificationService _notificationService;
+        private readonly OrderBlotterViewModel _blotter = new OrderBlotterViewModel();
+        private OrderServiceProxy _proxy;
 
         [ObservableProperty]
-        private object _activeDocument;
+        private DocumentViewModel _activeDocument;
+
+        [ObservableProperty]
+        private string _connectionStatus = "Not connected";
 
         public ShellViewModel(IWindowService windowService, INotificationService notificationService, IMessenger messenger)
         {
             _windowService = windowService;
             _notificationService = notificationService;
-            var blotter = new OrderBlotterViewModel();
-            Documents = new ObservableCollection<object> { blotter };
-            ActiveDocument = blotter;
+            Documents = new ObservableCollection<DocumentViewModel> { _blotter };
+            ActiveDocument = _blotter;
             Notifications = new ObservableCollection<NotificationViewModel>();
             messenger.RegisterAll(this);
         }
 
-        public ObservableCollection<object> Documents { get; }
+        public ObservableCollection<DocumentViewModel> Documents { get; }
 
         public ObservableCollection<NotificationViewModel> Notifications { get; }
 
         [RelayCommand]
-        private void CreateOrder()
-        {
-            _windowService.ShowDialog(new OrderEditorViewModel());
-        }
+        private Task CreateOrderAsync() => _windowService.ShowDialogAsync(new OrderEditorViewModel());
 
         [RelayCommand]
-        private void CreateNotification()
+        private void CreateNotification() => _notificationService.ProcessInfo("hello", "Ding Ding Dong");
+
+        [RelayCommand]
+        private async Task ConnectAsync()
         {
-            _notificationService.ProcessInfo("hello", "Ding Ding Dong");
+            if (_proxy != null) return;
+            ConnectionStatus = "Connecting...";
+            try
+            {
+                _proxy = new OrderServiceProxy();
+                _proxy.Subscribe(new OrderObserver(orders => Dispatcher.UIThread.Post(() => _blotter.AddOrders(orders))));
+                await _proxy.StartAsync();
+                ConnectionStatus = "Connected to http://localhost:9001/orders";
+            }
+            catch (Exception ex)
+            {
+                _proxy = null;
+                ConnectionStatus = "Connection failed: " + ex.Message;
+            }
         }
 
         public void Receive(INotification message)
         {
             Notifications.Add(new NotificationViewModel(message));
+        }
+
+        private sealed class OrderObserver : IObserver<Tuple<ItemOperationType, OrderDto[]>>
+        {
+            private readonly Action<OrderDto[]> _onOrders;
+            public OrderObserver(Action<OrderDto[]> onOrders) { _onOrders = onOrders; }
+            public void OnNext(Tuple<ItemOperationType, OrderDto[]> value) => _onOrders(value.Item2);
+            public void OnError(Exception error) { }
+            public void OnCompleted() { }
         }
     }
 }

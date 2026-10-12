@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest   # Oms.Client is WPF (net10.0-windows)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

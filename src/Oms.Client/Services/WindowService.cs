@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Windows;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Oms.Client.Modules.OrderEditor;
 
 namespace Oms.Client.Services
 {
     public interface IWindowService
     {
-        bool? ShowDialog(object viewModel);
+        Task ShowDialogAsync(object viewModel);
     }
 
     /// <summary>Implemented by view models that can ask their window to close.</summary>
@@ -23,15 +26,14 @@ namespace Oms.Client.Services
             { typeof(OrderEditorViewModel), () => new OrderEditorView() },
         };
 
-        public bool? ShowDialog(object viewModel)
+        public Task ShowDialogAsync(object viewModel)
         {
             var window = Views[viewModel.GetType()]();
             window.DataContext = viewModel;
-            window.Owner = Application.Current.MainWindow;
-            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (viewModel is IRequestClose requestClose)
                 requestClose.CloseRequested += (_, _) => window.Close();
-            return window.ShowDialog();
+            var owner = (Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            return window.ShowDialog(owner);
         }
     }
 }

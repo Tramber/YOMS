@@ -5,7 +5,7 @@ Guidance for AI coding agents working in this repository. See `README.md` for th
 ## Commands
 
 - Build: `dotnet build src/Oms.sln`
-- Test: `dotnet test src/Oms.sln` (`Oms.Client.Tests` only runs on Windows)
+- Test: `dotnet test src/Oms.sln`
 - Run server: `dotnet run --project src/Oms.Server.host`
 
 ## Conventions

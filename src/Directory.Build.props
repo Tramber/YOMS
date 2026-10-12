@@ -4,7 +4,6 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <NoWarn>$(NoWarn);NU1701;SYSLIB0011</NoWarn>
   </PropertyGroup>
 </Project>
