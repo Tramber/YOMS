@@ -73,7 +73,33 @@ stateDiagram-v2
     Terminated --> Dealing: AddTrade
 ```
 
-Where two transitions share a trigger (for example `AddTrade` from `Working`), guards pick the target, typically whether the order is fully filled (`IsFilled`).
+Where two transitions share a trigger, guards in `Order.CreateStateMachine` pick the target:
+
+- `AddTrade` (from Working or Dealing): to Validating when the order is fully executed once the new trade is counted, otherwise to Dealing.
+- `CancelTrade` (from Validating or Booking): back to Dealing when cancelling leaves the order not fully executed, otherwise it stays put.
+- `TradeBooked` (from Booking): to Terminated when every active trade is booked, otherwise it stays in Booking. An order terminated this way has the status Filled (or OverFilled), not Cancelled.
+
+Cancel and Update are pending commands: they are logged as Pending and only take effect, with the data sent with them, when `AcceptPending` is called. `RejectPending` discards them.
+
+## Trade life cycle
+
+A `Trade` is created by `Order.AddTrade` and records its own event log.
+
+```mermaid
+stateDiagram-v2
+    [*] --> New: Create
+    New --> BookingSent: BookingSend
+    BookingError --> BookingSent: BookingSend
+    BookingSent --> BookingSent: BookingRefresh
+    BookingSent --> Booked: Booked
+    BookingSent --> BookingError: BookingFailed
+    New --> Booked: ForceBooked
+    BookingError --> Booked: ForceBooked
+    New --> Cancelled: Cancel
+    BookingSent --> Cancelled: Cancel
+    BookingError --> Cancelled: Cancel
+    Booked --> Cancelled: Cancel
+```
 
 ## Persistence
 

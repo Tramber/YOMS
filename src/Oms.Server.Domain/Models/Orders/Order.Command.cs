@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Diagnostics.Contracts;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
@@ -124,7 +125,10 @@ namespace Oms.Server.Domain.Models.Orders
         #endregion
 
         #region Trade actions
-        /// <summary>Records that a trade was booked. Not finished: the booking outcome is still a TODO.</summary>
+        /// <summary>
+        /// Records that a trade was booked (the trade moves from BookingSent to Booked unless it is already Booked).
+        /// The order stays in Booking while trades remain to book, and terminates once every trade is booked.
+        /// </summary>
         public GenericResult TradeBooked(ITriggerContext context, ITrade trade)
         {
             return HandleTradeCommand(OrderStateMachine.Trigger.TradeBooked, context, trade);
@@ -158,7 +162,18 @@ namespace Oms.Server.Domain.Models.Orders
         {
             if (PendingTrigger == null)
                 return GenericResult.FailureFormat("There is no pending command to {0}", isAccept ? "accept" : "reject");
+            // Accepting an Update applies the data that was sent with it.
+            if (isAccept && editableData == null && PendingTrigger == OrderStateMachine.Trigger.Update)
+                editableData = PendingEditableData();
             return HandleCommand(PendingTrigger.Value, context, editableData, dealingData, coreData, isAccept ? TriggerStatus.Accepted : TriggerStatus.Rejected);
+        }
+
+        /// <summary>The data sent with the Update that is still waiting for an answer.</summary>
+        private IOrderEditableData PendingEditableData()
+        {
+            var pending = EventLogs.OfType<OrderParameterEventLog<IOrderEditableData>>()
+                .LastOrDefault(e => e.Trigger == OrderStateMachine.Trigger.Update && e.TriggerStatus.IsPending());
+            return pending == null ? null : pending.Parameters;
         }
 
         private GenericResult EnforceTriggerStatus(OrderStateMachine.Trigger trigger, ref TriggerStatus triggerStatus)
@@ -188,25 +203,50 @@ namespace Oms.Server.Domain.Models.Orders
 
 
         private GenericResult HandleCommand(
-            OrderStateMachine.Trigger trigger, 
+            OrderStateMachine.Trigger trigger,
             ITriggerContext context,
             IOrderEditableData editableData = null,
             IOrderDealingData dealingData = null,
             IOrderCoreData coreData = null,
             TriggerStatus status = TriggerStatus.Done)
         {
+            try
+            {
+                return RunCommand(trigger, context, editableData, dealingData, coreData, status);
+            }
+            finally
+            {
+                _workingData = null;
+                _incomingTrade = null;
+            }
+        }
+
+        private GenericResult RunCommand(
+            OrderStateMachine.Trigger trigger,
+            ITriggerContext context,
+            IOrderEditableData editableData,
+            IOrderDealingData dealingData,
+            IOrderCoreData coreData,
+            TriggerStatus status)
+        {
             Contract.Requires(context != null, "context != null" );
 
             _workingData = CurrentData.Clone()
                 .SetRoutingData(dealingData)
-                .SetEditableData(editableData)
                 .SetTrigger(trigger)
                 .SetPendingTrigger(this.PendingTrigger);
+            // The guards of the state machine decide on what remains and what is booked once this trade is counted.
+            _incomingTrade = dealingData == null ? null : dealingData.Trade;
+            if (_incomingTrade != null)
+                _workingData.SetExecutionQuantity(ComputeExecutionQuantity(_workingData.Side, _incomingTrade));
             var result = EnforceTriggerStatus(trigger, ref status);
             if (result.IsFailure())
             {
                 return result;
             }
+            // The data of a command that waits for an answer, or was refused, is not applied.
+            if (status != TriggerStatus.Pending && status != TriggerStatus.Rejected)
+                _workingData.SetEditableData(editableData);
             if (status == TriggerStatus.Rejected)
             {
                 result = GenericResult.Success();
@@ -221,7 +261,8 @@ namespace Oms.Server.Domain.Models.Orders
                 _workingData.SetOrderState(_stateMachine.GetState);
                 if (editableData != null)
                 {
-                    if (coreData != null) this.InsertDataFrom(coreData);
+                    // Core data of a command that waits for an answer is not applied either.
+                    if (coreData != null && status.IsValid()) this.InsertDataFrom(coreData);
                     EventLogs.Add(new OrderParameterEventLog<IOrderEditableData>(context, trigger, status, _workingData.OrderState, this, editableData));
                 }
                 else if (dealingData != null)
@@ -257,14 +298,20 @@ namespace Oms.Server.Domain.Models.Orders
             switch (trigger)
             {
                 case OrderStateMachine.Trigger.AddTrade:
-                    trade = new Trade {Order = this};
-                    result = trade.Create(context, editableData);
+                    // The trade passed in carries the data of the execution; the order owns a trade of its own.
+                    var newTrade = new Trade {Order = this};
+                    result = newTrade.Create(context, editableData ?? trade);
+                    trade = newTrade;
                     break;
                 case OrderStateMachine.Trigger.TradeBooked:
-                    //TODO handle the booking done
-                    result = GenericResult.Success();
+                    if (trade == null)
+                        return GenericResult.Failure("The trade is required");
+                    // A trade forced to booked by hand is already booked.
+                    result = trade.TradeState == TradeState.Booked ? GenericResult.Success() : trade.Booked(context);
                     break;
                 case OrderStateMachine.Trigger.CancelTrade:
+                    if (trade == null)
+                        return GenericResult.Failure("The trade is required");
                     result = trade.Cancel(context);
                     break;
                 case OrderStateMachine.Trigger.UpdateTrade:
