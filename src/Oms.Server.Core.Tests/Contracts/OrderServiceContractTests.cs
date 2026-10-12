@@ -29,7 +29,7 @@ namespace Oms.Server.Core.Tests.Contracts
         {
             _service = Substitute.For<IOrderManagementService>();
             _contract = new OrderServiceContract(_service);
-            _published = new List<Tuple<ItemOperationType, OrderDto[]>>();
+            _published = [];
             _contract.OrderListUpdated += (type, orders) => _published.Add(Tuple.Create(type, orders));
         }
 
@@ -45,13 +45,13 @@ namespace Oms.Server.Core.Tests.Contracts
 
         private static OrderRequest StateRequest(OrderStateCommand command, params int[] ids)
         {
-            return new OrderRequest("token", command, new List<int>(ids), default(TransactionMode));
+            return new OrderRequest("token", command, [.. ids], default(TransactionMode));
         }
 
         [Test]
         public void Should_answer_an_edition_with_the_saved_orders_and_publish_them_as_added()
         {
-            var request = new OrderEditionRequest("token", EditionCommand.Create, new List<OrderDto> { new OrderDto { Quantity = 5 } }, default(TransactionMode));
+            var request = new OrderEditionRequest("token", EditionCommand.Create, [new OrderDto { Quantity = 5 }], default(TransactionMode));
             _service.HandleRequest(request).Returns(new List<OrderCommandResult> { Success(11) });
 
             var response = _contract.Handle(request);
@@ -66,7 +66,7 @@ namespace Oms.Server.Core.Tests.Contracts
         [Test]
         public void Should_publish_an_edited_order_as_updated()
         {
-            var request = new OrderEditionRequest("token", EditionCommand.Update, new List<OrderDto> { new OrderDto { Id = 4 } }, default(TransactionMode));
+            var request = new OrderEditionRequest("token", EditionCommand.Update, [new OrderDto { Id = 4 }], default(TransactionMode));
             _service.HandleRequest(request).Returns(new List<OrderCommandResult> { Success(4) });
 
             _contract.Handle(request);
@@ -78,7 +78,7 @@ namespace Oms.Server.Core.Tests.Contracts
         public void Should_answer_a_failed_edition_with_the_submitted_order_and_the_error_and_publish_nothing()
         {
             var submitted = new OrderDto { Quantity = 0 };
-            var request = new OrderEditionRequest("token", EditionCommand.Create, new List<OrderDto> { submitted }, default(TransactionMode));
+            var request = new OrderEditionRequest("token", EditionCommand.Create, [submitted], default(TransactionMode));
             _service.HandleRequest(request).Returns(new List<OrderCommandResult> { Failure(0, "Quantity must be greater than 0") });
 
             var response = _contract.Handle(request);
@@ -97,11 +97,11 @@ namespace Oms.Server.Core.Tests.Contracts
 
             var response = _contract.Handle(request);
 
-            Assert.That(response.ResultList.Select(r => r.Item1), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(response.ResultList.Select(r => r.Item1), Is.EqualTo([1, 2]));
             Assert.That(response.ResultList[0].Item2.ErrorCode, Is.EqualTo(GenericResult.NoErrorCode));
             Assert.That(response.ResultList[1].Item2.ErrorMessage, Is.EqualTo("refused"));
             Assert.That(_published.Single().Item1, Is.EqualTo(ItemOperationType.Update));
-            Assert.That(_published.Single().Item2.Select(o => o.Id), Is.EqualTo(new[] { 1 }));
+            Assert.That(_published.Single().Item2.Select(o => o.Id), Is.EqualTo([1]));
         }
 
         [Test]
@@ -118,7 +118,7 @@ namespace Oms.Server.Core.Tests.Contracts
         [Test]
         public void Should_answer_a_market_request_and_publish_the_orders_as_updated()
         {
-            var request = new OrderMarketRequest("token", OrderMarketCommand.MarketSend, new List<int> { 3 }, default(TransactionMode));
+            var request = new OrderMarketRequest("token", OrderMarketCommand.MarketSend, [3], default(TransactionMode));
             _service.HandleRequest(request).Returns(new List<OrderCommandResult> { Success(3) });
 
             var response = _contract.Handle(request);

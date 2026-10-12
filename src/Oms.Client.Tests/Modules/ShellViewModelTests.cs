@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
+using Oms.Client.Model;
 using Oms.Client.Modules.OrderBlotter;
 using Oms.Client.Modules.OrderEditor;
 using Oms.Client.Modules.Shell;
@@ -159,6 +160,20 @@ namespace Oms.Client.Tests.Modules
             Assert.That(_shell.Notifications, Has.Count.EqualTo(1));
             Assert.That(_shell.Notifications[0].Notification.Title, Is.EqualTo("careful"));
             Assert.That(_shell.Notifications[0].Notification.NotificationType, Is.EqualTo(NotificationType.Warn));
+        }
+
+        [Test]
+        public async Task Should_open_the_order_editor_on_the_order_to_edit()
+        {
+            OrderEditorViewModel opened = null;
+            _windowService.ShowDialogAsync(Arg.Do<object>(vm => opened = vm as OrderEditorViewModel)).Returns(Task.CompletedTask);
+            await _shell.ConnectCommand.ExecuteAsync(null);
+            var order = OrderAdapter.From(new OrderDto { Id = 1, Quantity = 80, Security = new SecurityDto { Id = 1 }, Fund = new FundDto { Id = 1 } });
+
+            await _shell.EditOrderAsync(order);
+
+            Assert.That(opened.IsEditing, Is.True);
+            Assert.That(opened.Quantity, Is.EqualTo(80m));
         }
     }
 }

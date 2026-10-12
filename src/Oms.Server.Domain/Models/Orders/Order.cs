@@ -98,7 +98,7 @@ namespace Oms.Server.Domain.Models.Orders
             return EventLogs.Where(e => e.TriggerStatus.IsValid())
                 .OfType<OrderParameterEventLog<IOrderDealingData>>()
                 .Select(e => e.Parameters.Trade)
-                .Concat(new[] { incomingTrade })
+                .Concat([incomingTrade])
                 .Where(t => t != null && t.TradeState != TradeState.Cancelled)
                 .Distinct();
         }
@@ -106,12 +106,14 @@ namespace Oms.Server.Domain.Models.Orders
         /// <summary>Every trade of the order, cancelled ones included.</summary>
         public IList<ITrade> GetTrades()
         {
-            return EventLogs.Where(e => e.TriggerStatus.IsValid())
-                .OfType<OrderParameterEventLog<IOrderDealingData>>()
-                .Select(e => e.Parameters.Trade)
-                .Where(t => t != null)
-                .Distinct()
-                .ToList();
+            return
+            [
+                .. EventLogs.Where(e => e.TriggerStatus.IsValid())
+                    .OfType<OrderParameterEventLog<IOrderDealingData>>()
+                    .Select(e => e.Parameters.Trade)
+                    .Where(t => t != null)
+                    .Distinct()
+            ];
         }
 
         /// <summary>Quantity executed so far; opposite-side trades count against it.</summary>

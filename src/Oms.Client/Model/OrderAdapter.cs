@@ -37,6 +37,8 @@ namespace Oms.Client.Model
 
         public SecurityDto Security { get; set; }
 
+        public FundDto Fund { get; set; }
+
         public UserDto Owner { get; set; }
 
         public UserDto Creator { get; set; }
@@ -69,6 +71,7 @@ namespace Oms.Client.Model
             ClientOrderRef = dto.ClientOrderRef;
             Way = dto.Way;
             Security = dto.Security;
+            Fund = dto.Fund;
             Owner = dto.Owner;
             Creator = dto.Creator;
             Version = dto.Version;

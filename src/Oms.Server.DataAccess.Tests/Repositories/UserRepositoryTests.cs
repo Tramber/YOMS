@@ -40,7 +40,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             var suffix = Guid.NewGuid().ToString("N");
             var active = new User { Login = "active-" + suffix, IsActive = true };
             var inactive = new User { Login = "inactive-" + suffix, IsActive = false };
-            repository.Add(new[] { active, inactive });
+            repository.Add([active, inactive]);
 
             var logins = repository.GetUserList().Select(u => u.Login).ToList();
 

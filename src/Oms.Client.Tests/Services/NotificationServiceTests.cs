@@ -17,7 +17,7 @@ namespace Oms.Client.Tests.Services
         public void SetUp()
         {
             _messenger = new WeakReferenceMessenger();
-            _received = new List<INotification>();
+            _received = [];
             _recipient = new object();
             _messenger.Register<object, INotification>(_recipient, (_, message) => _received.Add(message));
             _service = new NotificationService(_messenger);
@@ -50,7 +50,7 @@ namespace Oms.Client.Tests.Services
             _service.ProcessError("c", "c");
 
             Assert.That(_received.ConvertAll(n => n.NotificationType),
-                Is.EqualTo(new[] { NotificationType.Info, NotificationType.Warn, NotificationType.Error }));
+                Is.EqualTo([NotificationType.Info, NotificationType.Warn, NotificationType.Error]));
         }
 
         [Test]

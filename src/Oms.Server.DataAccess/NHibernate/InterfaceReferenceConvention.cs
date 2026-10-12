@@ -35,11 +35,12 @@ namespace Oms.Server.DataAccess.NHibernate
 
         // Created together with the order and owned by it: saved with it. The other references (users, funds,
         // securities, ...) are referential data that must already exist.
-        private static readonly HashSet<Type> OwnedByTheReferrer = new HashSet<Type>
-        {
+        private static readonly HashSet<Type> OwnedByTheReferrer =
+        [
             typeof(OrderBasket), typeof(OrderInitialReferentialData), typeof(TriggerContext),
-            typeof(OrderEditableEventParameter), typeof(OrderDealingEventParameter), typeof(TradeEditableEventParameter), typeof(Trade),
-        };
+            typeof(OrderEditableEventParameter), typeof(OrderDealingEventParameter),
+            typeof(TradeEditableEventParameter), typeof(Trade)
+        ];
 
         public void Apply(IManyToOneInstance instance)
         {

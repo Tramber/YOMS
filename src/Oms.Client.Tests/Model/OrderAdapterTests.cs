@@ -115,7 +115,7 @@ namespace Oms.Client.Tests.Model
             Assert.That(session.Login, Is.EqualTo("trader"));
             session.Login = "alice";
 
-            Assert.That(changed, Is.EqualTo(new[] { "Login" }));
+            Assert.That(changed, Is.EqualTo(["Login"]));
         }
     }
 }

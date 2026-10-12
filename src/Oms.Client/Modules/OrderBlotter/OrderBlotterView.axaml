@@ -14,6 +14,7 @@
       </StackPanel>
       <!-- Commands for the selected orders; the server refuses the ones the order state does not allow. -->
       <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Edit" Command="{Binding EditOrderCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
         <Button Content="Recall" Command="{Binding RecallOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
         <Button Content="Delete" Command="{Binding DeleteOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
         <Button Content="Cancel" Command="{Binding CancelOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />

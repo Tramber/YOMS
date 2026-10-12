@@ -40,7 +40,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             _repositories.Funds.Add(_fund);
             _repositories.Securities.Add(_security);
             _contract = new OrderServiceContract(new OrderManagementService(_repositories));
-            _published = new List<Tuple<ItemOperationType, OrderDto[]>>();
+            _published = [];
             _contract.OrderListUpdated += (type, orders) => _published.Add(Tuple.Create(type, orders));
         }
 
@@ -60,7 +60,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
 
         private int CreateOrder()
         {
-            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, new List<OrderDto> { NewOrder() }, default(TransactionMode)));
+            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, [NewOrder()], default(TransactionMode)));
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
             return response.ResultList.Single().Item1.Id;
         }
@@ -76,7 +76,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
 
         private GenericResultDto SendTrade(OrderTradeCommand command, TradeDto trade)
         {
-            return _contract.Handle(new OrderTradeRequest(_login, command, new List<TradeDto> { trade }, default(TransactionMode))).ResultList.Single().Item2;
+            return _contract.Handle(new OrderTradeRequest(_login, command, [trade], default(TransactionMode))).ResultList.Single().Item2;
         }
 
         [Test]
@@ -92,7 +92,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             Assert.That(trade.Id, Is.GreaterThan(0));
             Assert.That(trade.State, Is.EqualTo("New"));
 
-            _contract.Handle(new OrderRequest(_login, OrderStateCommand.StartBooking, new List<int> { id }, default(TransactionMode)));
+            _contract.Handle(new OrderRequest(_login, OrderStateCommand.StartBooking, [id], default(TransactionMode)));
             var booked = SendTrade(OrderTradeCommand.BookTrade, new TradeDto { OrderId = id, Id = trade.Id });
 
             Assert.That(booked.ErrorMessage, Is.Null);
@@ -131,7 +131,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
         [Test]
         public void Should_create_an_order_that_is_saved_and_published()
         {
-            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, new List<OrderDto> { NewOrder() }, default(TransactionMode)));
+            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, [NewOrder()], default(TransactionMode)));
 
             var created = response.ResultList.Single().Item1;
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
@@ -151,8 +151,8 @@ namespace Oms.Server.DataAccess.Tests.Repositories
         public void Should_recall_then_delete_a_draft_across_requests()
         {
             var id = CreateOrder();
-            _contract.Handle(new OrderRequest(_login, OrderStateCommand.Recall, new List<int> { id }, default(TransactionMode)));
-            _contract.Handle(new OrderRequest(_login, OrderStateCommand.Delete, new List<int> { id }, default(TransactionMode)));
+            _contract.Handle(new OrderRequest(_login, OrderStateCommand.Recall, [id], default(TransactionMode)));
+            _contract.Handle(new OrderRequest(_login, OrderStateCommand.Delete, [id], default(TransactionMode)));
 
             Assert.That(_repositories.Orders.GetOrderById(id).OrderState, Is.EqualTo(OrderStateMachine.State.Terminated));
         }
@@ -165,18 +165,19 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             order.SendAccept(new Oms.Server.Domain.Models.EventLogs.TriggerContext(_repositories.Users.GetUserByLogin(_login)));
             _repositories.Orders.Update(order);
 
-            var cancel = _contract.Handle(new OrderRequest(_login, OrderStateCommand.Cancel, new List<int> { id }, default(TransactionMode)));
+            var cancel = _contract.Handle(new OrderRequest(_login, OrderStateCommand.Cancel, [id], default(TransactionMode)));
             Assert.That(cancel.ResultList.Single().Item2.ErrorMessage, Is.Null);
             var pending = _repositories.Orders.GetOrderById(id);
             Assert.That(pending.OrderState, Is.EqualTo(OrderStateMachine.State.Working));
             Assert.That(pending.PendingTrigger, Is.EqualTo(OrderStateMachine.Trigger.Cancel));
 
-            var accept = _contract.Handle(new OrderRequest(_login, OrderStateCommand.AcceptPending, new List<int> { id }, default(TransactionMode)));
+            var accept = _contract.Handle(new OrderRequest(_login, OrderStateCommand.AcceptPending, [id], default(TransactionMode)));
             Assert.That(accept.ResultList.Single().Item2.ErrorMessage, Is.Null);
             var cancelled = _repositories.Orders.GetOrderById(id);
             Assert.That(cancelled.OrderState, Is.EqualTo(OrderStateMachine.State.Terminated));
             Assert.That(cancelled.PendingTrigger, Is.Null);
-            Assert.That(_published.Select(p => p.Item1), Is.EqualTo(new[] { ItemOperationType.Add, ItemOperationType.Update, ItemOperationType.Update }));
+            Assert.That(_published.Select(p => p.Item1), Is.EqualTo([ItemOperationType.Add, ItemOperationType.Update, ItemOperationType.Update
+            ]));
         }
 
         [Test]
@@ -185,7 +186,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             var id = CreateOrder();
             _published.Clear();
 
-            var response = _contract.Handle(new OrderRequest(_login, OrderStateCommand.StartBooking, new List<int> { id }, default(TransactionMode)));
+            var response = _contract.Handle(new OrderRequest(_login, OrderStateCommand.StartBooking, [id], default(TransactionMode)));
 
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Does.Contain("not allowed"));
             Assert.That(_repositories.Orders.GetOrderById(id).EventLogs.Count, Is.EqualTo(1));
@@ -213,7 +214,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             var dto = NewOrder();
             dto.Way = OrderDtoWay.Sell;
 
-            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, new List<OrderDto> { dto }, default(TransactionMode)));
+            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, [dto], default(TransactionMode)));
 
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
             Assert.That(response.ResultList.Single().Item1.Way, Is.EqualTo(OrderDtoWay.Sell));
@@ -223,7 +224,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
         [Test]
         public void Should_refuse_an_unknown_user()
         {
-            var response = _contract.Handle(new OrderEditionRequest("nobody", EditionCommand.Create, new List<OrderDto> { NewOrder() }, default(TransactionMode)));
+            var response = _contract.Handle(new OrderEditionRequest("nobody", EditionCommand.Create, [NewOrder()], default(TransactionMode)));
 
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Does.Contain("Unknown user"));
             Assert.That(_published, Is.Empty);

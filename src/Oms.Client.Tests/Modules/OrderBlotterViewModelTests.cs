@@ -24,6 +24,7 @@ namespace Oms.Client.Tests.Modules
         private INotificationService _notifications;
         private Session _session;
         private OrderBlotterViewModel _blotter;
+        private List<OrderAdapter> _edited;
 
         [SetUp]
         public void SetUp()
@@ -32,7 +33,8 @@ namespace Oms.Client.Tests.Modules
             _notifications = Substitute.For<INotificationService>();
             _session = new Session { Login = "trader" };
             _proxy.GetOrdersAsync().Returns(Task.FromResult(new List<OrderDto>()));
-            _blotter = new OrderBlotterViewModel(_proxy, _notifications, _session);
+            _edited = [];
+            _blotter = new OrderBlotterViewModel(_proxy, _notifications, _session, order => { _edited.Add(order); return Task.CompletedTask; });
         }
 
         private static OrderDto Dto(int id, double quantity = 100, string state = "Working", string status = "New")
@@ -54,7 +56,7 @@ namespace Oms.Client.Tests.Modules
 
         private OrderAdapter[] Rows()
         {
-            return _blotter.OrdersView.Cast<object>().OfType<OrderAdapter>().ToArray();
+            return [.. _blotter.OrdersView.Cast<object>().OfType<OrderAdapter>()];
         }
 
         private async Task LoadAsync(params OrderDto[] orders)
@@ -70,19 +72,22 @@ namespace Oms.Client.Tests.Modules
         private void ServerAnswersState(OrderStateCommand command, params Tuple<int, GenericResultDto>[] results)
         {
             _proxy.SendAsync(Arg.Any<OrderRequest>())
-                .Returns(Task.FromResult(new Response<Tuple<int, GenericResultDto>, OrderStateCommand>(command, results.ToList())));
+                .Returns(Task.FromResult(new Response<Tuple<int, GenericResultDto>, OrderStateCommand>(command,
+                    [.. results])));
         }
 
         private void ServerAnswersMarket(OrderMarketCommand command, params Tuple<int, GenericResultDto>[] results)
         {
             _proxy.SendAsync(Arg.Any<OrderMarketRequest>())
-                .Returns(Task.FromResult(new Response<Tuple<int, GenericResultDto>, OrderMarketCommand>(command, results.ToList())));
+                .Returns(Task.FromResult(new Response<Tuple<int, GenericResultDto>, OrderMarketCommand>(command,
+                    [.. results])));
         }
 
         private void ServerAnswersTrade(OrderTradeCommand command, params Tuple<int, GenericResultDto>[] results)
         {
             _proxy.SendAsync(Arg.Any<OrderTradeRequest>())
-                .Returns(Task.FromResult(new Response<Tuple<int, GenericResultDto>, OrderTradeCommand>(command, results.ToList())));
+                .Returns(Task.FromResult(new Response<Tuple<int, GenericResultDto>, OrderTradeCommand>(command,
+                    [.. results])));
         }
 
         [Test]
@@ -97,7 +102,7 @@ namespace Oms.Client.Tests.Modules
             await LoadAsync(Dto(1, 100), Dto(2, 50, "Draft", "Pending"));
 
             var rows = Rows();
-            Assert.That(rows.Select(r => r.Id), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(rows.Select(r => r.Id), Is.EqualTo([1, 2]));
             Assert.That(rows[0].ClientOrderRef, Is.EqualTo("ref-1"));
             Assert.That(rows[0].SecurityName, Is.EqualTo("ACME"));
             Assert.That(rows[0].Way, Is.EqualTo(OrderDtoWay.Sell));
@@ -128,7 +133,7 @@ namespace Oms.Client.Tests.Modules
 
             await LoadAsync(Dto(1), Dto(3));
 
-            Assert.That(Rows().Select(r => r.Id), Is.EqualTo(new[] { 1, 3 }));
+            Assert.That(Rows().Select(r => r.Id), Is.EqualTo([1, 3]));
             Assert.That(Rows().Single(r => r.Id == 1).GroupId, Is.EqualTo(group));
             Assert.That(Rows().Single(r => r.Id == 3).GroupId, Is.EqualTo(0));
         }
@@ -136,7 +141,7 @@ namespace Oms.Client.Tests.Modules
         [Test]
         public void Should_add_an_order_pushed_by_the_server()
         {
-            _blotter.Apply(ItemOperationType.Add, new[] { Dto(7) });
+            _blotter.Apply(ItemOperationType.Add, [Dto(7)]);
 
             Assert.That(Rows().Single().Id, Is.EqualTo(7));
         }
@@ -149,7 +154,7 @@ namespace Oms.Client.Tests.Modules
             var changed = new List<string>();
             row.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
-            _blotter.Apply(ItemOperationType.Update, new[] { Dto(1, 150, "Working", "CancelPending") });
+            _blotter.Apply(ItemOperationType.Update, [Dto(1, 150, "Working", "CancelPending")]);
 
             Assert.That(Rows().Single(), Is.SameAs(row));
             Assert.That(row.State, Is.EqualTo("Working"));
@@ -161,7 +166,7 @@ namespace Oms.Client.Tests.Modules
         [Test]
         public void Should_show_an_updated_order_it_did_not_know()
         {
-            _blotter.Apply(ItemOperationType.Update, new[] { Dto(9) });
+            _blotter.Apply(ItemOperationType.Update, [Dto(9)]);
 
             Assert.That(Rows().Single().Id, Is.EqualTo(9));
         }
@@ -172,9 +177,9 @@ namespace Oms.Client.Tests.Modules
         {
             await LoadAsync(Dto(1), Dto(2));
 
-            _blotter.Apply(type, new[] { Dto(1), Dto(5) });
+            _blotter.Apply(type, [Dto(1), Dto(5)]);
 
-            Assert.That(Rows().Select(r => r.Id), Is.EqualTo(new[] { 2 }));
+            Assert.That(Rows().Select(r => r.Id), Is.EqualTo([2]));
         }
 
         [Test]
@@ -220,7 +225,7 @@ namespace Oms.Client.Tests.Modules
             await LoadAsync(Dto(1), Dto(2));
 
             _blotter.FilterText = "ClientOrderRef = \"ref-2\"";
-            Assert.That(Rows().Select(r => r.Id), Is.EqualTo(new[] { 2 }));
+            Assert.That(Rows().Select(r => r.Id), Is.EqualTo([2]));
 
             _blotter.FilterText = "Security.IsinCode = \"FR0000000001\"";
             Assert.That(Rows(), Has.Length.EqualTo(2));
@@ -367,13 +372,13 @@ namespace Oms.Client.Tests.Modules
         public async Task Should_book_the_trades_that_are_not_booked_yet()
         {
             var order = Dto(1);
-            order.Trades = new List<TradeDto>
-            {
+            order.Trades =
+            [
                 new TradeDto { Id = 10, OrderId = 1, State = "New" },
                 new TradeDto { Id = 11, OrderId = 1, State = "Booked" },
                 new TradeDto { Id = 12, OrderId = 1, State = "Cancelled" },
-                new TradeDto { Id = 13, OrderId = 1, State = "BookingError" },
-            };
+                new TradeDto { Id = 13, OrderId = 1, State = "BookingError" }
+            ];
             await LoadAsync(order);
             ServerAnswersTrade(OrderTradeCommand.BookTrade, Tuple.Create(1, Ok), Tuple.Create(1, Ok));
 
@@ -408,6 +413,30 @@ namespace Oms.Client.Tests.Modules
             await _blotter.ExecuteOrdersCommand.ExecuteAsync(Rows().ToList());
 
             _notifications.Received(1).Process("Execute: order 2", "not allowed", NotificationType.Error);
+        }
+
+        [Test]
+        public async Task Should_open_the_editor_on_the_single_selected_order()
+        {
+            await LoadAsync(Dto(1), Dto(2));
+
+            await _blotter.EditOrderCommand.ExecuteAsync(Rows().Where(o => o.Id == 2).ToList());
+
+            Assert.That(_edited.Single().Id, Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task Should_ask_for_a_single_order_when_several_or_none_are_selected()
+        {
+            await LoadAsync(Dto(1), Dto(2));
+
+            await _blotter.EditOrderCommand.ExecuteAsync(new List<OrderAdapter>());
+            _notifications.DidNotReceive().Process(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<NotificationType>());
+
+            await _blotter.EditOrderCommand.ExecuteAsync(Rows().ToList());
+
+            Assert.That(_edited, Is.Empty);
+            _notifications.Received(1).Process("Edit", "Select a single order to edit", NotificationType.Error);
         }
     }
 }

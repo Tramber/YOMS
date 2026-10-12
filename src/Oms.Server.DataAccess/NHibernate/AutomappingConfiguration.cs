@@ -19,41 +19,41 @@ namespace Oms.Server.DataAccess.NHibernate
 
         public AutomappingConfiguration()
         {
-            _mappedTypes = new HashSet<Type>
-            {
-                typeof (Order),
-                typeof (OrderBasket),
-                typeof (OrderInitialReferentialData),
-                typeof (Trade),
-                typeof (User),
-                typeof (Fund),
-                typeof (Security),
-                typeof (TriggerContext),
-                typeof (OrderEventLog),
-                typeof (OrderParameterEventLog<IOrderDealingData>),
-                typeof (OrderParameterEventLog<IOrderEditableData>),
-                typeof (TradeEventLog),
-                typeof (TradeParameterEventLog<ITradeEditableData>),
-                typeof (OrderDealingEventParameter),
-                typeof (OrderEditableEventParameter),
-                typeof (TradeEditableEventParameter),
-            };
+            _mappedTypes =
+            [
+                typeof(Order),
+                typeof(OrderBasket),
+                typeof(OrderInitialReferentialData),
+                typeof(Trade),
+                typeof(User),
+                typeof(Fund),
+                typeof(Security),
+                typeof(TriggerContext),
+                typeof(OrderEventLog),
+                typeof(OrderParameterEventLog<IOrderDealingData>),
+                typeof(OrderParameterEventLog<IOrderEditableData>),
+                typeof(TradeEventLog),
+                typeof(TradeParameterEventLog<ITradeEditableData>),
+                typeof(OrderDealingEventParameter),
+                typeof(OrderEditableEventParameter),
+                typeof(TradeEditableEventParameter)
+            ];
 
-            _componentTypes = new HashSet<Type>();
+            _componentTypes = [];
 
-            _isDiscriminatedTypes = new HashSet<Type>
-            {
-                typeof (OrderEventLog),
-            };
+            _isDiscriminatedTypes =
+            [
+                typeof(OrderEventLog)
+            ];
         }
 
         /// <summary>The closed generic event logs; assembly scanning cannot find them.</summary>
         public static readonly Type[] ClosedGenericTypes =
-        {
+        [
             typeof (OrderParameterEventLog<IOrderDealingData>),
             typeof (OrderParameterEventLog<IOrderEditableData>),
-            typeof (TradeParameterEventLog<ITradeEditableData>),
-        };
+            typeof (TradeParameterEventLog<ITradeEditableData>)
+        ];
 
         public override string GetDiscriminatorColumn(Type type)
         {

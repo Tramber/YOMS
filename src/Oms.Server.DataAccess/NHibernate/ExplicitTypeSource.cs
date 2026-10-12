@@ -16,7 +16,7 @@ namespace Oms.Server.DataAccess.NHibernate
 
         public ExplicitTypeSource(Type assemblyMarker, IEnumerable<Type> extraTypes)
         {
-            _types = assemblyMarker.Assembly.GetTypes().Concat(extraTypes).ToList();
+            _types = [.. assemblyMarker.Assembly.GetTypes(), .. extraTypes];
         }
 
         public IEnumerable<Type> GetTypes()
