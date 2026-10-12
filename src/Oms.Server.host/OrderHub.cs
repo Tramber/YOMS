@@ -18,11 +18,11 @@ public class OrderHub : Hub
     }
 
     // SignalR hub methods cannot be overloaded, hence one name per request type.
-    public EditionResponse<OrderDto> HandleOrderEdition(OrderEditionRequest request) => _service.Handle(request);
+    public Response<Tuple<OrderDto, GenericResultDto>, EditionCommand> HandleOrderEdition(OrderEditionRequest request) => _service.Handle(request);
 
     public Response<Tuple<int, GenericResultDto>, OrderStateCommand> HandleOrder(OrderRequest request) => _service.Handle(request);
 
-    public Response<Tuple<int, GenericResultDto>, OrderStateCommand> HandleOrderMarket(OrderMarketRequest request) => _service.Handle(request);
+    public Response<Tuple<int, GenericResultDto>, OrderMarketCommand> HandleOrderMarket(OrderMarketRequest request) => _service.Handle(request);
 
     public Task SubscribeToEvents() => Groups.AddToGroupAsync(Context.ConnectionId, SubscribersGroup);
 

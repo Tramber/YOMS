@@ -1,6 +1,8 @@
 ﻿using System;
+using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Transport.Contracts.Dto;
+using Oms.Transport.Contracts.Messages;
 
 namespace Oms.Server.Core.Extensions
 {
@@ -22,11 +24,36 @@ namespace Oms.Server.Core.Extensions
             {
                 Id = order.Id,
                 PriceLimit = order.PriceLimit,
+                PriceStop = order.PriceStop,
                 Quantity = order.Quantity,
+                Way = order.Side.ToMappingEnum<OrderDtoWay>(),
                 OrderType = order.OrderType.ToMappingEnum<OrderDtoType>(),
+                Validity = order.OrderValidity.ToMappingEnum<OrderDtoValidityType>(),
+                ExpiryDate = order.ExpiryDate,
+                SettlementDate = order.SettlementDate,
                 ClientOrderRef = order.ClientOrderRef,
                 CreationDate = order.CreationDate,
+                Owner = order.Owner == null ? null : order.Owner.ToDto(),
+                Creator = order.Creator == null ? null : order.Creator.ToDto(),
+                Security = order.Security == null ? null : order.Security.ToDto(),
+                Fund = order.Fund == null ? null : order.Fund.ToDto(),
             };
+        }
+
+        public static FundDto ToDto(this IFund fund)
+        {
+            return new FundDto
+            {
+                Id = fund.Id,
+                Name = fund.Name,
+                Portfolio = fund.Portfolio,
+                Depositary = fund.Depositary,
+            };
+        }
+
+        public static GenericResultDto ToDto(this GenericResult result)
+        {
+            return new GenericResultDto(result.ErrorMessage, result.ErrorCode);
         }
 
         public static SecurityDto ToDto(this ISecurity security)
@@ -35,7 +62,7 @@ namespace Oms.Server.Core.Extensions
             {
                 BloombergTicker = security.BloombergTicker,
                 CreationDate = security.CreationDate,
-                Creator = security.Creator.ToDto(),
+                Creator = security.Creator == null ? null : security.Creator.ToDto(),
                 Currency = security.Currency.ToMappingEnum<CurrencyDto>(),
                 Id = security.Id,
                 IsinCode = security.IsinCode,

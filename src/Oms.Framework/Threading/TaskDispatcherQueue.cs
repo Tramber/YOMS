@@ -2,10 +2,6 @@
 
 namespace Oms.Framework.Threading
 {
-    public class TaskDispatcherQueue : TaskDispatcherCollection<ConcurrentQueue<TaskDispatcherWorkItem>>
-    {
-        public TaskDispatcherQueue(int workerCount) : base(workerCount)
-        {
-        }
-    }
+    public class TaskDispatcherQueue(int workerCount)
+        : TaskDispatcherCollection<ConcurrentQueue<TaskDispatcherWorkItem>>(workerCount);
 }

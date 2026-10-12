@@ -6,8 +6,8 @@ namespace Oms.Transport.Contracts.Messages
     {
         protected Request(string token, TCommand command, List<TItem> itemList, TransactionMode transactionMode)
         {
+            Token = token;
             ItemList = itemList;
-            TransactionMode = transactionMode;
             Command = command;
             TransactionMode = transactionMode;
         }

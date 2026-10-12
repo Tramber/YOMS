@@ -1,7 +1,11 @@
-using System;
+﻿using System;
 using NUnit.Framework;
 using Oms.Server.Core.Extensions;
+using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
+using Oms.Server.Domain.Models.EventLogs;
+using Oms.Server.Domain.Models.Funds;
+using Oms.Server.Domain;
 using Oms.Server.Domain.Models.Orders;
 using Oms.Server.Domain.Models.Securities;
 using Oms.Server.Domain.Models.Users;
@@ -78,6 +82,61 @@ namespace Oms.Server.Core.Tests.Extensions
 
             Assert.That(dto.Id, Is.EqualTo(5));
             Assert.That(dto.OrderType, Is.EqualTo(OrderDtoType.Market));
+        }
+
+        [Test]
+        public void Should_map_a_fund()
+        {
+            var dto = new Fund { Id = 4, Name = "Alpha", Portfolio = "P1", Depositary = "Bank" }.ToDto();
+
+            Assert.That(dto.Id, Is.EqualTo(4));
+            Assert.That(dto.Name, Is.EqualTo("Alpha"));
+            Assert.That(dto.Portfolio, Is.EqualTo("P1"));
+            Assert.That(dto.Depositary, Is.EqualTo("Bank"));
+        }
+
+        [Test]
+        public void Should_map_a_result_with_its_error()
+        {
+            var failure = GenericResult.Failure("refused", 7).ToDto();
+            var success = GenericResult.Success().ToDto();
+
+            Assert.That(failure.ErrorMessage, Is.EqualTo("refused"));
+            Assert.That(failure.ErrorCode, Is.EqualTo(7));
+            Assert.That(success.ErrorMessage, Is.Null);
+            Assert.That(success.ErrorCode, Is.EqualTo(GenericResult.NoErrorCode));
+        }
+
+        [Test]
+        public void Should_map_the_data_of_an_order_that_was_sent()
+        {
+            var user = new User { Id = 2, Login = "trader" };
+            var builder = new OrderBuilder()
+                .WithCoreData(user, user, new OrderBasket(), "client-ref")
+                .WithFund(new Fund { Id = 6, Name = "Alpha" })
+                .WithSecurity(new Security { Id = 8, Name = "ACME", Currency = Currency.EUR, Type = SecurityType.Equity })
+                .WithPrices(OrderType.Limit, 100, 12.5, 11)
+                .WithDates(new DateTime(2030, 1, 3), OrderValidityType.Gtd, new DateTime(2030, 2, 1))
+                .WithInitialReferentialData("instCode", SecurityCodeType.Isin, "fundCode", FundCodeType.Other, "folioCode");
+            var order = new Order { Id = 5 };
+            order.SendRequest(new TriggerContext(user), builder.BuildOrderCoreData(), builder.BuildOrderEditableData());
+
+            var dto = order.ToDto();
+
+            Assert.That(dto.Id, Is.EqualTo(5));
+            Assert.That(dto.Quantity, Is.EqualTo(100));
+            Assert.That(dto.PriceLimit, Is.EqualTo(12.5));
+            Assert.That(dto.PriceStop, Is.EqualTo(11));
+            Assert.That(dto.Way, Is.EqualTo(OrderDtoWay.Buy));
+            Assert.That(dto.OrderType, Is.EqualTo(OrderDtoType.Limit));
+            Assert.That(dto.Validity, Is.EqualTo(OrderDtoValidityType.Gtd));
+            Assert.That(dto.SettlementDate, Is.EqualTo(new DateTime(2030, 1, 3)));
+            Assert.That(dto.ExpiryDate, Is.EqualTo(new DateTime(2030, 2, 1)));
+            Assert.That(dto.ClientOrderRef, Is.EqualTo("client-ref"));
+            Assert.That(dto.Owner.Login, Is.EqualTo("trader"));
+            Assert.That(dto.Creator.Login, Is.EqualTo("trader"));
+            Assert.That(dto.Security.Name, Is.EqualTo("ACME"));
+            Assert.That(dto.Fund.Name, Is.EqualTo("Alpha"));
         }
     }
 }

@@ -12,9 +12,9 @@ namespace Oms.Transport.Contracts.Messages
             ErrorCode = errorCode;
         }
 
-        public string ErrorMessage { get; private set; }
+        public string ErrorMessage { get; set; }
 
-        public int ErrorCode { get; private set; }
+        public int ErrorCode { get; set; }
 
     }
 }

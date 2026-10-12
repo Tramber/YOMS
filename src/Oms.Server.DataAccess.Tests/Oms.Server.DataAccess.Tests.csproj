@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Oms.Server.DataAccess\Oms.Server.DataAccess.csproj" />
+    <ProjectReference Include="..\Oms.Server.Core\Oms.Server.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="App.config" CopyToOutputDirectory="PreserveNewest" />

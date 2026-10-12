@@ -6,6 +6,7 @@ using Oms.Server.Domain;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Interfaces.Repository;
+using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Orders;
 using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
@@ -38,64 +39,95 @@ namespace Oms.Server.Core.Services
             _repositoryFacade = repositoryFacade;
         }
 
-        /// <summary>Creates a new order from each DTO of the request (Stash, Create or Update). Not finished: always reports success.</summary>
-        public GenericResult HandleRequest(OrderEditionRequest request)
+        /// <summary>
+        /// Creates (Stash, Create) or updates (Update) the orders described by the request. A created order is saved, an
+        /// updated one is loaded by its id; the DTO's data goes through the usual validation.
+        /// </summary>
+        public IList<OrderCommandResult> HandleRequest(OrderEditionRequest request)
         {
             if (request == null) throw new ArgumentNullException("request");
             var requester = _repositoryFacade.Users.GetUserByLogin(request.Token);
             var orderBasket = new OrderBasket();
-            return OrderHandleRequest(request.Command, request.ItemList.Select(o => CreateEditableCommandTuple(o, requester, orderBasket)));
+            return request.ItemList
+                .Select(dto => Execute(requester, request.Command, dto.Id, () => EditionTarget(request.Command, dto, requester, orderBasket)))
+                .ToList();
         }
 
-        /// <summary>Applies a command to the existing orders listed in the request.</summary>
-        public GenericResult HandleRequest(OrderMarketRequest request)
+        /// <summary>Applies a market command to the existing orders listed in the request.</summary>
+        public IList<OrderCommandResult> HandleRequest(OrderMarketRequest request)
         {
             if (request == null) throw new ArgumentNullException("request");
-            return OrderHandleRequest(request.Command, request.ItemList.Select(CreateMarketCommandTuple));
+            var requester = _repositoryFacade.Users.GetUserByLogin(request.Token);
+            return request.ItemList
+                .Select(id => Execute(requester, request.Command, id, () => new Target { Order = _repositoryFacade.Orders.GetById(id), Dealing = new OrderDealingEventParameter(null) }))
+                .ToList();
         }
 
         /// <summary>Applies a state command (cancel, recall, delete, ...) to the existing orders listed in the request.</summary>
-        public GenericResult HandleRequest(OrderRequest request)
+        public IList<OrderCommandResult> HandleRequest(OrderRequest request)
         {
             if (request == null) throw new ArgumentNullException("request");
-            return OrderHandleRequest(request.Command, request.ItemList.Select(CreateMarketCommandTuple));
+            var requester = _repositoryFacade.Users.GetUserByLogin(request.Token);
+            return request.ItemList
+                .Select(id => Execute(requester, request.Command, id, () => new Target { Order = _repositoryFacade.Orders.GetById(id) }))
+                .ToList();
         }
 
-        private GenericResult OrderHandleRequest(Enum command, IEnumerable<Tuple<Order, IOrderEditableData, IOrderCoreData, IOrderDealingData>> parameters)
+        private OrderCommandResult Execute(IUser requester, Enum command, int orderId, Func<Target> prepare)
         {
-            foreach (var parameter in parameters)
+            if (requester == null)
+                return new OrderCommandResult(orderId, null, GenericResult.Failure("Unknown user"));
+
+            Target target;
+            try
             {
-                var result = OrderCommandMappings[command](parameter.Item1, null, parameter.Item3, parameter.Item2, parameter.Item4);
-                if(result.IsSuccess())
-                    _repositoryFacade.Orders.Update(parameter.Item1);
+                target = prepare();
             }
-            return GenericResult.Success();
+            catch (NotSupportedException ex)
+            {
+                // A DTO value the domain has no equivalent for.
+                return new OrderCommandResult(orderId, null, GenericResult.Failure(ex.Message));
+            }
+            if (target.Order == null)
+                return new OrderCommandResult(orderId, null, GenericResult.FailureFormat("Order {0} not found", orderId));
+
+            var result = OrderCommandMappings[command](target.Order, new TriggerContext(requester), target.Core, target.Editable, target.Dealing);
+            if (result.IsSuccess())
+            {
+                if (target.Order.Id == 0)
+                    _repositoryFacade.Orders.Add(target.Order);
+                else
+                    _repositoryFacade.Orders.Update(target.Order);
+            }
+            return new OrderCommandResult(target.Order.Id, target.Order, result);
         }
 
-        private Tuple<Order, IOrderEditableData, IOrderCoreData, IOrderDealingData> CreateMarketCommandTuple(int orderId)
+        private Target EditionTarget(EditionCommand command, OrderDto orderDto, IUser requester, OrderBasket orderBasket)
         {
-            var order = _repositoryFacade.Orders.GetById(orderId);
-            return new Tuple<Order, IOrderEditableData, IOrderCoreData, IOrderDealingData>(order, null, null, null);
-        }
-
-        private Tuple<Order, IOrderEditableData, IOrderCoreData, IOrderDealingData> CreateStateCommandTuple(int orderId)
-        {
-            var order = _repositoryFacade.Orders.GetById(orderId);
-            return new Tuple<Order, IOrderEditableData, IOrderCoreData, IOrderDealingData>(order, null, null, null);
-        }
-
-        private Tuple<Order, IOrderEditableData, IOrderCoreData, IOrderDealingData> CreateEditableCommandTuple(OrderDto orderDto, IUser requester, OrderBasket orderBasket)
-        {
-            var owner = _repositoryFacade.Users.GetById(orderDto.Owner?.Id ?? 0);
-            var security = _repositoryFacade.Securities.GetById(orderDto.Security?.Id ?? 0);
-            var fund = _repositoryFacade.Funds.GetById(orderDto.Fund?.Id ?? 0);
+            var owner = _repositoryFacade.Users.GetById(orderDto.Owner == null ? 0 : orderDto.Owner.Id);
+            var security = _repositoryFacade.Securities.GetById(orderDto.Security == null ? 0 : orderDto.Security.Id);
+            var fund = _repositoryFacade.Funds.GetById(orderDto.Fund == null ? 0 : orderDto.Fund.Id);
             var orderBuilder = new OrderBuilder()
                 .WithCoreData(requester, owner ?? requester, orderBasket, orderDto.ClientOrderRef)
                 .WithFund(fund)
                 .WithSecurity(security)
                 .WithPrices(orderDto.OrderType.ToMappingEnum<OrderType>(), orderDto.Quantity, orderDto.PriceLimit, orderDto.PriceStop)
                 .WithDates(orderDto.SettlementDate, orderDto.Validity.ToMappingEnum<OrderValidityType>(), orderDto.ExpiryDate);
-            return new Tuple<Order, IOrderEditableData, IOrderCoreData, IOrderDealingData>(new Order(), orderBuilder.BuildOrderEditableData(), orderBuilder.BuildOrderCoreData(), null);
+            return new Target
+            {
+                Order = command == EditionCommand.Update ? _repositoryFacade.Orders.GetById(orderDto.Id) : new Order(),
+                Editable = orderBuilder.BuildOrderEditableData(),
+                Core = orderBuilder.BuildOrderCoreData(),
+            };
+        }
+
+        /// <summary>What a command is applied to, and with which data.</summary>
+        private sealed class Target
+        {
+            public Order Order;
+            public IOrderEditableData Editable;
+            public IOrderCoreData Core;
+            public IOrderDealingData Dealing;
         }
     }
 }

@@ -56,7 +56,7 @@ Oms.Client/
 
 ## Server connection
 
-The server is a SignalR hub at `http://localhost:9001/orders` (see [architecture.md](architecture.md)); method and event names are the constants in `OrderHubMethods` (`Oms.Transport`). `OrderServiceProxy` wraps a `HubConnection` with automatic reconnect: `StartAsync()` connects and calls `SubscribeToEvents`, and the proxy is an `IObservable<Tuple<ItemOperationType, OrderDto[]>>` fed by `OrderListUpdated`. The hub's `Handle*` methods return `null` today, so request/response calls need the server work noted in `AGENTS.md` first.
+The server is a SignalR hub at `http://localhost:9001/orders` (see [architecture.md](architecture.md)); method and event names are the constants in `OrderHubMethods` (`Oms.Transport`). `OrderServiceProxy` wraps a `HubConnection` with automatic reconnect: `StartAsync()` connects and calls `SubscribeToEvents`, and the proxy is an `IObservable<Tuple<ItemOperationType, OrderDto[]>>` fed by `OrderListUpdated`. The hub's `Handle*` methods now answer with one outcome per order, but the client does not call them yet.
 
 ## What changed from the WPF client
 
