@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Oms.Server.Core.Extensions;
+using Oms.Server.Core.Services.Acceptance;
 using Oms.Server.Domain;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
@@ -20,6 +21,7 @@ namespace Oms.Server.Core.Services
     public class OrderManagementService : IOrderManagementService
     {
         private readonly IRepositoryFacade _repositoryFacade;
+        private readonly IAcceptanceService _acceptanceService;
 
         private Dictionary<Enum, Func<Order, ITriggerContext,  IOrderCoreData, IOrderEditableData, IOrderDealingData, GenericResult>> _orderCommandMappings = new Dictionary<Enum, Func<Order, ITriggerContext, IOrderCoreData, IOrderEditableData, IOrderDealingData, GenericResult>>
         {
@@ -36,9 +38,10 @@ namespace Oms.Server.Core.Services
             {OrderStateCommand.RejectPending, (o, c, cd, ed, dd) => o.RejectPending(c)},
         };
 
-        public OrderManagementService(IRepositoryFacade repositoryFacade)
+        public OrderManagementService(IRepositoryFacade repositoryFacade, IAcceptanceService acceptanceService)
         {
             _repositoryFacade = repositoryFacade;
+            _acceptanceService = acceptanceService;
         }
 
         /// <summary>
@@ -124,6 +127,9 @@ namespace Oms.Server.Core.Services
                 return new OrderCommandResult(orderId, null, GenericResult.FailureFormat("Order {0} not found", orderId));
 
             var result = _orderCommandMappings[command](target.Order, new TriggerContext(requester), target.Core, target.Editable, target.Dealing);
+            // A sent order that needs no acceptance goes straight to Working; the order is saved once, in its final state.
+            if (result.IsSuccess() && command.Equals(EditionCommand.Create))
+                result = AutoAccept(target.Order, requester);
             if (result.IsSuccess())
             {
                 if (target.Order.Id == 0)
@@ -132,6 +138,18 @@ namespace Oms.Server.Core.Services
                     _repositoryFacade.Orders.Update(target.Order);
             }
             return new OrderCommandResult(target.Order.Id, target.Order, result);
+        }
+
+        /// <summary>Accepts the order that was just sent when the acceptance service allows it; otherwise it stays in Accepting.</summary>
+        private GenericResult AutoAccept(Order order, IUser requester)
+        {
+            if (_acceptanceService.IsAutoAccepted(order).IsFailure())
+                return GenericResult.Success();
+            // The events of an order are replayed by date: the acceptance must come after the request.
+            var date = DateTime.Now;
+            var sent = order.EventLogs.Max(e => e.Context.Date);
+            if (date <= sent) date = sent.AddTicks(1);
+            return order.SendAccept(new TriggerContext(requester, date));
         }
 
         private OrderCommandResult ExecuteTrade(IUser requester, OrderTradeCommand command, TradeDto dto)

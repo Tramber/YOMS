@@ -7,12 +7,8 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Oms.Client.Services;
-using Oms.Server.Domain.Framework;
-using Oms.Server.Domain.Interfaces.Repository;
-using Oms.Server.Domain.Models.EventLogs;
 using Oms.Transport.Contracts;
 using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
@@ -73,41 +69,67 @@ namespace Oms.Server.host.Tests
         }
 
         [Test]
-        public async Task Should_create_recall_and_delete_an_order_and_push_each_change()
+        public async Task Should_accept_a_new_order_and_cancel_it_in_two_steps_pushing_each_change()
         {
             var created = await CreateOrderAsync();
             Assert.That(created.Id, Is.GreaterThan(0));
-            Assert.That(created.State, Is.EqualTo("Accepting"));
+            Assert.That(created.State, Is.EqualTo("Working"), "a sent order is accepted by the server");
             var add = await PushedAsync(ItemOperationType.Add, created.Id);
             Assert.That(add.Quantity, Is.EqualTo(100));
             Assert.That((await _proxy.GetOrdersAsync()).Select(o => o.Id), Does.Contain(created.Id));
 
-            var recall = await _proxy.SendAsync(new OrderRequest(Login, OrderStateCommand.Recall, [created.Id], default(TransactionMode)));
-            Assert.That(recall.ResultList.Single().Item2.ErrorMessage, Is.Null);
-            Assert.That((await PushedAsync(ItemOperationType.Update, created.Id)).State, Is.EqualTo("Draft"));
+            var cancel = await _proxy.SendAsync(new OrderRequest(Login, OrderStateCommand.Cancel, new List<int> { created.Id }, default(TransactionMode)));
+            Assert.That(cancel.ResultList.Single().Item2.ErrorMessage, Is.Null);
+            await PushedAsync(ItemOperationType.Update, created.Id, o => o.Status == "CancelPending");
 
-            await _proxy.SendAsync(new OrderRequest(Login, OrderStateCommand.Delete, [created.Id], default(TransactionMode)));
-            await PushedAsync(ItemOperationType.Delete, created.Id);
+            await _proxy.SendAsync(new OrderRequest(Login, OrderStateCommand.AcceptPending, new List<int> { created.Id }, default(TransactionMode)));
+            await PushedAsync(ItemOperationType.Update, created.Id, o => o.State == "Terminated");
         }
 
         [Test]
-        public async Task Should_update_an_existing_order_once_the_pending_update_is_accepted()
+        public async Task Should_stash_and_delete_a_draft_pushing_each_change()
         {
-            var created = await CreateOrderAsync();
-            created.Quantity = 250;
-            created.PriceLimit = 9.5;
+            var order = NewOrderDto(await _proxy.GetSecuritiesAsync(), await _proxy.GetFundsAsync());
+            var stash = await _proxy.SendAsync(new OrderEditionRequest(Login, EditionCommand.Stash, new List<OrderDto> { order }, default(TransactionMode)));
+            var id = stash.ResultList.Single().Item1.Id;
+            Assert.That((await PushedAsync(ItemOperationType.Add, id)).State, Is.EqualTo("Draft"));
 
-            var response = await _proxy.SendAsync(new OrderEditionRequest(Login, EditionCommand.Update, [created], default(TransactionMode)));
+            await _proxy.SendAsync(new OrderRequest(Login, OrderStateCommand.Delete, new List<int> { id }, default(TransactionMode)));
+
+            await PushedAsync(ItemOperationType.Delete, id);
+        }
+
+        [Test]
+        public async Task Should_update_a_draft_order_once_the_pending_update_is_accepted()
+        {
+            var order = NewOrderDto(await _proxy.GetSecuritiesAsync(), await _proxy.GetFundsAsync());
+            var stash = await _proxy.SendAsync(new OrderEditionRequest(Login, EditionCommand.Stash, [order], default(TransactionMode)));
+            var draft = stash.ResultList.Single().Item1;
+            draft.Quantity = 250;
+            draft.PriceLimit = 9.5;
+
+            var response = await _proxy.SendAsync(new OrderEditionRequest(Login, EditionCommand.Update, [draft], default(TransactionMode)));
 
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
-            var pending = await PushedAsync(ItemOperationType.Update, created.Id, o => o.Status == "UpdatePending");
+            var pending = await PushedAsync(ItemOperationType.Update, draft.Id, o => o.Status == "UpdatePending");
             Assert.That(pending.Quantity, Is.EqualTo(100), "the order keeps its values until the update is accepted");
 
-            var accept = await _proxy.SendAsync(new OrderRequest(Login, OrderStateCommand.AcceptPending, [created.Id], default(TransactionMode)));
+            var accept = await _proxy.SendAsync(new OrderRequest(Login, OrderStateCommand.AcceptPending, [draft.Id], default(TransactionMode)));
             Assert.That(accept.ResultList.Single().Item2.ErrorMessage, Is.Null);
-            var updated = await PushedAsync(ItemOperationType.Update, created.Id, o => o.Quantity == 250);
+            var updated = await PushedAsync(ItemOperationType.Update, draft.Id, o => o.Quantity == 250);
             Assert.That(updated.PriceLimit, Is.EqualTo(9.5));
             Assert.That(updated.Owner.Login, Is.EqualTo(Login));
+        }
+
+        [Test]
+        public async Task Should_refuse_to_update_an_order_that_is_already_working()
+        {
+            var working = await CreateOrderAsync();
+            working.Quantity = 250;
+
+            var response = await _proxy.SendAsync(new OrderEditionRequest(Login, EditionCommand.Update, [working], default(TransactionMode)));
+
+            Assert.That(response.ResultList.Single().Item2.ErrorMessage, Does.Contain("not allowed"));
         }
 
         [Test]
@@ -116,9 +138,9 @@ namespace Oms.Server.host.Tests
             var id = (await CreateOrderAsync()).Id;
 
             var state = await _proxy.SendAsync(new OrderRequest(Login, OrderStateCommand.StartBooking, [id], default(TransactionMode)));
-            var market = await _proxy.SendAsync(new OrderMarketRequest(Login, OrderMarketCommand.MarketSend, [id], default(TransactionMode)));
+            var market = await _proxy.SendAsync(new OrderMarketRequest(Login, OrderMarketCommand.MarketCancel, [id], default(TransactionMode)));
             var trade = await _proxy.SendAsync(new OrderTradeRequest(Login, OrderTradeCommand.AddTrade,
-                [new TradeDto { OrderId = id, ExecutionQuantity = 10 }], default(TransactionMode)));
+                [new TradeDto { OrderId = id, ExecutionQuantity = 0 }], default(TransactionMode)));
             var unknown = await _proxy.SendAsync(new OrderRequest("nobody", OrderStateCommand.Cancel, [id], default(TransactionMode)));
 
             Assert.That(state.Command, Is.EqualTo(OrderStateCommand.StartBooking));
@@ -133,7 +155,9 @@ namespace Oms.Server.host.Tests
         public async Task Should_execute_and_book_an_order_through_the_hub()
         {
             var id = (await CreateOrderAsync()).Id;
-            AcceptOnTheServer(id);
+            var market = await _proxy.SendAsync(new OrderMarketRequest(Login, OrderMarketCommand.MarketSend, [id], default(TransactionMode)));
+            Assert.That(market.ResultList.Single().Item2.ErrorMessage, Is.Null);
+            await PushedAsync(ItemOperationType.Update, id, o => o.State == "Dealing");
 
             var added = await _proxy.SendAsync(new OrderTradeRequest(Login, OrderTradeCommand.AddTrade,
             [
@@ -154,30 +178,26 @@ namespace Oms.Server.host.Tests
             Assert.That(filled.Trades.Single().State, Is.EqualTo("Booked"));
         }
 
-        private async Task<OrderDto> CreateOrderAsync()
+        private static OrderDto NewOrderDto(List<SecurityDto> securities, List<FundDto> funds)
         {
-            var order = new OrderDto
+            return new OrderDto
             {
                 Quantity = 100,
                 PriceLimit = 12.5,
                 OrderType = OrderDtoType.Limit,
                 Validity = OrderDtoValidityType.Day,
-                Security = new SecurityDto { Id = (await _proxy.GetSecuritiesAsync()).First().Id },
-                Fund = new FundDto { Id = (await _proxy.GetFundsAsync()).First().Id },
+                Security = new SecurityDto { Id = securities.First().Id },
+                Fund = new FundDto { Id = funds.First().Id },
                 ClientOrderRef = "ref-" + Guid.NewGuid().ToString("N"),
             };
-            var response = await _proxy.SendAsync(new OrderEditionRequest(Login, EditionCommand.Create, [order], default(TransactionMode)));
-            Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
-            return response.ResultList.Single().Item1;
         }
 
-        /// <summary>No command takes an order to Working yet (the acceptance is a domain operation), so the test does it on the server.</summary>
-        private void AcceptOnTheServer(int orderId)
+        private async Task<OrderDto> CreateOrderAsync()
         {
-            var repositories = _host.Services.GetRequiredService<IRepositoryFacade>();
-            var order = repositories.Orders.GetOrderById(orderId);
-            Assert.That(order.SendAccept(new TriggerContext(repositories.Users.GetUserByLogin(Login))).IsSuccess(), Is.True);
-            repositories.Orders.Update(order);
+            var order = NewOrderDto(await _proxy.GetSecuritiesAsync(), await _proxy.GetFundsAsync());
+            var response = await _proxy.SendAsync(new OrderEditionRequest(Login, EditionCommand.Create, new List<OrderDto> { order }, default(TransactionMode)));
+            Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
+            return response.ResultList.Single().Item1;
         }
 
         /// <summary>Waits for the change the server pushed for the order.</summary>

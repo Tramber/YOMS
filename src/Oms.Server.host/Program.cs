@@ -12,6 +12,7 @@ using Oms.Server.Core.Contracts;
 using Oms.Server.DataAccess.NHibernate.Repositories;
 using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Core.Services;
+using Oms.Server.Core.Services.Acceptance;
 using Oms.Transport.Contracts;
 
 XmlConfigurator.Configure(LogManager.GetRepository(Assembly.GetEntryAssembly()), new FileInfo(Path.Combine(AppContext.BaseDirectory, "log4net.config")));
@@ -20,6 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://localhost:9001");
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IRepositoryFacade, RepositoryFacade>();
+builder.Services.AddSingleton<IAcceptanceService, AcceptanceService>();
 builder.Services.AddSingleton<IOrderManagementService, OrderManagementService>();
 builder.Services.AddSingleton<OrderServiceContract>();
 builder.Services.AddSingleton<IOrderServiceContract>(sp => sp.GetRequiredService<OrderServiceContract>());

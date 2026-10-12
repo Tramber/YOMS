@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Oms.Server.Core.Contracts;
 using Oms.Server.Core.Services;
+using Oms.Server.Core.Services.Acceptance;
 using Oms.Server.DataAccess.NHibernate.Repositories;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Securities;
@@ -39,7 +40,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             _repositories.Users.Add(user);
             _repositories.Funds.Add(_fund);
             _repositories.Securities.Add(_security);
-            _contract = new OrderServiceContract(new OrderManagementService(_repositories));
+            _contract = new OrderServiceContract(new OrderManagementService(_repositories, new AcceptanceService()));
             _published = [];
             _contract.OrderListUpdated += (type, orders) => _published.Add(Tuple.Create(type, orders));
         }
@@ -65,15 +66,6 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             return response.ResultList.Single().Item1.Id;
         }
 
-        private int CreateWorkingOrder()
-        {
-            var id = CreateOrder();
-            var order = _repositories.Orders.GetOrderById(id);
-            order.SendAccept(new Oms.Server.Domain.Models.EventLogs.TriggerContext(_repositories.Users.GetUserByLogin(_login)));
-            _repositories.Orders.Update(order);
-            return id;
-        }
-
         private GenericResultDto SendTrade(OrderTradeCommand command, TradeDto trade)
         {
             return _contract.Handle(new OrderTradeRequest(_login, command, [trade], default(TransactionMode))).ResultList.Single().Item2;
@@ -82,7 +74,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
         [Test]
         public void Should_execute_and_book_an_order_across_requests()
         {
-            var id = CreateWorkingOrder();
+            var id = CreateOrder();
 
             var added = SendTrade(OrderTradeCommand.AddTrade, new TradeDto { OrderId = id, Way = OrderDtoWay.Buy, ExecutionQuantity = 100, ExecutionAmountNet = 1250 });
             Assert.That(added.ErrorMessage, Is.Null);
@@ -105,7 +97,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
         [Test]
         public void Should_cancel_a_trade_and_put_the_order_back_to_dealing()
         {
-            var id = CreateWorkingOrder();
+            var id = CreateOrder();
             SendTrade(OrderTradeCommand.AddTrade, new TradeDto { OrderId = id, Way = OrderDtoWay.Buy, ExecutionQuantity = 100, ExecutionAmountNet = 1250 });
             var trade = _published.Last().Item2.Single().Trades.Single();
 
@@ -121,7 +113,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
         [Test]
         public void Should_refuse_an_unknown_trade_and_a_trade_on_a_draft_order()
         {
-            var id = CreateWorkingOrder();
+            var id = CreateOrder();
 
             Assert.That(SendTrade(OrderTradeCommand.BookTrade, new TradeDto { OrderId = id, Id = 999999 }).ErrorMessage, Does.Contain("not found"));
             Assert.That(SendTrade(OrderTradeCommand.AddTrade, new TradeDto { OrderId = id, ExecutionQuantity = 0 }).ErrorMessage, Does.Contain("positive"));
@@ -141,17 +133,19 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             Assert.That(created.Creator.Login, Is.EqualTo(_login));
 
             var saved = _repositories.Orders.GetOrderById(created.Id);
-            Assert.That(saved.OrderState, Is.EqualTo(OrderStateMachine.State.Accepting));
+            Assert.That(saved.OrderState, Is.EqualTo(OrderStateMachine.State.Working), "an order is accepted when it is sent");
             Assert.That(saved.ClientOrderRef, Is.EqualTo(created.ClientOrderRef));
             Assert.That(_published.Single().Item1, Is.EqualTo(ItemOperationType.Add));
             Assert.That(_published.Single().Item2.Single().Id, Is.EqualTo(created.Id));
         }
 
         [Test]
-        public void Should_recall_then_delete_a_draft_across_requests()
+        public void Should_stash_then_delete_a_draft_across_requests()
         {
-            var id = CreateOrder();
-            _contract.Handle(new OrderRequest(_login, OrderStateCommand.Recall, [id], default(TransactionMode)));
+            var stash = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Stash, [NewOrder()], default(TransactionMode)));
+            var id = stash.ResultList.Single().Item1.Id;
+            Assert.That(_repositories.Orders.GetOrderById(id).OrderState, Is.EqualTo(OrderStateMachine.State.Draft));
+
             _contract.Handle(new OrderRequest(_login, OrderStateCommand.Delete, [id], default(TransactionMode)));
 
             Assert.That(_repositories.Orders.GetOrderById(id).OrderState, Is.EqualTo(OrderStateMachine.State.Terminated));
@@ -161,9 +155,6 @@ namespace Oms.Server.DataAccess.Tests.Repositories
         public void Should_cancel_a_working_order_in_two_steps_across_requests()
         {
             var id = CreateOrder();
-            var order = _repositories.Orders.GetOrderById(id);
-            order.SendAccept(new Oms.Server.Domain.Models.EventLogs.TriggerContext(_repositories.Users.GetUserByLogin(_login)));
-            _repositories.Orders.Update(order);
 
             var cancel = _contract.Handle(new OrderRequest(_login, OrderStateCommand.Cancel, [id], default(TransactionMode)));
             Assert.That(cancel.ResultList.Single().Item2.ErrorMessage, Is.Null);
@@ -189,7 +180,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             var response = _contract.Handle(new OrderRequest(_login, OrderStateCommand.StartBooking, [id], default(TransactionMode)));
 
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Does.Contain("not allowed"));
-            Assert.That(_repositories.Orders.GetOrderById(id).EventLogs.Count, Is.EqualTo(1));
+            Assert.That(_repositories.Orders.GetOrderById(id).EventLogs.Count, Is.EqualTo(2));
             Assert.That(_published, Is.Empty);
         }
 
@@ -200,7 +191,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
 
             var order = _contract.GetOrders().Single(o => o.Id == id);
 
-            Assert.That(order.State, Is.EqualTo("Accepting"));
+            Assert.That(order.State, Is.EqualTo("Working"));
             Assert.That(order.Status, Is.EqualTo("New"));
             Assert.That(order.RemainingQuantity, Is.EqualTo(100));
             Assert.That(order.Security.Id, Is.EqualTo(_security.Id));

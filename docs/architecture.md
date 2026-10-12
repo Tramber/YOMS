@@ -30,16 +30,16 @@ flowchart LR
 
 1. The client sends a request (`OrderEditionRequest`, `OrderRequest`, `OrderMarketRequest` or `OrderTradeRequest`) to a hub method: `HandleOrderEdition`, `HandleOrder`, `HandleOrderMarket` or `HandleOrderTrade`. SignalR does not allow overloaded hub methods, hence four names.
 2. `OrderHub` forwards to `IOrderServiceContract` (`OrderServiceContract`), which calls `OrderManagementService.HandleRequest`.
-3. `OrderManagementService` resolves the requester from the request token (the user's login; an unknown user fails every order of the request). For each order of the request it loads the order (or builds a new one for Create and Stash), looks up the command (`EditionCommand`, `OrderStateCommand`, `OrderMarketCommand`) in `OrderCommandMappings` and runs the matching `Order` method with the requester as trigger context.
-4. Each call fires a trigger on the order's state machine and returns a `GenericResult`. A successful order is saved (`Add` when new, `Update` otherwise); a failed one is reported and does not stop the others. The service returns one `OrderCommandResult` per order, in request order.
-5. `OrderServiceContract` answers with one outcome per order: `Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>` for edition requests (the order as saved, or as submitted when it failed) and `Response<Tuple<int, GenericResultDto>, ...>` (order id and outcome) for state and market requests.
-6. It then raises `OrderListUpdated` with the orders that changed: Add for created orders, Update for edited, state and market changes, Delete for deleted orders. Nothing is raised when every order failed. Clients call `SubscribeToEvents` to join a SignalR group, and the host forwards the event to it as `OrderListUpdated(ItemOperationType, OrderDto[])`.
+3. `OrderManagementService` resolves the requester from the request token (the user's login; an unknown user fails every order of the request). For each order of the request it loads the order (or builds a new one for Create and Stash), looks up the command (`EditionCommand`, `OrderStateCommand`, `OrderMarketCommand`) in `OrderCommandMappings` and runs the matching `Order` method with the requester as trigger context. Trade requests (`OrderTradeCommand`: `AddTrade`, `CancelTrade`, `BookTrade`) carry the order id and the trade in a `TradeDto`; the service loads the order, finds the trade by id among `Order.GetTrades()` and calls `AddTrade`, `CancelTrade` or `TradeBooked` (a trade that was not sent to booking is first forced to Booked, see the trade life cycle).
+4. Each call fires a trigger on the order's state machine and returns a `GenericResult`. A created order (`Create`) that `IAcceptanceService.IsAutoAccepted` accepts (every order, today) is accepted straight away with `SendAccept`, so it is Working when it is saved; otherwise it stays in Accepting. A successful order is saved (`Add` when new, `Update` otherwise); a failed one is reported and does not stop the others. The service returns one `OrderCommandResult` per order, in request order.
+5. `OrderServiceContract` answers with one outcome per order: `Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>` for edition requests (the order as saved, or as submitted when it failed) and `Response<Tuple<int, GenericResultDto>, ...>` (order id and outcome) for state, market and trade requests.
+6. It then raises `OrderListUpdated` with the orders that changed: Add for created orders, Update for edited orders and for state, market and trade changes, Delete for deleted orders. Nothing is raised when every order failed. Clients call `SubscribeToEvents` to join a SignalR group, and the host forwards the event to it as `OrderListUpdated(ItemOperationType, OrderDto[])`.
 
 ### Queries and the order DTO
 
-Besides the three commands the hub has three queries, without arguments, so that a client can fill itself before it follows the pushed changes: `GetOrders` (every order, with its state), `GetSecurities` (the active securities an order can be placed on, i.e. with a currency and a type) and `GetFunds`.
+Besides the four commands the hub has three queries, without arguments, so that a client can fill itself before it follows the pushed changes: `GetOrders` (every order, with its state), `GetSecurities` (the active securities an order can be placed on, i.e. with a currency and a type) and `GetFunds`.
 
-An `OrderDto` carries the editable data (security, fund, way, type, quantity, prices, validity, dates, client reference), who created and owns it, and what the server computed: `State` (Draft, Accepting, Working, ...), `Status` (New, PartiallyFilled, CancelPending, ...) and `RemainingQuantity`. Both are strings, so a client does not need the domain enums.
+An `OrderDto` carries the editable data (security, fund, way, type, quantity, prices, validity, dates, client reference), who created and owns it, and what the server computed: `State` (Draft, Accepting, Working, ...), `Status` (New, PartiallyFilled, CancelPending, ...) and `RemainingQuantity`. Both are strings, so a client does not need the domain enums. `Trades` lists the executions of the order, cancelled ones included, as `TradeDto` (id, order id, way, quantity, net amount and `State`: New, BookingSent, Booked, Cancelled or BookingError). An update of an order is pending until it is accepted: the DTO keeps the old values and `Status` is `UpdatePending`.
 
 Request messages carry the login of the user in `Token`, the command, the list of items (DTOs or order ids) and a `TransactionMode` that is not used yet.
 
@@ -117,7 +117,7 @@ stateDiagram-v2
 - The mapping override of `Order` ignores the computed members; `Trade` stores its own quantity, amount, state and side. Both map the event logs as lists. A `Trade` is owned by the dealing event parameter that references it, so it is saved with the order.
 - `Microsoft.Data.Sqlite` cannot describe its schema, so reserved-word discovery is turned off.
 
-The provider comes from the `OmsDB` connection string in the host's `App.config` (an Oracle branch exists but needs a .NET provider package). For SQLite the string is the database file, relative to the working directory (`oms.sqlite`). The schema is created once, when that file is missing or empty; it is never dropped or migrated, so delete the file after changing a mapping.
+The provider comes from the `OmsDB` connection string in the host's `App.config`: `SQLite` or `PostgreSQL` (an Oracle branch exists but needs a .NET provider package). For SQLite the string is the database file, relative to the working directory (`oms.sqlite`). The schema is created once, when that file is missing or empty; it is never dropped or migrated. A fingerprint of the DDL the mappings generate is stored in the file (`PRAGMA user_version`) and checked at every start, so a file from another mapping version makes the host fail with a message to delete it. On PostgreSQL, `SchemaUpdate` adds the missing tables at start.
 
 ## Hosting and configuration
 
@@ -131,6 +131,17 @@ The provider comes from the `OmsDB` connection string in the host's `App.config`
 
 There is no authentication: a request is run as the user whose login it carries.
 
+## Tests
+
+| Project | What it runs |
+|---|---|
+| `Oms.Server.Domain.Tests` | The order and trade workflows, validation, event sourcing |
+| `Oms.Server.Core.Tests` | `OrderManagementService`, `OrderServiceContract`, DTO mapping, JSON round trips of the messages |
+| `Oms.Server.DataAccess.Tests` | Repositories and the order service on a real database: SQLite, or PostgreSQL with `OMS_TEST_DB=postgres` (Testcontainers) |
+| `Oms.Server.host.Tests` | The client's `OrderServiceProxy` against the host: in memory (long polling) and on a real loopback port over WebSockets, plus a check that every `OrderHubMethods` name exists on `OrderHub` |
+| `Oms.Client.Tests` | The view models with a fake `IOrderServiceProxy` |
+| `Oms.Framework.Tests` | The task dispatchers |
+
 ## Known gaps
 
-See the [GitHub issues](https://github.com/Tramber/YOMS/issues).
+Known problems, missing features and technical debt are tracked in the [GitHub issues](https://github.com/Tramber/YOMS/issues).

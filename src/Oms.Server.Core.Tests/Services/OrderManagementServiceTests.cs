@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using NSubstitute;
 using NUnit.Framework;
 using Oms.Server.Core.Services;
+using Oms.Server.Core.Services.Acceptance;
 using Oms.Server.Domain;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
@@ -29,6 +30,7 @@ namespace Oms.Server.Core.Tests.Services
         private ISecurityRepository _securities;
         private IFundRepository _funds;
         private User _user;
+        private IAcceptanceService _acceptance;
         private OrderManagementService _service;
 
         [SetUp]
@@ -47,7 +49,9 @@ namespace Oms.Server.Core.Tests.Services
             _users.GetUserByLogin("token").Returns(_user);
             _securities.GetById(1).Returns(new Security { Id = 1 });
             _funds.GetById(1).Returns(new Fund { Id = 1 });
-            _service = new OrderManagementService(_repositories);
+            _acceptance = Substitute.For<IAcceptanceService>();
+            _acceptance.IsAutoAccepted(Arg.Any<IOrder>()).Returns(GenericResult.Success());
+            _service = new OrderManagementService(_repositories, _acceptance);
         }
 
         private Order AcceptingOrder(int id)
@@ -195,18 +199,39 @@ namespace Oms.Server.Core.Tests.Services
         }
 
         [Test]
-        public void Should_create_save_and_send_the_new_order_for_acceptance()
+        public void Should_create_save_and_accept_the_new_order()
         {
             var results = _service.HandleRequest(Edition(EditionCommand.Create, Dto(100)));
 
             var result = results.Single();
             Assert.That(result.Result.IsSuccess(), Is.True, result.Result.ErrorMessage);
-            Assert.That(result.Order.OrderState, Is.EqualTo(OrderStateMachine.State.Accepting));
+            Assert.That(result.Order.OrderState, Is.EqualTo(OrderStateMachine.State.Working));
             Assert.That(result.Order.Quantity, Is.EqualTo(100));
             Assert.That(result.Order.ClientOrderRef, Is.EqualTo("client-ref"));
             Assert.That(result.Order.Creator, Is.SameAs(_user));
             _orders.Received(1).Add(result.Order);
             _orders.DidNotReceive().Update(Arg.Any<Order>());
+        }
+
+        [Test]
+        public void Should_leave_the_new_order_in_accepting_when_it_is_not_auto_accepted()
+        {
+            _acceptance.IsAutoAccepted(Arg.Any<IOrder>()).Returns(GenericResult.Failure("needs a manual acceptance"));
+
+            var result = _service.HandleRequest(Edition(EditionCommand.Create, Dto(100))).Single();
+
+            Assert.That(result.Result.IsSuccess(), Is.True, result.Result.ErrorMessage);
+            Assert.That(result.Order.OrderState, Is.EqualTo(OrderStateMachine.State.Accepting));
+            _orders.Received(1).Add(result.Order);
+        }
+
+        [Test]
+        public void Should_not_accept_a_stashed_order()
+        {
+            var result = _service.HandleRequest(Edition(EditionCommand.Stash, Dto(100))).Single();
+
+            Assert.That(result.Order.OrderState, Is.EqualTo(OrderStateMachine.State.Draft));
+            _acceptance.DidNotReceive().IsAutoAccepted(Arg.Any<IOrder>());
         }
 
         [Test]
