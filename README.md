@@ -14,6 +14,7 @@ Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence
 | `Oms.Server.host` | ASP.NET Core host exposing the SignalR `OrderHub` at `http://localhost:9001/orders` |
 | `Oms.Transport` | DTOs, messages and the shared service contract |
 | `Oms.Client` | WPF client (CommunityToolkit.Mvvm, Microsoft DI, MahApps.Metro); Windows only |
+| `Oms.Client.Avalonia` | Cross-platform UI proof of concept (Avalonia); runs on macOS, see [`docs/avalonia-poc.md`](docs/avalonia-poc.md) |
 | `Oms.Framework` | Shared utilities |
 
 See [`docs/architecture.md`](docs/architecture.md) for the server architecture, request flow and order workflow, and [`docs/client.md`](docs/client.md) for the WPF client.
