@@ -38,13 +38,13 @@ In the client, keep the login `trader` and press **Connect**, then **Create Orde
 | `Oms.Client` | Avalonia desktop client (CommunityToolkit.Mvvm, Microsoft DI); runs on Windows, macOS and Linux |
 | `Oms.Framework` | Shared utilities (task dispatchers) |
 
-Each of these has a `*.Tests` project (NUnit) except `Oms.Transport`, which is covered by the tests of the projects that use it. `Oms.Server.host.Tests` runs the client's `OrderServiceProxy` against the host in memory. `Oms.Server.DataAccess.Tests` runs the repositories and the order service against a real SQLite file.
+Each of these has a `*.Tests` project (NUnit) except `Oms.Transport`, which is covered by the tests of the projects that use it. `Oms.Server.host.Tests` runs the client's `OrderServiceProxy` against the host, in memory and on a real loopback port. `Oms.Server.DataAccess.Tests` runs the repositories and the order service against a real SQLite file.
 
 ## Documentation
 
 - [`docs/architecture.md`](docs/architecture.md): components, request flow, the order model (event sourcing), the order and trade workflows, persistence, hosting and configuration.
 - [`docs/client.md`](docs/client.md): using the client, its modules and its link to the server.
-- `AGENTS.md` (also read by `CLAUDE.md`): commands, conventions and known issues, for people and coding agents.
+- `AGENTS.md` (also read by `CLAUDE.md`): commands and conventions, for people and coding agents. Known problems are tracked in the GitHub issues.
 
 ## Build and test
 
