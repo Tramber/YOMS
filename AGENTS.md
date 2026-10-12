@@ -20,6 +20,7 @@ The server writes `oms.sqlite` in its working directory and seeds demo data on a
 - Transport is SignalR (`OrderHub`). Hub methods cannot be overloaded, so each request type has its own method name; shared names are in `OrderHubMethods`. Messages go through System.Text.Json: a constructor parameter must match the name of a property, and a DTO property needs a public setter (`MessageSerializationTests` checks the round trip).
 - Client view models talk to the server only through `IOrderServiceProxy` and report problems with `INotificationService`; keep them free of SignalR types so they can be tested with a fake.
 - `Oms.Server.Domain/Workflow/OrderStateMachine.cs` is generated from `OrderStateMachine.stateless`: edit the designer file, not the C#. Custom logic goes in `OrderStateMachine.Custom.cs`.
+- An Update (or Cancel) of an order is pending: the order keeps its values (status `UpdatePending` / `CancelPending`) until Accept pending or Reject pending, so the client only shows new values after the acceptance.
 - Persistence: NHibernate maps the domain through `NHibernateHelper` (automapping). Interface-typed associations are pointed to their entity class by `InterfaceReferenceConvention`; the generic event logs (`OrderParameterEventLog<IOrderEditableData>`, ...) are added by `ExplicitTypeSource` because assembly scanning cannot find closed generics. The SQLite schema is created once, when the database file is missing or empty (never dropped or migrated), so delete `oms.sqlite` after changing a mapping. A fingerprint of the generated DDL is stored in the file (`PRAGMA user_version`); a file from another mapping version makes the host fail at start with a message saying so. A `PostgreSQL` provider is also supported (`SchemaUpdate` adds missing tables); `OMS_TEST_DB=postgres dotnet test Oms.Server.DataAccess.Tests` runs the persistence tests against a Testcontainers PostgreSQL (needs Docker).
 - The SignalR layer is tested in `Oms.Server.host.Tests`: the real client `OrderServiceProxy` against the host running in memory (`WebApplicationFactory`, long polling, a SQLite file), a check that every `OrderHubMethods` name exists on `OrderHub`, and `LiveSignalRTests`, the same host on a real loopback port (Kestrel) over WebSockets, including Unsubscribe. Keep `Program` public (`public partial class Program`) for it.
 
@@ -32,17 +33,7 @@ The server writes `oms.sqlite` in its working directory and seeds demo data on a
 
 ## Known issues
 
-Each open GitHub issue has an entry here, and an entry goes away when its issue is closed (see "GitHub issues").
-
-- No authentication (#10): requests identify the user by login (`Request.Token`) and the server trusts it.
-- Parts of the SignalR layer are untested (#12): the Avalonia UI itself, and the pushed-change path onto the UI thread. The client has not been run by hand against a live server.
-- The PostgreSQL persistence tests are not run in CI (#14).
-- No form to enter an execution (#23): the client's Execute button trades what remains of an order at its limit price.
-- No booking system (#24): `BookTrade` forces a new trade to booked by hand.
-- The order editor lacks stop price, settlement and expiry dates (#25), so editing an order cannot change them.
-- No database migrations (#26): see Persistence in "Conventions".
-
-Editing an order sends `EditionCommand.Update`, which the server keeps pending (status `UpdatePending`, values unchanged) until Accept pending or Reject pending. This is the designed behaviour, not an issue.
+The [GitHub issues](https://github.com/Tramber/YOMS/issues) are the only list of known problems, missing features and technical debt: read them before starting work, and do not copy them into this file. When you find a problem you are not fixing now, or a limit worth tracking, open an issue for it (format below) after checking that it is not already there.
 
 ## GitHub issues
 
@@ -64,7 +55,7 @@ One problem or task per issue, so each can be closed by one PR. Search the open 
 
 **Lifecycle:**
 - A PR that fixes an issue says `Closes #n` in its description.
-- Keep "Known issues" above in sync: one entry (with the issue number) per open issue, removed when the issue is closed.
+- The issues are the golden source for what is wrong or missing: do not list them in `AGENTS.md`, `README.md` or `docs/`; refer to them by number (`#12`) when needed.
 - Edit the issue instead of adding a comment when its scope changes; use comments for discussion and progress.
 - Do not put secrets, personal data or customer content in an issue.
 

@@ -133,4 +133,4 @@ There is no authentication: a request is run as the user whose login it carries.
 
 ## Known gaps
 
-See `AGENTS.md`. In short: no authentication and no database migrations; there is no booking system (`BookTrade` forces trades to booked by hand); and there is no query for the event log of a single order.
+See the [GitHub issues](https://github.com/Tramber/YOMS/issues).

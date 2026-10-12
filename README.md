@@ -44,7 +44,7 @@ Each of these has a `*.Tests` project (NUnit) except `Oms.Transport`, which is c
 
 - [`docs/architecture.md`](docs/architecture.md): components, request flow, the order model (event sourcing), the order and trade workflows, persistence, hosting and configuration.
 - [`docs/client.md`](docs/client.md): using the client, its modules and its link to the server.
-- `AGENTS.md` (also read by `CLAUDE.md`): commands, conventions and known issues, for people and coding agents.
+- `AGENTS.md` (also read by `CLAUDE.md`): commands and conventions, for people and coding agents. Known problems are tracked in the GitHub issues.
 
 ## Build and test
 
