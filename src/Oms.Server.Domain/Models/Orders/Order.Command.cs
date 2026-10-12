@@ -1,13 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Diagnostics.Eventing.Reader;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
@@ -21,16 +13,19 @@ namespace Oms.Server.Domain.Models.Orders
     {
         private OrderData _workingData;
 
+        /// <summary>Validates the core and editable data and saves the order as a draft (Undefined to Draft).</summary>
         public GenericResult Create(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
             return HandleEditionCommand(OrderStateMachine.Trigger.Create, context, editableData, coreData);
         }
 
+        /// <summary>Validates the data and sends the order for acceptance (Undefined or Draft to Accepting).</summary>
         public GenericResult SendRequest(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
             return HandleEditionCommand(OrderStateMachine.Trigger.SendRequest, context, editableData, coreData);
         }
 
+        /// <summary>Edits the order data. Update is a pending command: it is logged as Pending and only applied once <see cref="AcceptPending"/> is called.</summary>
         public GenericResult Update(ITriggerContext context, IOrderCoreData coreData, IOrderEditableData editableData)
         {
             return HandleEditionCommand(OrderStateMachine.Trigger.Update, context, editableData, coreData);
@@ -38,11 +33,13 @@ namespace Oms.Server.Domain.Models.Orders
 
         #region Simple Order State actions
 
+        /// <summary>Requests the cancellation of the order. Cancel is a pending command: the order moves to Terminated only once <see cref="AcceptPending"/> is called.</summary>
         public GenericResult Cancel(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.Cancel, context);
         }
 
+        /// <summary>Validates the core and editable data, then runs an editing trigger (Create, SendRequest or Update) with them.</summary>
         public GenericResult HandleEditionCommand(OrderStateMachine.Trigger trigger,
             ITriggerContext context,
             IOrderEditableData editableData = null,
@@ -58,30 +55,36 @@ namespace Oms.Server.Domain.Models.Orders
             return resultCore;
         }
 
+        /// <summary>Accepts the pending Cancel or Update and applies it. Fails when nothing is pending.</summary>
         public GenericResult AcceptPending(ITriggerContext context, IOrderEditableData editableData = null, IOrderDealingData dealingData = null)
         {
             return HandlePendingReplyCommand(true, context, editableData, dealingData);
         }
 
+        /// <summary>Rejects the pending Cancel or Update; the order keeps its state. Fails when nothing is pending.</summary>
         public GenericResult RejectPending(ITriggerContext context, IOrderEditableData editableData = null, IOrderDealingData dealingData = null)
         {
             return HandlePendingReplyCommand(false, context, editableData, dealingData);
         }
 
+        /// <summary>Deletes a draft (Draft to Terminated).</summary>
         public GenericResult Delete(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.Delete, context);
         }
+        /// <summary>Takes the order back from acceptance to edit it again (Accepting to Draft).</summary>
         public GenericResult Recall(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.Recall, context);
         }
 
+        /// <summary>Starts the booking of a fully executed order (Validating to Booking).</summary>
         public GenericResult StartBooking(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.StartBooking, context);
         }
 
+        /// <summary>Sends the order for acceptance without changing its data (Undefined or Draft to Accepting).</summary>
         public GenericResult SendRequest(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.SendRequest, context);
@@ -92,10 +95,12 @@ namespace Oms.Server.Domain.Models.Orders
             return HandleCommand(OrderStateMachine.Trigger.SendRequest, context, editableData, null, coreData);
         }
 
+        /// <summary>Records that the order was refused (Accepting to Terminated).</summary>
         public GenericResult SendReject(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.SendReject, context);
         }
+        /// <summary>Records that the order was accepted (Accepting to Working).</summary>
         public GenericResult SendAccept(ITriggerContext context)
         {
             return HandleCommand(OrderStateMachine.Trigger.SendAccept, context);
@@ -104,11 +109,13 @@ namespace Oms.Server.Domain.Models.Orders
 
         #region Market send actions
 
+        /// <summary>Sends the order to the market (Working or Dealing to Dealing). The dealing data describes the route.</summary>
         public GenericResult MarketSend(ITriggerContext context, IOrderDealingData dealingData)
         {
             return HandleCommand(OrderStateMachine.Trigger.MarketSend, context, dealingData: dealingData);
         }
 
+        /// <summary>Cancels the order at the market while it stays in Dealing.</summary>
         public GenericResult MarketCancel(ITriggerContext context, IOrderDealingData dealingData)
         {
             return HandleCommand(OrderStateMachine.Trigger.MarketCancel, context, dealingData: dealingData);
@@ -117,19 +124,22 @@ namespace Oms.Server.Domain.Models.Orders
         #endregion
 
         #region Trade actions
+        /// <summary>Records that a trade was booked. Not finished: the booking outcome is still a TODO.</summary>
         public GenericResult TradeBooked(ITriggerContext context, ITrade trade)
         {
             return HandleTradeCommand(OrderStateMachine.Trigger.TradeBooked, context, trade);
         }
 
+        /// <summary>Records an execution on the order. Cannot succeed yet: the Dealing/Validating transitions have no guard clauses wired.</summary>
         public GenericResult AddTrade(ITriggerContext context, ITrade trade)
         {
             return HandleTradeCommand(OrderStateMachine.Trigger.AddTrade, context, trade);
         }
 
+        /// <summary>Cancels an execution of the order. Works from Dealing; from Validating and Booking the state machine still lacks guards.</summary>
         public GenericResult CancelTrade(ITriggerContext context, ITrade trade)
         {
-            return HandleTradeCommand(OrderStateMachine.Trigger.AddTrade, context, trade);
+            return HandleTradeCommand(OrderStateMachine.Trigger.CancelTrade, context, trade);
         }
         #endregion
 
@@ -157,7 +167,7 @@ namespace Oms.Server.Domain.Models.Orders
             {
                 if (_workingData.PendingTrigger != null)
                 {
-                    if(triggerStatus.IsPending())
+                    if(!triggerStatus.IsPendingReply())
                         return GenericResult.FailureFormat("There is already a {0} pending command. You must handle it before", _workingData.PendingTrigger);
                     if(trigger != _workingData.PendingTrigger)
                         return GenericResult.FailureFormat("There is a {0} pending not a {1}. You cannot {0} it", _workingData.PendingTrigger, trigger, triggerStatus);

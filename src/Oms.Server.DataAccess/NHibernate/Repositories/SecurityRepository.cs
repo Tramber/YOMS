@@ -2,13 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using NHibernate.Proxy;
-using Oms.Server.Domain.Interfaces;
 using Oms.Server.Domain.Interfaces.Repository;
-using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Securities;
 
 namespace Oms.Server.DataAccess.NHibernate.Repositories

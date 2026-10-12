@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Messaging;
 
 namespace Oms.Client.Services.Notifications
 {
+    /// <summary>Sends notifications on the <see cref="IMessenger"/>.</summary>
     public class NotificationService : INotificationService
     {
         private readonly IMessenger _messenger;

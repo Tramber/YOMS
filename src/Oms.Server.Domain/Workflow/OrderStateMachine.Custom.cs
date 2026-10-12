@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Stateless;
+﻿using Stateless;
 
 namespace Oms.Server.Domain.Workflow
 {
@@ -11,6 +6,7 @@ namespace Oms.Server.Domain.Workflow
     {
         private readonly StateMachine<State, Trigger>.TriggerWithParameters<State> _initializeTrigger = new StateMachine<State, Trigger>.TriggerWithParameters<State>(Trigger.Initialize);
 
+        /// <summary>Creates a state machine in Undefined that can be moved to any state with <see cref="Initialize"/>, to resume an order from its event log.</summary>
         public static OrderStateMachine CreateInitializable()
         {
             var result = new OrderStateMachine();
@@ -18,11 +14,13 @@ namespace Oms.Server.Domain.Workflow
             return result;
         }
 
+        /// <summary>Puts the machine in the given state without running entry or exit actions. Only valid while it is still Undefined.</summary>
         public void Initialize(State state)
         {
             stateMachine.Fire(_initializeTrigger, state);
         }
 
+        /// <summary>True when the trigger is allowed in the current state.</summary>
         public bool CanFireTrigger(Trigger trigger)
         {
             return stateMachine.CanFire(trigger);

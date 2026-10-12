@@ -10,7 +10,6 @@ namespace Oms.Server.Domain.Validation
             RuleFor(o => o.CreationDate).NotEmpty();
             RuleFor(o => o.Creator).NotEmpty();
             RuleFor(o => o.Owner).NotEmpty();
-            RuleFor(o => o.IsAutoAccepted).NotEmpty();
         }
     }
 

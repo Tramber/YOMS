@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Oms.Transport.Contracts.Dto;
 
 
 namespace Oms.Client.Model
 {
+    /// <summary>Bindable order row of the blotter. <c>GroupId</c> 0 means not grouped.</summary>
     public class OrderAdapter : ObservableObject
     {
         private double _quantity;

@@ -5,6 +5,7 @@ using System;
 
 namespace Oms.Transport.Contracts
 {
+    /// <summary>Operations a client can ask the server for. Shared by the server implementation and the hub.</summary>
     public interface IOrderServiceContract
     {
         EditionResponse<OrderDto> Handle(OrderEditionRequest request);

@@ -1,15 +1,16 @@
 using System;
 using Oms.Server.Domain.Interfaces.Models;
-using Oms.Server.Domain.Models.Users;
 
 namespace Oms.Server.Domain.Models.EventLogs
 {
+    /// <summary>Who fired a trigger, when and from which platform.</summary>
     public class TriggerContext : ITriggerContext
     {
         public TriggerContext()
         {
         }
 
+        /// <summary>Context for the given user; the date defaults to now.</summary>
         public TriggerContext(IUser user, DateTime? date = null, string plateformOrigin = null)
         {
             User = user;

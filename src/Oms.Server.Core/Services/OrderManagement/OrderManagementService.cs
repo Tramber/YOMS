@@ -1,26 +1,19 @@
 ﻿using System;
-using System.CodeDom;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Dynamic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Oms.Server.Core.Extensions;
 using Oms.Server.Domain;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Interfaces.Repository;
-using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Orders;
-using Oms.Transport.Contracts;
 using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
 using Oms.Transport.Contracts.Messages.Orders;
 
 namespace Oms.Server.Core.Services
 {
+    /// <summary>Application service behind the order requests: loads or builds the orders, applies the requested command and saves the ones that succeeded.</summary>
     public class OrderManagementService : IOrderManagementService
     {
         private readonly IRepositoryFacade _repositoryFacade;
@@ -45,23 +38,26 @@ namespace Oms.Server.Core.Services
             _repositoryFacade = repositoryFacade;
         }
 
+        /// <summary>Creates a new order from each DTO of the request (Stash, Create or Update). Not finished: always reports success.</summary>
         public GenericResult HandleRequest(OrderEditionRequest request)
         {
-            Contract.Requires<ArgumentNullException>(request != null, "request != null");
+            if (request == null) throw new ArgumentNullException("request");
             var requester = _repositoryFacade.Users.GetUserByLogin(request.Token);
             var orderBasket = new OrderBasket();
             return OrderHandleRequest(request.Command, request.ItemList.Select(o => CreateEditableCommandTuple(o, requester, orderBasket)));
         }
 
+        /// <summary>Applies a command to the existing orders listed in the request.</summary>
         public GenericResult HandleRequest(OrderMarketRequest request)
         {
-            Contract.Requires<ArgumentNullException>(request != null, "request != null");
+            if (request == null) throw new ArgumentNullException("request");
             return OrderHandleRequest(request.Command, request.ItemList.Select(CreateMarketCommandTuple));
         }
 
+        /// <summary>Applies a state command (cancel, recall, delete, ...) to the existing orders listed in the request.</summary>
         public GenericResult HandleRequest(OrderRequest request)
         {
-            Contract.Requires<ArgumentNullException>(request != null, "request != null");
+            if (request == null) throw new ArgumentNullException("request");
             return OrderHandleRequest(request.Command, request.ItemList.Select(CreateMarketCommandTuple));
         }
 
@@ -90,9 +86,9 @@ namespace Oms.Server.Core.Services
 
         private Tuple<Order, IOrderEditableData, IOrderCoreData, IOrderDealingData> CreateEditableCommandTuple(OrderDto orderDto, IUser requester, OrderBasket orderBasket)
         {
-            var owner = _repositoryFacade.Users.GetById(orderDto.Owner == null ? 0 : orderDto.Owner.Id);
-            var security = _repositoryFacade.Securities.GetById(orderDto.Security == null ? 0 : orderDto.Security.Id);
-            var fund = _repositoryFacade.Funds.GetById(orderDto.Fund == null ? 0 : orderDto.Fund.Id);
+            var owner = _repositoryFacade.Users.GetById(orderDto.Owner?.Id ?? 0);
+            var security = _repositoryFacade.Securities.GetById(orderDto.Security?.Id ?? 0);
+            var fund = _repositoryFacade.Funds.GetById(orderDto.Fund?.Id ?? 0);
             var orderBuilder = new OrderBuilder()
                 .WithCoreData(requester, owner ?? requester, orderBasket, orderDto.ClientOrderRef)
                 .WithFund(fund)

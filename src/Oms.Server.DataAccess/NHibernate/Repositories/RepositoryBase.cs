@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using NHibernate.Criterion;
-using Oms.Server.Domain;
-using Oms.Server.Domain.Interfaces;
 using Oms.Server.Domain.Interfaces.Repository;
 
 namespace Oms.Server.DataAccess.NHibernate.Repositories
@@ -92,6 +86,7 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
             }
         }
 
+        /// <summary>Entities whose property equals the value.</summary>
         public IList<T> GetByColumn(string propertyName, object columnValue)
         {
             using (var session = NHibernateHelper.Instance.OpenSession())

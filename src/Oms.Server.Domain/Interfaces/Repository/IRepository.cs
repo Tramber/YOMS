@@ -2,6 +2,7 @@
 
 namespace Oms.Server.Domain.Interfaces.Repository
 {
+    /// <summary>Persistence of one entity type. Methods open their own session and transaction.</summary>
     public interface IRepository<T>
     {
         void Add(T entity);

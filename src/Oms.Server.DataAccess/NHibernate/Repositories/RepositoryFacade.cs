@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Oms.Server.Domain.Interfaces;
-using Oms.Server.Domain.Interfaces.Repository;
+﻿using Oms.Server.Domain.Interfaces.Repository;
 
 namespace Oms.Server.DataAccess.NHibernate.Repositories
 {
+    /// <summary>NHibernate repositories behind <see cref="IRepositoryFacade"/>.</summary>
     public class RepositoryFacade : IRepositoryFacade
     {
         public RepositoryFacade()

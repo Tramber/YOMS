@@ -1,5 +1,4 @@
-﻿using Oms.Server.Domain.Interfaces;
-using Oms.Server.Domain.Interfaces.Models;
+﻿using Oms.Server.Domain.Interfaces.Models;
 
 namespace Oms.Server.Domain.Models.Users
 {

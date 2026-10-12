@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using NUnit.Framework;
 using Oms.Server.Domain.Framework;
+using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Orders;
 using Oms.Server.Domain.Models.Securities;
+using Oms.Server.Domain.Models.Trades;
 using Oms.Server.Domain.Models.Users;
 using Oms.Server.Domain.Workflow;
 
@@ -68,5 +66,46 @@ namespace Oms.Server.Domain.Tests.Models.Orders
             return order.OrderState;
         }
 
+        // Validating and Booking are not covered: the state machine has two CancelTrade targets there
+        // (Dealing or staying put) and no guard clauses to choose between them yet.
+        [Test]
+        public void Should_cancel_a_trade_when_the_order_is_dealing()
+        {
+            var order = CreateOrder(OrderStateMachine.State.Dealing);
+            var trade = new Trade();
+            trade.Create(new TriggerContext(), new TradeEditableEventParameter { ExecutionQuantity = 100 });
+
+            var result = order.CancelTrade(new TriggerContext(), trade);
+
+            Assert.That(result.IsSuccess(), Is.True, result.ErrorMessage);
+            Assert.That(order.OrderState, Is.EqualTo(OrderStateMachine.State.Dealing));
+            var lastEvent = order.EventLogs.Last();
+            Assert.That(lastEvent.Trigger, Is.EqualTo(OrderStateMachine.Trigger.CancelTrade));
+            Assert.That(((OrderParameterEventLog<IOrderDealingData>)lastEvent).Parameters.Trade, Is.SameAs(trade));
+        }
+
+        [Test]
+        public void Should_refuse_to_cancel_a_trade_when_the_order_is_working()
+        {
+            var order = CreateOrder(OrderStateMachine.State.Working);
+            var eventCount = order.EventLogs.Count;
+
+            var result = order.CancelTrade(new TriggerContext(), new Trade());
+
+            Assert.That(result.IsFailure(), Is.True);
+            Assert.That(order.OrderState, Is.EqualTo(OrderStateMachine.State.Working));
+            Assert.That(order.EventLogs.Count, Is.EqualTo(eventCount));
+        }
+
+        private static Order CreateOrder(OrderStateMachine.State state)
+        {
+            return new OrderBuilderForTest()
+                .WithOrderState(state)
+                .WithCoreData(new User(), new User(), new OrderBasket(), "nnn")
+                .WithFund(new Fund())
+                .WithSecurity(new Security())
+                .WithInitialReferentialData("instCode", SecurityCodeType.Isin, "fundCode", FundCodeType.Other, "folioCode")
+                .Build();
+        }
     }
 }

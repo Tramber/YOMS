@@ -3,12 +3,12 @@ using System.Linq;
 using System.Text;
 using FluentValidation;
 using Oms.Server.Domain.Framework;
-using Oms.Server.Domain.Interfaces.Models;
 
 namespace Oms.Server.Domain.Validation
 {
     public static class ValidationExtensions
     {
+        /// <summary>Validates the item and returns a <see cref="GenericResult"/> whose error message lists the failed properties.</summary>
         public static GenericResult IsValid<T>(this AbstractValidator<T> validator, T item)
         {
             Contract.Requires(item != null, "item != null");

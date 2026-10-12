@@ -1,20 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FluentNHibernate;
 using FluentNHibernate.Automapping;
-using Oms.Server.Domain.Framework;
-using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Orders;
 using Oms.Server.Domain.Models.Securities;
 using Oms.Server.Domain.Models.Trades;
 using Oms.Server.Domain.Models.Users;
-using Oms.Server.Domain.Workflow;
 
 namespace Oms.Server.DataAccess.NHibernate
 {

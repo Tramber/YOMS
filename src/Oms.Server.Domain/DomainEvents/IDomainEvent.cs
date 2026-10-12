@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Oms.Server.Domain.Interfaces.Models;
+﻿using Oms.Server.Domain.Interfaces.Models;
 
 namespace Oms.Server.Domain.DomainEvents
 {

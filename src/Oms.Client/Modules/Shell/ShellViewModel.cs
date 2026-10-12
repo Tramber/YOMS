@@ -15,6 +15,7 @@ using Oms.Transport.Contracts.Dto;
 
 namespace Oms.Client.Modules.Shell
 {
+    /// <summary>Main window: hosts the documents as tabs, the toolbar commands, the notification overlay and the server connection.</summary>
     public partial class ShellViewModel : ObservableObject, IRecipient<INotification>
     {
         private readonly IWindowService _windowService;
@@ -38,8 +39,10 @@ namespace Oms.Client.Modules.Shell
             messenger.RegisterAll(this);
         }
 
+        /// <summary>Open tabs.</summary>
         public ObservableCollection<DocumentViewModel> Documents { get; }
 
+        /// <summary>Notifications shown in the overlay. They are never removed.</summary>
         public ObservableCollection<NotificationViewModel> Notifications { get; }
 
         [RelayCommand]
@@ -67,6 +70,7 @@ namespace Oms.Client.Modules.Shell
             }
         }
 
+        /// <summary>Adds each notification sent on the messenger to the overlay.</summary>
         public void Receive(INotification message)
         {
             Notifications.Add(new NotificationViewModel(message));
