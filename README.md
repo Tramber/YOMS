@@ -1,3 +1,13 @@
+```text
+██╗     ██╗  ████╗  ██╗     ██╗  ██████╗
+╚═██╗ ██╔═╝██╔═══██╗████╗ ████║██╔═════╝
+  ╚═██╔═╝  ██║   ██║██╔═██╔═██║╚═████╗
+    ██║    ██║   ██║██║ ╚═╝ ██║  ╚═══██╗
+    ██║    ╚═████╔═╝██║     ██║██████╔═╝
+    ╚═╝      ╚═══╝  ╚═╝     ╚═╝╚═════╝
+    Yet Another Order Management System
+```
+
 # YOMS
 
 Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence, SignalR transport) and a cross-platform Avalonia client. Traders create orders, the server takes each order through its workflow (draft, acceptance, working, dealing, validation, booking), keeps the full history of every order, and pushes the changes to every connected client.
@@ -28,7 +38,7 @@ In the client, keep the login `trader` and press **Connect**, then **Create Orde
 | `Oms.Client` | Avalonia desktop client (CommunityToolkit.Mvvm, Microsoft DI); runs on Windows, macOS and Linux |
 | `Oms.Framework` | Shared utilities (task dispatchers) |
 
-Each of these has a `*.Tests` project (NUnit) except `Oms.Server.host` and `Oms.Transport`, which are covered by the tests of the projects that use them. `Oms.Server.DataAccess.Tests` runs the repositories and the order service against a real SQLite file.
+Each of these has a `*.Tests` project (NUnit) except `Oms.Transport`, which is covered by the tests of the projects that use it. `Oms.Server.host.Tests` runs the client's `OrderServiceProxy` against the host in memory. `Oms.Server.DataAccess.Tests` runs the repositories and the order service against a real SQLite file.
 
 ## Documentation
 
