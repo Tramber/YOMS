@@ -30,11 +30,11 @@ flowchart LR
 
 1. The client sends a request (`OrderEditionRequest`, `OrderRequest` or `OrderMarketRequest`) to a hub method: `HandleOrderEdition`, `HandleOrder` or `HandleOrderMarket`. SignalR does not allow overloaded hub methods, hence three names.
 2. `OrderHub` forwards to `IOrderServiceContract` (`OrderServiceContract`), which calls `OrderManagementService.HandleRequest`.
-3. `OrderManagementService` resolves the user from the request token, then looks up the command (`EditionCommand`, `OrderStateCommand`, `OrderMarketCommand`) in `OrderCommandMappings` and invokes the matching `Order` method (`Create`, `SendRequest`, `Update`, `Cancel`, `MarketSend`, ...).
-4. Each call fires a trigger on the order's state machine. The result is a `GenericResult`.
-5. Clients call `SubscribeToEvents` to join a SignalR group. `OrderServiceContract.OrderListUpdated` is forwarded by the host to that group as `OrderListUpdated(ItemOperationType, OrderDto[])`.
+3. `OrderManagementService` resolves the requester from the request token (the user's login; an unknown user fails every order of the request). For each order of the request it loads the order (or builds a new one for Create and Stash), looks up the command (`EditionCommand`, `OrderStateCommand`, `OrderMarketCommand`) in `OrderCommandMappings` and runs the matching `Order` method with the requester as trigger context.
+4. Each call fires a trigger on the order's state machine and returns a `GenericResult`. A successful order is saved (`Add` when new, `Update` otherwise); a failed one is reported and does not stop the others. The service returns one `OrderCommandResult` per order, in request order.
+5. `OrderServiceContract` answers with one outcome per order: `Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>` for edition requests (the order as saved, or as submitted when it failed) and `Response<Tuple<int, GenericResultDto>, ...>` (order id and outcome) for state and market requests.
+6. It then raises `OrderListUpdated` with the orders that changed: Add for created orders, Update for edited, state and market changes, Delete for deleted orders. Nothing is raised when every order failed. Clients call `SubscribeToEvents` to join a SignalR group, and the host forwards the event to it as `OrderListUpdated(ItemOperationType, OrderDto[])`.
 
-> Work in progress: the three `OrderServiceContract.Handle*` methods call the management service but still return `null`, and nothing raises `OrderListUpdated` yet.
 
 ## Order model: event sourcing
 

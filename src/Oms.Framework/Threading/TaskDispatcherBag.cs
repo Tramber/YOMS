@@ -2,10 +2,6 @@ using System.Collections.Concurrent;
 
 namespace Oms.Framework.Threading
 {
-    public class TaskDispatcherBag : TaskDispatcherCollection<ConcurrentBag<TaskDispatcherWorkItem>>
-    {
-        public TaskDispatcherBag(int workerCount) : base(workerCount)
-        {
-        }
-    }
+    public class TaskDispatcherBag(int workerCount)
+        : TaskDispatcherCollection<ConcurrentBag<TaskDispatcherWorkItem>>(workerCount);
 }

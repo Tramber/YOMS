@@ -4,17 +4,13 @@ using System.Threading.Tasks;
 
 namespace Oms.Framework.Threading
 {
-    public class TaskDispatcherWorkItem
+    public class TaskDispatcherWorkItem(
+        TaskCompletionSource<object> taskSource,
+        Action action,
+        CancellationToken? cancelToken)
     {
-        public readonly TaskCompletionSource<object> TaskSource;
-        public readonly Action Action;
-        public readonly CancellationToken? CancelToken;
-
-        public TaskDispatcherWorkItem(TaskCompletionSource<object> taskSource, Action action, CancellationToken? cancelToken)
-        {
-            TaskSource = taskSource;
-            Action = action;
-            CancelToken = cancelToken;
-        }
+        public readonly TaskCompletionSource<object> TaskSource = taskSource;
+        public readonly Action Action = action;
+        public readonly CancellationToken? CancelToken = cancelToken;
     }
 }

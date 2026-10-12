@@ -27,4 +27,4 @@ Guidance for AI coding agents working in this repository. See `README.md` for th
 ## Known issues
 
 - Persistence: NHibernate maps the domain through `NHibernateHelper` (automapping). Interface-typed associations are pointed to their entity class by `InterfaceReferenceConvention`; the generic event logs (`OrderParameterEventLog<IOrderEditableData>`, ...) are added by `ExplicitTypeSource` because assembly scanning cannot find closed generics. The SQLite schema is created once, when the database file is missing or empty (never dropped or migrated), so delete `oms.sqlite` after changing a mapping.
-- `OrderServiceContract.Handle*` still return `null` (work in progress).
+- Requests identify the user by login (`Request.Token`); there is no authentication yet. A security with an `Undefined` currency or type cannot be mapped to a DTO, so an order on such a security fails after it was saved.

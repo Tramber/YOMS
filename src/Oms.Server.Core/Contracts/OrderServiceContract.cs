@@ -1,6 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Oms.Server.Core.Extensions;
 using Oms.Server.Core.Services;
+using Oms.Server.Domain.Framework;
 using Oms.Transport.Contracts;
 using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
@@ -8,33 +11,58 @@ using Oms.Transport.Contracts.Messages.Orders;
 
 namespace Oms.Server.Core.Contracts
 {
-    /// <summary>Server implementation of the order service. Work in progress: the responses are not built yet.</summary>
-    public class OrderServiceContract(IOrderManagementService orderManagementService) : IOrderServiceContract
+    /// <summary>
+    /// Server implementation of the order service: runs the request through <see cref="IOrderManagementService"/>, answers
+    /// with one outcome per order and raises <see cref="OrderListUpdated"/> for the orders that changed.
+    /// </summary>
+    public class OrderServiceContract : IOrderServiceContract
     {
+        private readonly IOrderManagementService _orderManagementService;
+
+        public OrderServiceContract(IOrderManagementService orderManagementService)
+        {
+            _orderManagementService = orderManagementService;
+        }
+
         /// <summary>Raised when orders change; the SignalR host forwards it to subscribed clients.</summary>
         public event Action<ItemOperationType, OrderDto[]> OrderListUpdated;
 
-        public EditionResponse<OrderDto> Handle(OrderEditionRequest request)
+        public Response<Tuple<OrderDto, GenericResultDto>, EditionCommand> Handle(OrderEditionRequest request)
         {
-            var response = orderManagementService.HandleRequest(request);
-            throw new NotImplementedException();
+            var results = _orderManagementService.HandleRequest(request);
+            Publish(request.Command == EditionCommand.Update ? ItemOperationType.Update : ItemOperationType.Add, results);
+            // An order that failed is answered with the DTO that was submitted.
+            var items = results
+                .Select((r, i) => Tuple.Create(r.Result.IsSuccess() ? r.Order.ToDto() : request.ItemList[i], r.Result.ToDto()))
+                .ToList();
+            return new Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>(request.Command, items);
         }
 
         public Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderRequest request)
         {
-            var response = orderManagementService.HandleRequest(request);
-            return null;
+            var results = _orderManagementService.HandleRequest(request);
+            Publish(request.Command == OrderStateCommand.Delete ? ItemOperationType.Delete : ItemOperationType.Update, results);
+            return new Response<Tuple<int, GenericResultDto>, OrderStateCommand>(request.Command, Outcomes(results));
         }
 
-        public Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderMarketRequest request)
+        public Response<Tuple<int, GenericResultDto>, OrderMarketCommand> Handle(OrderMarketRequest request)
         {
-            var response = orderManagementService.HandleRequest(request);
-            return null;
+            var results = _orderManagementService.HandleRequest(request);
+            Publish(ItemOperationType.Update, results);
+            return new Response<Tuple<int, GenericResultDto>, OrderMarketCommand>(request.Command, Outcomes(results));
         }
 
-        private void SendOrderChange(ItemOperationType operationType, List<OrderDto> orderDtoList)
+        private static List<Tuple<int, GenericResultDto>> Outcomes(IEnumerable<OrderCommandResult> results)
         {
-            OrderListUpdated?.Invoke(operationType, orderDtoList.ToArray());
+            return results.Select(r => Tuple.Create(r.OrderId, r.Result.ToDto())).ToList();
+        }
+
+        /// <summary>Tells the subscribers about the orders that changed; nothing is sent when every order failed.</summary>
+        private void Publish(ItemOperationType operationType, IEnumerable<OrderCommandResult> results)
+        {
+            var changed = results.Where(r => r.Result.IsSuccess()).Select(r => r.Order.ToDto()).ToArray();
+            if (changed.Length > 0 && OrderListUpdated != null)
+                OrderListUpdated(operationType, changed);
         }
     }
 }

@@ -1,0 +1,141 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
+using Oms.Server.Core.Contracts;
+using Oms.Server.Core.Services;
+using Oms.Server.DataAccess.NHibernate.Repositories;
+using Oms.Server.Domain.Models.Funds;
+using Oms.Server.Domain.Models.Securities;
+using Oms.Server.Domain.Models.Users;
+using Oms.Server.Domain.Workflow;
+using Oms.Transport.Contracts;
+using Oms.Transport.Contracts.Dto;
+using Oms.Transport.Contracts.Messages;
+using Oms.Transport.Contracts.Messages.Orders;
+
+namespace Oms.Server.DataAccess.Tests.Repositories
+{
+    /// <summary>The order service from the contract down to a real SQLite database.</summary>
+    [TestFixture]
+    public class OrderServiceIntegrationTests
+    {
+        private RepositoryFacade _repositories;
+        private OrderServiceContract _contract;
+        private List<Tuple<ItemOperationType, OrderDto[]>> _published;
+        private string _login;
+        private Security _security;
+        private Fund _fund;
+
+        [SetUp]
+        public void SetUp()
+        {
+            var suffix = Guid.NewGuid().ToString("N");
+            _login = "trader-" + suffix;
+            var user = new User { Login = _login, IsActive = true };
+            _fund = new Fund { Name = "Fund " + suffix };
+            _security = new Security { Name = "Security " + suffix, Creator = user, BloombergTicker = "T", CreationDate = DateTime.Now, Currency = Currency.EUR, Type = SecurityType.Equity };
+            _repositories = new RepositoryFacade();
+            _repositories.Users.Add(user);
+            _repositories.Funds.Add(_fund);
+            _repositories.Securities.Add(_security);
+            _contract = new OrderServiceContract(new OrderManagementService(_repositories));
+            _published = new List<Tuple<ItemOperationType, OrderDto[]>>();
+            _contract.OrderListUpdated += (type, orders) => _published.Add(Tuple.Create(type, orders));
+        }
+
+        private OrderDto NewOrder()
+        {
+            return new OrderDto
+            {
+                Quantity = 100,
+                PriceLimit = 12.5,
+                OrderType = OrderDtoType.Limit,
+                Validity = OrderDtoValidityType.Day,
+                Security = new SecurityDto { Id = _security.Id },
+                Fund = new FundDto { Id = _fund.Id },
+                ClientOrderRef = "ref-" + Guid.NewGuid().ToString("N"),
+            };
+        }
+
+        private int CreateOrder()
+        {
+            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, new List<OrderDto> { NewOrder() }, default(TransactionMode)));
+            Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
+            return response.ResultList.Single().Item1.Id;
+        }
+
+        [Test]
+        public void Should_create_an_order_that_is_saved_and_published()
+        {
+            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, new List<OrderDto> { NewOrder() }, default(TransactionMode)));
+
+            var created = response.ResultList.Single().Item1;
+            Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
+            Assert.That(created.Id, Is.GreaterThan(0));
+            Assert.That(created.Quantity, Is.EqualTo(100));
+            Assert.That(created.Security.Id, Is.EqualTo(_security.Id));
+            Assert.That(created.Creator.Login, Is.EqualTo(_login));
+
+            var saved = _repositories.Orders.GetOrderById(created.Id);
+            Assert.That(saved.OrderState, Is.EqualTo(OrderStateMachine.State.Accepting));
+            Assert.That(saved.ClientOrderRef, Is.EqualTo(created.ClientOrderRef));
+            Assert.That(_published.Single().Item1, Is.EqualTo(ItemOperationType.Add));
+            Assert.That(_published.Single().Item2.Single().Id, Is.EqualTo(created.Id));
+        }
+
+        [Test]
+        public void Should_recall_then_delete_a_draft_across_requests()
+        {
+            var id = CreateOrder();
+            _contract.Handle(new OrderRequest(_login, OrderStateCommand.Recall, new List<int> { id }, default(TransactionMode)));
+            _contract.Handle(new OrderRequest(_login, OrderStateCommand.Delete, new List<int> { id }, default(TransactionMode)));
+
+            Assert.That(_repositories.Orders.GetOrderById(id).OrderState, Is.EqualTo(OrderStateMachine.State.Terminated));
+        }
+
+        [Test]
+        public void Should_cancel_a_working_order_in_two_steps_across_requests()
+        {
+            var id = CreateOrder();
+            var order = _repositories.Orders.GetOrderById(id);
+            order.SendAccept(new Oms.Server.Domain.Models.EventLogs.TriggerContext(_repositories.Users.GetUserByLogin(_login)));
+            _repositories.Orders.Update(order);
+
+            var cancel = _contract.Handle(new OrderRequest(_login, OrderStateCommand.Cancel, new List<int> { id }, default(TransactionMode)));
+            Assert.That(cancel.ResultList.Single().Item2.ErrorMessage, Is.Null);
+            var pending = _repositories.Orders.GetOrderById(id);
+            Assert.That(pending.OrderState, Is.EqualTo(OrderStateMachine.State.Working));
+            Assert.That(pending.PendingTrigger, Is.EqualTo(OrderStateMachine.Trigger.Cancel));
+
+            var accept = _contract.Handle(new OrderRequest(_login, OrderStateCommand.AcceptPending, new List<int> { id }, default(TransactionMode)));
+            Assert.That(accept.ResultList.Single().Item2.ErrorMessage, Is.Null);
+            var cancelled = _repositories.Orders.GetOrderById(id);
+            Assert.That(cancelled.OrderState, Is.EqualTo(OrderStateMachine.State.Terminated));
+            Assert.That(cancelled.PendingTrigger, Is.Null);
+            Assert.That(_published.Select(p => p.Item1), Is.EqualTo(new[] { ItemOperationType.Add, ItemOperationType.Update, ItemOperationType.Update }));
+        }
+
+        [Test]
+        public void Should_answer_a_refused_command_without_saving_it()
+        {
+            var id = CreateOrder();
+            _published.Clear();
+
+            var response = _contract.Handle(new OrderRequest(_login, OrderStateCommand.StartBooking, new List<int> { id }, default(TransactionMode)));
+
+            Assert.That(response.ResultList.Single().Item2.ErrorMessage, Does.Contain("not allowed"));
+            Assert.That(_repositories.Orders.GetOrderById(id).EventLogs.Count, Is.EqualTo(1));
+            Assert.That(_published, Is.Empty);
+        }
+
+        [Test]
+        public void Should_refuse_an_unknown_user()
+        {
+            var response = _contract.Handle(new OrderEditionRequest("nobody", EditionCommand.Create, new List<OrderDto> { NewOrder() }, default(TransactionMode)));
+
+            Assert.That(response.ResultList.Single().Item2.ErrorMessage, Does.Contain("Unknown user"));
+            Assert.That(_published, Is.Empty);
+        }
+    }
+}
