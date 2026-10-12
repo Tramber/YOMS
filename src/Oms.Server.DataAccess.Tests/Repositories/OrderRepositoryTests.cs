@@ -41,6 +41,22 @@ namespace Oms.Server.DataAccess.Tests.Repositories
         }
 
         [Test]
+        public void Should_list_every_saved_order_with_its_event_log()
+        {
+            var facade = new RepositoryFacade();
+            User user;
+            var first = SavedAcceptingOrder(facade, Guid.NewGuid().ToString("N"), out user);
+            var second = SavedAcceptingOrder(facade, Guid.NewGuid().ToString("N"), out user);
+
+            var orders = facade.Orders.GetOrderList();
+
+            var listedFirst = orders.Single(o => o.Id == first.Id);
+            var listedSecond = orders.Single(o => o.Id == second.Id);
+            Assert.That(listedFirst.EventLogs.Count, Is.EqualTo(1));
+            Assert.That(listedSecond.ClientOrderRef, Is.EqualTo(second.ClientOrderRef));
+        }
+
+        [Test]
         public void Should_save_the_new_event_log_entries_when_the_order_is_updated()
         {
             var facade = new RepositoryFacade();
