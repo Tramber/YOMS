@@ -36,7 +36,7 @@
       <HintPath>..\packages\FluentValidation.5.6.2.0\lib\Net45\FluentValidation.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
-      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+      <HintPath>..\packages\log4net.2.0.10\lib\net40-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Stateless">
       <HintPath>..\packages\Stateless.2.5.18.0\lib\portable-net40+sl50+win+wp80\Stateless.dll</HintPath>
