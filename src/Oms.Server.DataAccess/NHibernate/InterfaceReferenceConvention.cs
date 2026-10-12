@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using FluentNHibernate.Conventions;
 using FluentNHibernate.Conventions.Instances;
@@ -38,7 +38,7 @@ namespace Oms.Server.DataAccess.NHibernate
         private static readonly HashSet<Type> OwnedByTheReferrer = new HashSet<Type>
         {
             typeof(OrderBasket), typeof(OrderInitialReferentialData), typeof(TriggerContext),
-            typeof(OrderEditableEventParameter), typeof(OrderDealingEventParameter), typeof(TradeEditableEventParameter),
+            typeof(OrderEditableEventParameter), typeof(OrderDealingEventParameter), typeof(TradeEditableEventParameter), typeof(Trade),
         };
 
         public void Apply(IManyToOneInstance instance)

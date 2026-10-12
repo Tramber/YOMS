@@ -9,6 +9,7 @@ using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Orders;
 using Oms.Server.Domain.Models.Securities;
+using Oms.Server.Domain.Models.Trades;
 using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
 using Oms.Transport.Contracts.Messages.Orders;
@@ -74,6 +75,17 @@ namespace Oms.Server.Core.Services
                 .ToList();
         }
 
+        /// <summary>
+        /// Adds a trade to an order, cancels one or books one. Booking a trade that was not sent to a booking system
+        /// forces it to booked first; the order terminates with its last booked trade.
+        /// </summary>
+        public IList<OrderCommandResult> HandleRequest(OrderTradeRequest request)
+        {
+            if (request == null) throw new ArgumentNullException("request");
+            var requester = _repositoryFacade.Users.GetUserByLogin(request.Token);
+            return request.ItemList.Select(dto => ExecuteTrade(requester, request.Command, dto)).ToList();
+        }
+
         /// <summary>Every order, with its event log.</summary>
         public IList<Order> GetOrders()
         {
@@ -120,6 +132,46 @@ namespace Oms.Server.Core.Services
                     _repositoryFacade.Orders.Update(target.Order);
             }
             return new OrderCommandResult(target.Order.Id, target.Order, result);
+        }
+
+        private OrderCommandResult ExecuteTrade(IUser requester, OrderTradeCommand command, TradeDto dto)
+        {
+            if (requester == null)
+                return new OrderCommandResult(dto.OrderId, null, GenericResult.Failure("Unknown user"));
+            var order = _repositoryFacade.Orders.GetById(dto.OrderId);
+            if (order == null)
+                return new OrderCommandResult(dto.OrderId, null, GenericResult.FailureFormat("Order {0} not found", dto.OrderId));
+
+            var context = new TriggerContext(requester);
+            GenericResult result;
+            if (command == OrderTradeCommand.AddTrade)
+            {
+                Side side;
+                if (!Enum.TryParse(dto.Way.ToString(), out side))
+                    return new OrderCommandResult(order.Id, order, GenericResult.Failure("Unknown way"));
+                result = order.AddTrade(context, new Trade { ExecutionQuantity = dto.ExecutionQuantity, ExecutionAmountNet = dto.ExecutionAmountNet, Side = side });
+            }
+            else
+            {
+                var trade = order.GetTrades().FirstOrDefault(t => t.Id == dto.Id);
+                if (trade == null)
+                    return new OrderCommandResult(order.Id, order, GenericResult.FailureFormat("Trade {0} not found on order {1}", dto.Id, order.Id));
+                result = command == OrderTradeCommand.CancelTrade ? order.CancelTrade(context, trade) : BookTrade(order, trade, context);
+            }
+            if (result.IsSuccess())
+                _repositoryFacade.Orders.Update(order);
+            return new OrderCommandResult(order.Id, order, result);
+        }
+
+        private static GenericResult BookTrade(Order order, ITrade trade, ITriggerContext context)
+        {
+            // No booking system yet: a trade that was not sent to one is booked by hand.
+            if (trade.TradeState == TradeState.New || trade.TradeState == TradeState.BookingError)
+            {
+                var forced = trade.ForceBooked(context);
+                if (forced.IsFailure()) return forced;
+            }
+            return order.TradeBooked(context, trade);
         }
 
         private Target EditionTarget(EditionCommand command, OrderDto orderDto, IUser requester, OrderBasket orderBasket)

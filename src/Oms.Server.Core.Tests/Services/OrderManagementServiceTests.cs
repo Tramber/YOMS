@@ -334,5 +334,102 @@ namespace Oms.Server.Core.Tests.Services
             Assert.That(results.Single().Result.IsFailure(), Is.True);
             _orders.DidNotReceive().Update(Arg.Any<Order>());
         }
+
+        private static OrderTradeRequest TradeRequest(OrderTradeCommand command, TradeDto trade)
+        {
+            return new OrderTradeRequest("token", command, new List<TradeDto> { trade }, default(TransactionMode));
+        }
+
+        private static TradeDto Execution(int orderId, double quantity = 100)
+        {
+            return new TradeDto { OrderId = orderId, Way = OrderDtoWay.Buy, ExecutionQuantity = quantity, ExecutionAmountNet = quantity * 10 };
+        }
+
+        [Test]
+        public void Should_add_a_trade_and_save_the_order()
+        {
+            var order = WorkingOrder(3);
+            _orders.GetById(3).Returns(order);
+
+            var results = _service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(3, 100)));
+
+            Assert.That(results.Single().Result.IsSuccess(), Is.True, results.Single().Result.ErrorMessage);
+            Assert.That(order.OrderState, Is.EqualTo(OrderStateMachine.State.Validating));
+            Assert.That(order.GetTrades().Single().ExecutionQuantity, Is.EqualTo(100));
+            _orders.Received(1).Update(order);
+        }
+
+        [Test]
+        public void Should_stay_in_dealing_after_a_partial_trade()
+        {
+            var order = WorkingOrder(3);
+            _orders.GetById(3).Returns(order);
+
+            _service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(3, 40)));
+
+            Assert.That(order.OrderState, Is.EqualTo(OrderStateMachine.State.Dealing));
+            Assert.That(order.RemainingQuantity, Is.EqualTo(60));
+        }
+
+        [Test]
+        public void Should_cancel_a_trade_by_its_id()
+        {
+            var order = WorkingOrder(3);
+            _orders.GetById(3).Returns(order);
+            _service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(3, 40)));
+            order.GetTrades().Single().Id = 7;
+
+            var results = _service.HandleRequest(TradeRequest(OrderTradeCommand.CancelTrade, new TradeDto { OrderId = 3, Id = 7 }));
+
+            Assert.That(results.Single().Result.IsSuccess(), Is.True, results.Single().Result.ErrorMessage);
+            Assert.That(order.GetTrades().Single().TradeState, Is.EqualTo(TradeState.Cancelled));
+            Assert.That(order.RemainingQuantity, Is.EqualTo(100));
+        }
+
+        [Test]
+        public void Should_force_a_new_trade_to_booked_and_terminate_the_order_with_its_last_booked_trade()
+        {
+            var order = WorkingOrder(3);
+            _orders.GetById(3).Returns(order);
+            _service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(3, 100)));
+            order.GetTrades().Single().Id = 7;
+            _service.HandleRequest(Request(OrderStateCommand.StartBooking, 3));
+
+            var results = _service.HandleRequest(TradeRequest(OrderTradeCommand.BookTrade, new TradeDto { OrderId = 3, Id = 7 }));
+
+            Assert.That(results.Single().Result.IsSuccess(), Is.True, results.Single().Result.ErrorMessage);
+            Assert.That(order.GetTrades().Single().TradeState, Is.EqualTo(TradeState.Booked));
+            Assert.That(order.OrderState, Is.EqualTo(OrderStateMachine.State.Terminated));
+            Assert.That(order.OrderStatus, Is.EqualTo(OrderStatus.Filled));
+        }
+
+        [Test]
+        public void Should_refuse_to_book_a_trade_before_the_booking_started_and_leave_the_order_unsaved()
+        {
+            var order = WorkingOrder(3);
+            _orders.GetById(3).Returns(order);
+            _service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(3, 100)));
+            order.GetTrades().Single().Id = 7;
+            _orders.ClearReceivedCalls();
+
+            var results = _service.HandleRequest(TradeRequest(OrderTradeCommand.BookTrade, new TradeDto { OrderId = 3, Id = 7 }));
+
+            Assert.That(results.Single().Result.IsFailure(), Is.True);
+            _orders.DidNotReceive().Update(Arg.Any<Order>());
+        }
+
+        [Test]
+        public void Should_refuse_an_unknown_order_an_unknown_trade_an_empty_trade_and_an_unknown_user()
+        {
+            var order = WorkingOrder(3);
+            _orders.GetById(3).Returns(order);
+
+            Assert.That(_service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(99))).Single().Result.ErrorMessage, Does.Contain("not found"));
+            Assert.That(_service.HandleRequest(TradeRequest(OrderTradeCommand.CancelTrade, new TradeDto { OrderId = 3, Id = 5 })).Single().Result.ErrorMessage, Does.Contain("not found"));
+            Assert.That(_service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(3, 0))).Single().Result.IsFailure(), Is.True);
+            var stranger = new OrderTradeRequest("nobody", OrderTradeCommand.AddTrade, new List<TradeDto> { Execution(3) }, default(TransactionMode));
+            Assert.That(_service.HandleRequest(stranger).Single().Result.ErrorMessage, Is.EqualTo("Unknown user"));
+            _orders.DidNotReceive().Update(Arg.Any<Order>());
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Oms.Server.Domain.Framework;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Transport.Contracts.Dto;
@@ -46,7 +47,23 @@ namespace Oms.Server.Core.Extensions
                 dto.Status = computed.OrderStatus.ToString();
                 dto.RemainingQuantity = computed.RemainingQuantity;
             }
+            var withTrades = order as Oms.Server.Domain.Models.Orders.Order;
+            if (withTrades != null)
+                dto.Trades = withTrades.GetTrades().Select(t => t.ToDto()).ToList();
             return dto;
+        }
+
+        public static TradeDto ToDto(this ITrade trade)
+        {
+            return new TradeDto
+            {
+                Id = trade.Id,
+                OrderId = trade.Order == null ? 0 : trade.Order.Id,
+                Way = trade.Side.ToMappingEnum<OrderDtoWay>(),
+                ExecutionQuantity = trade.ExecutionQuantity,
+                ExecutionAmountNet = trade.ExecutionAmountNet,
+                State = trade.TradeState.ToString(),
+            };
         }
 
         public static FundDto ToDto(this IFund fund)

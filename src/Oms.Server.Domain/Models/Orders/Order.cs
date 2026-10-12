@@ -103,6 +103,17 @@ namespace Oms.Server.Domain.Models.Orders
                 .Distinct();
         }
 
+        /// <summary>Every trade of the order, cancelled ones included.</summary>
+        public IList<ITrade> GetTrades()
+        {
+            return EventLogs.Where(e => e.TriggerStatus.IsValid())
+                .OfType<OrderParameterEventLog<IOrderDealingData>>()
+                .Select(e => e.Parameters.Trade)
+                .Where(t => t != null)
+                .Distinct()
+                .ToList();
+        }
+
         /// <summary>Quantity executed so far; opposite-side trades count against it.</summary>
         private double ComputeExecutionQuantity(Side side, ITrade incomingTrade = null)
         {

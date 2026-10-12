@@ -41,8 +41,13 @@ namespace Oms.Server.Domain.Models.Trades
             ExecutionAmountNet = editableData.ExecutionAmountNet;
             Side = editableData.Side;
             TradeState = TradeState.New;
+            // A snapshot of the data, so that what is logged is always the persisted parameter type.
+            var snapshot = new TradeEditableEventParameter
+            {
+                ExecutionQuantity = ExecutionQuantity, ExecutionAmountNet = ExecutionAmountNet, Side = Side, TradeState = TradeState,
+            };
             EventLogs.Add(new TradeParameterEventLog<ITradeEditableData>(
-                context, TradeTrigger.Create, TriggerStatus.Done, TradeState, this, editableData));
+                context, TradeTrigger.Create, TriggerStatus.Done, TradeState, this, snapshot));
             return GenericResult.Success();
         }
 

@@ -52,7 +52,7 @@ Oms.Client/
 `OrderBlotterViewModel` exposes a `DataGridCollectionView` (`OrdersView`) over an `ObservableCollection<OrderAdapter>`, grouped by `GroupId` and sorted by `Id`. The columns are Id, Reference, Security, Way, Type, Quantity, Remaining, Price, State, Status and Group.
 
 - **Content.** `LoadAsync` replaces the rows by `GetOrdersAsync()` (it keeps the local group of the orders that stay). The proxy's pushed changes go through `Apply` on the UI thread: Add and Update insert or refresh the row (the cells update in place), Delete and Remove drop it.
-- **Commands** act on the selected rows and send one request with their ids, with the login as token: **Recall**, **Delete**, **Cancel**, **Accept pending** and **Reject pending** (`OrderRequest`), **Send to market** and **Cancel at market** (`OrderMarketRequest`). The buttons are always enabled: the server refuses what the state does not allow. The accepted orders are not reported; they show up through the pushed changes. Each refused order becomes an error notification with the server's message, and a failed call (server unreachable) a single error notification.
+- **Commands** act on the selected rows and send one request with their ids, with the login as token: **Recall**, **Delete**, **Cancel**, **Accept pending** and **Reject pending** (`OrderRequest`), **Start booking** (`OrderRequest`), **Send to market** and **Cancel at market** (`OrderMarketRequest`), and the trade buttons (`OrderTradeRequest`): **Execute** trades what remains of each selected order in one trade at its limit price (0 for an order without one), and **Book trades** books the trades that are not booked yet. There is no form to enter a quantity or an amount. The buttons are always enabled: the server refuses what the state does not allow. The accepted orders are not reported; they show up through the pushed changes. Each refused order becomes an error notification with the server's message, and a failed call (server unreachable) a single error notification.
 - **Group / Ungroup** are local to the client: grouping assigns the next free group id (from 4000) to ungrouped rows, ungrouping resets them to 0. The handlers refuse invalid selections, so the buttons are not greyed out.
 - **Filter** accepts `Property = "value"` (nested paths allowed, for example `Security.IsinCode = "FR0000000001"`) through `FastSearch<OrderAdapter>`. Incomplete or invalid text shows all rows, and only string properties can be compared.
 - Sorting is by clicking the column headers.
@@ -76,6 +76,7 @@ Not offered yet: stop orders, the Gtd validity, settlement and expiry dates, and
 | `SendAsync(OrderEditionRequest)` | `HandleOrderEdition`: one `(OrderDto, GenericResultDto)` per order |
 | `SendAsync(OrderRequest)` | `HandleOrder`: one `(orderId, GenericResultDto)` per order |
 | `SendAsync(OrderMarketRequest)` | `HandleOrderMarket`: one `(orderId, GenericResultDto)` per order |
+| `SendAsync(OrderTradeRequest)` | `HandleOrderTrade`: one `(orderId, GenericResultDto)` per trade |
 | `Subscribe(observer)` | the `OrderListUpdated(ItemOperationType, OrderDto[])` event |
 
 A call throws when the server cannot be reached; the view models turn that into a notification or an error message. A result with `ErrorCode != 0` is a refusal, and `ErrorMessage` says why.

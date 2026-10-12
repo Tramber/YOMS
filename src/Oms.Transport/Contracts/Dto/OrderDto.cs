@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Oms.Transport.Contracts.Dto
@@ -65,6 +66,10 @@ namespace Oms.Transport.Contracts.Dto
 
         [DataMember]
         public double RemainingQuantity { get; set; }
+
+        /// <summary>The executions of the order, cancelled ones included. Set by the server.</summary>
+        [DataMember]
+        public List<TradeDto> Trades { get; set; } = new List<TradeDto>();
     }
 }
 

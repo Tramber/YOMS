@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -63,6 +63,69 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, new List<OrderDto> { NewOrder() }, default(TransactionMode)));
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
             return response.ResultList.Single().Item1.Id;
+        }
+
+        private int CreateWorkingOrder()
+        {
+            var id = CreateOrder();
+            var order = _repositories.Orders.GetOrderById(id);
+            order.SendAccept(new Oms.Server.Domain.Models.EventLogs.TriggerContext(_repositories.Users.GetUserByLogin(_login)));
+            _repositories.Orders.Update(order);
+            return id;
+        }
+
+        private GenericResultDto SendTrade(OrderTradeCommand command, TradeDto trade)
+        {
+            return _contract.Handle(new OrderTradeRequest(_login, command, new List<TradeDto> { trade }, default(TransactionMode))).ResultList.Single().Item2;
+        }
+
+        [Test]
+        public void Should_execute_and_book_an_order_across_requests()
+        {
+            var id = CreateWorkingOrder();
+
+            var added = SendTrade(OrderTradeCommand.AddTrade, new TradeDto { OrderId = id, Way = OrderDtoWay.Buy, ExecutionQuantity = 100, ExecutionAmountNet = 1250 });
+            Assert.That(added.ErrorMessage, Is.Null);
+            var executed = _repositories.Orders.GetOrderById(id);
+            Assert.That(executed.OrderState, Is.EqualTo(OrderStateMachine.State.Validating));
+            var trade = _published.Last().Item2.Single().Trades.Single();
+            Assert.That(trade.Id, Is.GreaterThan(0));
+            Assert.That(trade.State, Is.EqualTo("New"));
+
+            _contract.Handle(new OrderRequest(_login, OrderStateCommand.StartBooking, new List<int> { id }, default(TransactionMode)));
+            var booked = SendTrade(OrderTradeCommand.BookTrade, new TradeDto { OrderId = id, Id = trade.Id });
+
+            Assert.That(booked.ErrorMessage, Is.Null);
+            var done = _repositories.Orders.GetOrderById(id);
+            Assert.That(done.OrderState, Is.EqualTo(OrderStateMachine.State.Terminated));
+            Assert.That(done.OrderStatus.ToString(), Is.EqualTo("Filled"));
+            Assert.That(_published.Last().Item2.Single().Trades.Single().State, Is.EqualTo("Booked"));
+        }
+
+        [Test]
+        public void Should_cancel_a_trade_and_put_the_order_back_to_dealing()
+        {
+            var id = CreateWorkingOrder();
+            SendTrade(OrderTradeCommand.AddTrade, new TradeDto { OrderId = id, Way = OrderDtoWay.Buy, ExecutionQuantity = 100, ExecutionAmountNet = 1250 });
+            var trade = _published.Last().Item2.Single().Trades.Single();
+
+            var cancelled = SendTrade(OrderTradeCommand.CancelTrade, new TradeDto { OrderId = id, Id = trade.Id });
+
+            Assert.That(cancelled.ErrorMessage, Is.Null);
+            var order = _repositories.Orders.GetOrderById(id);
+            Assert.That(order.OrderState, Is.EqualTo(OrderStateMachine.State.Dealing));
+            Assert.That(order.RemainingQuantity, Is.EqualTo(100));
+            Assert.That(_published.Last().Item2.Single().Trades.Single().State, Is.EqualTo("Cancelled"));
+        }
+
+        [Test]
+        public void Should_refuse_an_unknown_trade_and_a_trade_on_a_draft_order()
+        {
+            var id = CreateWorkingOrder();
+
+            Assert.That(SendTrade(OrderTradeCommand.BookTrade, new TradeDto { OrderId = id, Id = 999999 }).ErrorMessage, Does.Contain("not found"));
+            Assert.That(SendTrade(OrderTradeCommand.AddTrade, new TradeDto { OrderId = id, ExecutionQuantity = 0 }).ErrorMessage, Does.Contain("positive"));
+            Assert.That(SendTrade(OrderTradeCommand.AddTrade, new TradeDto { OrderId = 999999, ExecutionQuantity = 1 }).ErrorMessage, Does.Contain("not found"));
         }
 
         [Test]

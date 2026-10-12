@@ -75,5 +75,23 @@ namespace Oms.Server.Core.Tests.Transport
             Assert.That(copy.ResultList.Single().Item1.Owner.Login, Is.EqualTo("trader"));
             Assert.That(copy.ResultList.Single().Item2.ErrorMessage, Is.EqualTo("bad"));
         }
+
+        [Test]
+        public void A_trade_request_and_the_trades_of_an_order_survive_json()
+        {
+            var request = new OrderTradeRequest("trader", OrderTradeCommand.AddTrade, new List<TradeDto>
+            {
+                new TradeDto { OrderId = 4, Way = OrderDtoWay.Sell, ExecutionQuantity = 10, ExecutionAmountNet = 125.5 },
+            }, default(TransactionMode));
+            var order = new OrderDto { Id = 4, Trades = new List<TradeDto> { new TradeDto { Id = 9, OrderId = 4, State = "Booked" } } };
+
+            var requestCopy = JsonSerializer.Deserialize<OrderTradeRequest>(JsonSerializer.Serialize(request, Options), Options);
+            var orderCopy = JsonSerializer.Deserialize<OrderDto>(JsonSerializer.Serialize(order, Options), Options);
+
+            Assert.That(requestCopy.Command, Is.EqualTo(OrderTradeCommand.AddTrade));
+            Assert.That(requestCopy.ItemList.Single().Way, Is.EqualTo(OrderDtoWay.Sell));
+            Assert.That(requestCopy.ItemList.Single().ExecutionAmountNet, Is.EqualTo(125.5));
+            Assert.That(orderCopy.Trades.Single().State, Is.EqualTo("Booked"));
+        }
     }
 }
