@@ -47,7 +47,7 @@ namespace Oms.Framework.Tests.Threading
                 release.Set();
                 await Task.WhenAll(blocker, first, second).WaitAsync(Timeout);
 
-                Assert.That(order, Is.EqualTo(new[] { 2, 1 }));
+                Assert.That(order, Is.EqualTo([2, 1]));
             }
         }
 

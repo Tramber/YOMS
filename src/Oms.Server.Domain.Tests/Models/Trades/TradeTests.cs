@@ -121,7 +121,7 @@ namespace Oms.Server.Domain.Tests.Models.Trades
             Assert.That(trade.Booked(new TriggerContext()).IsSuccess(), Is.True);
             Assert.That(trade.TradeState, Is.EqualTo(TradeState.Booked));
             Assert.That(trade.EventLogs.Select(l => l.Trigger),
-                Is.EqualTo(new[] { TradeTrigger.Create, TradeTrigger.BookingSend, TradeTrigger.Booked }));
+                Is.EqualTo([TradeTrigger.Create, TradeTrigger.BookingSend, TradeTrigger.Booked]));
         }
 
         [Test]

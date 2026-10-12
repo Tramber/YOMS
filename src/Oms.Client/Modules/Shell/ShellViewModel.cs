@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Oms.Client.Model;
 using Oms.Client.Modules.Notification;
 using Oms.Client.Modules.OrderBlotter;
 using Oms.Client.Modules.OrderEditor;
@@ -36,10 +37,10 @@ namespace Oms.Client.Modules.Shell
             _notificationService = notificationService;
             _proxy = proxy;
             Session = session;
-            Blotter = new OrderBlotterViewModel(proxy, notificationService, session);
-            Documents = new ObservableCollection<DocumentViewModel> { Blotter };
+            Blotter = new OrderBlotterViewModel(proxy, notificationService, session, EditOrderAsync);
+            Documents = [Blotter];
             ActiveDocument = Blotter;
-            Notifications = new ObservableCollection<NotificationViewModel>();
+            Notifications = [];
             messenger.RegisterAll(this);
         }
 
@@ -73,12 +74,17 @@ namespace Oms.Client.Modules.Shell
         }
 
         [RelayCommand(CanExecute = nameof(IsConnected))]
-        private async Task CreateOrderAsync()
+        private Task CreateOrderAsync() => OpenEditorAsync(null);
+
+        /// <summary>Opens the order editor on an existing order (the blotter's Edit button).</summary>
+        public Task EditOrderAsync(OrderAdapter order) => OpenEditorAsync(order);
+
+        private async Task OpenEditorAsync(OrderAdapter order)
         {
             var editor = new OrderEditorViewModel(_proxy, Session);
             try
             {
-                await editor.LoadAsync();
+                await editor.LoadAsync(order);
             }
             catch (Exception ex)
             {

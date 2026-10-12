@@ -10,13 +10,13 @@ namespace Oms.Client.Tests.Framework.Observables
     [TestFixture]
     public class FastSearchTests
     {
-        private List<OrderAdapter> _orders = new()
-        {
-            new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode1"}},
-            new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode2"}},
-            new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode3"}},
-            new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode1"}},
-        };
+        private List<OrderAdapter> _orders =
+        [
+            new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode1" } },
+            new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode2" } },
+            new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode3" } },
+            new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode1" } }
+        ];
 
 
 

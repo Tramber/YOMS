@@ -23,20 +23,20 @@ namespace Oms.Server.Core.Tests.Transport
         [Test]
         public void A_request_keeps_its_token_command_and_orders()
         {
-            var request = new OrderRequest("trader", OrderStateCommand.Cancel, new List<int> { 3, 4 }, default(TransactionMode));
+            var request = new OrderRequest("trader", OrderStateCommand.Cancel, [3, 4], default(TransactionMode));
 
             Assert.That(request.Token, Is.EqualTo("trader"));
             var copy = JsonSerializer.Deserialize<OrderRequest>(JsonSerializer.Serialize(request, Options), Options);
 
             Assert.That(copy.Token, Is.EqualTo("trader"));
             Assert.That(copy.Command, Is.EqualTo(OrderStateCommand.Cancel));
-            Assert.That(copy.ItemList, Is.EqualTo(new[] { 3, 4 }));
+            Assert.That(copy.ItemList, Is.EqualTo([3, 4]));
         }
 
         [Test]
         public void A_market_request_carries_a_market_command()
         {
-            var request = new OrderMarketRequest("trader", OrderMarketCommand.MarketCancel, new List<int> { 3 }, default(TransactionMode));
+            var request = new OrderMarketRequest("trader", OrderMarketCommand.MarketCancel, [3], default(TransactionMode));
 
             var copy = JsonSerializer.Deserialize<OrderMarketRequest>(JsonSerializer.Serialize(request, Options), Options);
 
@@ -46,16 +46,15 @@ namespace Oms.Server.Core.Tests.Transport
         [Test]
         public void A_state_response_keeps_the_outcome_of_each_order_including_the_error()
         {
-            var response = new Response<Tuple<int, GenericResultDto>, OrderStateCommand>(OrderStateCommand.Cancel, new List<Tuple<int, GenericResultDto>>
-            {
+            var response = new Response<Tuple<int, GenericResultDto>, OrderStateCommand>(OrderStateCommand.Cancel, [
                 Tuple.Create(1, new GenericResultDto(null, 0)),
-                Tuple.Create(2, new GenericResultDto("refused", 1)),
-            });
+                Tuple.Create(2, new GenericResultDto("refused", 1))
+            ]);
 
             var copy = RoundTrip(response);
 
             Assert.That(copy.Command, Is.EqualTo(OrderStateCommand.Cancel));
-            Assert.That(copy.ResultList.Select(r => r.Item1), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(copy.ResultList.Select(r => r.Item1), Is.EqualTo([1, 2]));
             Assert.That(copy.ResultList[1].Item2.ErrorMessage, Is.EqualTo("refused"));
             Assert.That(copy.ResultList[1].Item2.ErrorCode, Is.EqualTo(1));
         }
@@ -63,10 +62,13 @@ namespace Oms.Server.Core.Tests.Transport
         [Test]
         public void An_edition_response_keeps_the_orders_and_their_outcome()
         {
-            var response = new Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>(EditionCommand.Create, new List<Tuple<OrderDto, GenericResultDto>>
-            {
-                Tuple.Create(new OrderDto { Id = 9, Quantity = 50, OrderType = OrderDtoType.Limit, Owner = new UserDto { Login = "trader" } }, new GenericResultDto("bad", 1)),
-            });
+            var response = new Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>(EditionCommand.Create, [
+                Tuple.Create(
+                    new OrderDto
+                    {
+                        Id = 9, Quantity = 50, OrderType = OrderDtoType.Limit, Owner = new UserDto { Login = "trader" }
+                    }, new GenericResultDto("bad", 1))
+            ]);
 
             var copy = RoundTrip(response);
 
@@ -79,11 +81,10 @@ namespace Oms.Server.Core.Tests.Transport
         [Test]
         public void A_trade_request_and_the_trades_of_an_order_survive_json()
         {
-            var request = new OrderTradeRequest("trader", OrderTradeCommand.AddTrade, new List<TradeDto>
-            {
-                new TradeDto { OrderId = 4, Way = OrderDtoWay.Sell, ExecutionQuantity = 10, ExecutionAmountNet = 125.5 },
-            }, default(TransactionMode));
-            var order = new OrderDto { Id = 4, Trades = new List<TradeDto> { new TradeDto { Id = 9, OrderId = 4, State = "Booked" } } };
+            var request = new OrderTradeRequest("trader", OrderTradeCommand.AddTrade, [
+                new TradeDto { OrderId = 4, Way = OrderDtoWay.Sell, ExecutionQuantity = 10, ExecutionAmountNet = 125.5 }
+            ], default(TransactionMode));
+            var order = new OrderDto { Id = 4, Trades = [new TradeDto { Id = 9, OrderId = 4, State = "Booked" }] };
 
             var requestCopy = JsonSerializer.Deserialize<OrderTradeRequest>(JsonSerializer.Serialize(request, Options), Options);
             var orderCopy = JsonSerializer.Deserialize<OrderDto>(JsonSerializer.Serialize(order, Options), Options);

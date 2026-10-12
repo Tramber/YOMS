@@ -31,13 +31,16 @@ namespace Oms.Client.Modules.OrderBlotter
         private readonly Session _session;
         private readonly ObservableCollection<OrderAdapter> _orders = new ObservableCollection<OrderAdapter>();
         private readonly FastSearch<OrderAdapter> _fastSearch = new FastSearch<OrderAdapter>();
+        private readonly Func<OrderAdapter, Task> _editOrder;
         private int _lastFreeGroupId = 4000;
 
         [ObservableProperty]
         private string _filterText = "";
 
-        public OrderBlotterViewModel(IOrderServiceProxy proxy, INotificationService notifications, Session session)
+        /// <param name="editOrder">Opens the editor on an order (the Edit button); without it Edit does nothing.</param>
+        public OrderBlotterViewModel(IOrderServiceProxy proxy, INotificationService notifications, Session session, Func<OrderAdapter, Task> editOrder = null)
         {
+            _editOrder = editOrder;
             _proxy = proxy;
             _notifications = notifications;
             _session = session;
@@ -128,6 +131,20 @@ namespace Oms.Client.Modules.OrderBlotter
             if (orders == null || orders.Count == 0 || orders.Any(o => o.GroupId == 0)) return;
             foreach (var order in orders) order.GroupId = 0;
             OrdersView.Refresh();
+        }
+
+        /// <summary>Opens the editor on the selected order; the server decides whether its state allows the update.</summary>
+        [RelayCommand]
+        private async Task EditOrderAsync(IList selected)
+        {
+            var orders = Orders(selected);
+            if (orders.Count == 0 || _editOrder == null) return;
+            if (orders.Count > 1)
+            {
+                _notifications.ProcessError("Edit", "Select a single order to edit");
+                return;
+            }
+            await _editOrder(orders[0]);
         }
 
         [RelayCommand]

@@ -34,7 +34,7 @@ The server writes `oms.sqlite` in its working directory and seeds demo data on a
 - Requests identify the user by login (`Request.Token`); there is no authentication yet.
 - Trades reach the hub through `OrderTradeRequest` (`AddTrade`, `CancelTrade`, `BookTrade`), but there is no booking system: `BookTrade` forces a new trade to booked by hand. The client's Execute button trades what remains of an order at its limit price; there is no form to enter a quantity or an amount.
 - The SignalR layer is tested in `Oms.Server.host.Tests`: the real client `OrderServiceProxy` against the host running in memory (`WebApplicationFactory`, long polling, a SQLite file), plus a check that every `OrderHubMethods` name exists on `OrderHub`. Keep `Program` public (`public partial class Program`) for it. The Avalonia UI itself, and the pushed-change path onto the UI thread, are not tested, and the client has not been run by hand against a live server.
-- The client's Update of an existing order is not offered in the UI, although the server supports it.
+- Editing an existing order: the blotter's Edit button opens the editor on it and sends `EditionCommand.Update`. The server makes an update pending (status `UpdatePending`, values unchanged) until someone presses Accept pending or Reject pending, so the blotter only shows the new values after the acceptance. The edit form does not cover stop prices, settlement or expiry dates.
 
 ## GitHub issues
 

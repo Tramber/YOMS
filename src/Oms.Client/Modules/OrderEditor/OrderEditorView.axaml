@@ -4,7 +4,7 @@
         xmlns:dto="using:Oms.Transport.Contracts.Dto"
         x:Class="Oms.Client.Modules.OrderEditor.OrderEditorView"
         x:DataType="vm:OrderEditorViewModel"
-        Title="New order" Width="460" SizeToContent="Height" WindowStartupLocation="CenterOwner">
+        Title="{Binding Title}" Width="460" SizeToContent="Height" WindowStartupLocation="CenterOwner">
   <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="16" RowSpacing="8">
     <TextBlock Grid.Row="0" Text="Security" VerticalAlignment="Center" />
     <ComboBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Securities}" SelectedItem="{Binding SelectedSecurity}">
@@ -45,8 +45,9 @@
     <TextBlock Grid.Row="8" Grid.ColumnSpan="2" Text="{Binding ErrorMessage}" Foreground="OrangeRed" TextWrapping="Wrap" />
 
     <StackPanel Grid.Row="9" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-      <Button Content="Save draft" Command="{Binding StashCommand}" />
-      <Button Content="Send" Command="{Binding SendCommand}" />
+      <Button Content="Save draft" Command="{Binding StashCommand}" IsVisible="{Binding IsNew}" />
+      <Button Content="Send" Command="{Binding SendCommand}" IsVisible="{Binding IsNew}" />
+      <Button Content="Update" Command="{Binding UpdateCommand}" IsVisible="{Binding IsEditing}" />
       <Button Content="Close" Command="{Binding CloseCommand}" />
     </StackPanel>
   </Grid>

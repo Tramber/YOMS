@@ -72,7 +72,7 @@ namespace Oms.Server.Core.Tests.Services
 
         private static OrderRequest Request(OrderStateCommand command, params int[] ids)
         {
-            return new OrderRequest("token", command, new List<int>(ids), default(TransactionMode));
+            return new OrderRequest("token", command, [.. ids], default(TransactionMode));
         }
 
         private static OrderDto Dto(double quantity = 100, int id = 0)
@@ -92,7 +92,7 @@ namespace Oms.Server.Core.Tests.Services
 
         private static OrderEditionRequest Edition(EditionCommand command, params OrderDto[] dtos)
         {
-            return new OrderEditionRequest("token", command, new List<OrderDto>(dtos), default(TransactionMode));
+            return new OrderEditionRequest("token", command, [.. dtos], default(TransactionMode));
         }
 
         [Test]
@@ -131,7 +131,7 @@ namespace Oms.Server.Core.Tests.Services
 
             var results = _service.HandleRequest(Request(OrderStateCommand.Recall, 1, 2));
 
-            Assert.That(results.Select(r => r.OrderId), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(results.Select(r => r.OrderId), Is.EqualTo([1, 2]));
             Assert.That(results.All(r => r.Result.IsSuccess()), Is.True);
             _orders.Received(1).Update(first);
             _orders.Received(1).Update(second);
@@ -170,11 +170,11 @@ namespace Oms.Server.Core.Tests.Services
         public void Should_refuse_every_order_when_the_user_is_unknown()
         {
             _users.GetUserByLogin("stranger").Returns((User)null);
-            var request = new OrderRequest("stranger", OrderStateCommand.Recall, new List<int> { 1, 2 }, default(TransactionMode));
+            var request = new OrderRequest("stranger", OrderStateCommand.Recall, [1, 2], default(TransactionMode));
 
             var results = _service.HandleRequest(request);
 
-            Assert.That(results.Select(r => r.OrderId), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(results.Select(r => r.OrderId), Is.EqualTo([1, 2]));
             Assert.That(results.All(r => r.Result.IsFailure() && r.Result.ErrorMessage.Contains("Unknown user")), Is.True);
             _orders.DidNotReceive().GetById(Arg.Any<int>());
         }
@@ -296,7 +296,7 @@ namespace Oms.Server.Core.Tests.Services
                 new Security { Id = 3, Currency = Currency.Usd, Type = SecurityType.Undefined },
             });
 
-            Assert.That(_service.GetSecurities().Select(s => s.Id), Is.EqualTo(new[] { 1 }));
+            Assert.That(_service.GetSecurities().Select(s => s.Id), Is.EqualTo([1]));
         }
 
         [Test]
@@ -313,7 +313,7 @@ namespace Oms.Server.Core.Tests.Services
         {
             var order = WorkingOrder(3);
             _orders.GetById(3).Returns(order);
-            var request = new OrderMarketRequest("token", OrderMarketCommand.MarketSend, new List<int> { 3 }, default(TransactionMode));
+            var request = new OrderMarketRequest("token", OrderMarketCommand.MarketSend, [3], default(TransactionMode));
 
             var results = _service.HandleRequest(request);
 
@@ -327,7 +327,7 @@ namespace Oms.Server.Core.Tests.Services
         {
             var order = WorkingOrder(3);
             _orders.GetById(3).Returns(order);
-            var request = new OrderMarketRequest("token", OrderMarketCommand.MarketCancel, new List<int> { 3 }, default(TransactionMode));
+            var request = new OrderMarketRequest("token", OrderMarketCommand.MarketCancel, [3], default(TransactionMode));
 
             var results = _service.HandleRequest(request);
 
@@ -337,7 +337,7 @@ namespace Oms.Server.Core.Tests.Services
 
         private static OrderTradeRequest TradeRequest(OrderTradeCommand command, TradeDto trade)
         {
-            return new OrderTradeRequest("token", command, new List<TradeDto> { trade }, default(TransactionMode));
+            return new OrderTradeRequest("token", command, [trade], default(TransactionMode));
         }
 
         private static TradeDto Execution(int orderId, double quantity = 100)
@@ -427,7 +427,7 @@ namespace Oms.Server.Core.Tests.Services
             Assert.That(_service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(99))).Single().Result.ErrorMessage, Does.Contain("not found"));
             Assert.That(_service.HandleRequest(TradeRequest(OrderTradeCommand.CancelTrade, new TradeDto { OrderId = 3, Id = 5 })).Single().Result.ErrorMessage, Does.Contain("not found"));
             Assert.That(_service.HandleRequest(TradeRequest(OrderTradeCommand.AddTrade, Execution(3, 0))).Single().Result.IsFailure(), Is.True);
-            var stranger = new OrderTradeRequest("nobody", OrderTradeCommand.AddTrade, new List<TradeDto> { Execution(3) }, default(TransactionMode));
+            var stranger = new OrderTradeRequest("nobody", OrderTradeCommand.AddTrade, [Execution(3)], default(TransactionMode));
             Assert.That(_service.HandleRequest(stranger).Single().Result.ErrorMessage, Is.EqualTo("Unknown user"));
             _orders.DidNotReceive().Update(Arg.Any<Order>());
         }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
+using Oms.Client.Model;
 using Oms.Client.Modules.OrderEditor;
 using Oms.Client.Services;
 using Oms.Transport.Contracts.Dto;
@@ -40,7 +41,7 @@ namespace Oms.Client.Tests.Modules
             _proxy.SendAsync(Arg.Do<OrderEditionRequest>(r => _sent = r)).Returns(call =>
                 Task.FromResult(new Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>(
                     call.Arg<OrderEditionRequest>().Command,
-                    new List<Tuple<OrderDto, GenericResultDto>> { Tuple.Create(new OrderDto(), result) })));
+                    [Tuple.Create(new OrderDto(), result)])));
         }
 
         private async Task FillAsync(decimal quantity = 100, decimal? price = 12.5m)
@@ -55,7 +56,7 @@ namespace Oms.Client.Tests.Modules
         {
             await _editor.LoadAsync();
 
-            Assert.That(_editor.Securities.Select(s => s.Name), Is.EqualTo(new[] { "ACME", "Globex" }));
+            Assert.That(_editor.Securities.Select(s => s.Name), Is.EqualTo(["ACME", "Globex"]));
             Assert.That(_editor.SelectedSecurity.Name, Is.EqualTo("ACME"));
             Assert.That(_editor.SelectedFund.Name, Is.EqualTo("Alpha"));
         }
@@ -216,6 +217,93 @@ namespace Oms.Client.Tests.Modules
 
             Assert.That(_closed, Is.EqualTo(1));
             _proxy.DidNotReceive().SendAsync(Arg.Any<OrderEditionRequest>());
+        }
+
+        private static OrderAdapter ExistingOrder()
+        {
+            return OrderAdapter.From(new OrderDto
+            {
+                Id = 42,
+                Security = new SecurityDto { Id = 2, Name = "Globex" },
+                Fund = new FundDto { Id = 5, Name = "Alpha" },
+                Owner = new UserDto { Id = 9, Login = "bob" },
+                Way = OrderDtoWay.Sell,
+                OrderType = OrderDtoType.Limit,
+                Validity = OrderDtoValidityType.Gtc,
+                Quantity = 250,
+                PriceLimit = 7.5,
+                ClientOrderRef = "my-ref",
+            });
+        }
+
+        [Test]
+        public async Task Should_fill_the_form_with_the_order_to_edit()
+        {
+            await _editor.LoadAsync(ExistingOrder());
+
+            Assert.That(_editor.IsEditing, Is.True);
+            Assert.That(_editor.IsNew, Is.False);
+            Assert.That(_editor.Title, Is.EqualTo("Edit order 42"));
+            Assert.That(_editor.SelectedSecurity.Name, Is.EqualTo("Globex"));
+            Assert.That(_editor.SelectedFund.Name, Is.EqualTo("Alpha"));
+            Assert.That(_editor.SelectedWay, Is.EqualTo(OrderDtoWay.Sell));
+            Assert.That(_editor.SelectedValidity, Is.EqualTo(OrderDtoValidityType.Gtc));
+            Assert.That(_editor.Quantity, Is.EqualTo(250m));
+            Assert.That(_editor.PriceLimit, Is.EqualTo(7.5m));
+            Assert.That(_editor.ClientOrderRef, Is.EqualTo("my-ref"));
+            Assert.That(_editor.UpdateCommand.CanExecute(null), Is.True);
+        }
+
+        [Test]
+        public async Task Should_be_a_new_order_form_when_there_is_nothing_to_edit()
+        {
+            await _editor.LoadAsync();
+
+            Assert.That(_editor.IsEditing, Is.False);
+            Assert.That(_editor.Title, Is.EqualTo("New order"));
+        }
+
+        [Test]
+        public async Task Should_send_an_update_with_the_id_and_owner_of_the_order_and_close()
+        {
+            await _editor.LoadAsync(ExistingOrder());
+            _editor.Quantity = 300;
+            ServerAnswers(new GenericResultDto(null, 0));
+
+            await _editor.UpdateCommand.ExecuteAsync(null);
+
+            Assert.That(_sent.Command, Is.EqualTo(EditionCommand.Update));
+            Assert.That(_sent.Token, Is.EqualTo("alice"));
+            var order = _sent.ItemList.Single();
+            Assert.That(order.Id, Is.EqualTo(42));
+            Assert.That(order.Owner.Login, Is.EqualTo("bob"));
+            Assert.That(order.Quantity, Is.EqualTo(300));
+            Assert.That(order.Way, Is.EqualTo(OrderDtoWay.Sell));
+            Assert.That(_closed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task Should_stay_open_with_the_message_when_the_server_refuses_the_update()
+        {
+            await _editor.LoadAsync(ExistingOrder());
+            ServerAnswers(new GenericResultDto("The command Update is not allowed", 1));
+
+            await _editor.UpdateCommand.ExecuteAsync(null);
+
+            Assert.That(_editor.ErrorMessage, Is.EqualTo("The command Update is not allowed"));
+            Assert.That(_closed, Is.EqualTo(0));
+        }
+
+        [Test]
+        public async Task Should_send_a_new_order_without_an_id()
+        {
+            await FillAsync();
+            ServerAnswers(new GenericResultDto(null, 0));
+
+            await _editor.SendCommand.ExecuteAsync(null);
+
+            Assert.That(_sent.ItemList.Single().Id, Is.EqualTo(0));
+            Assert.That(_sent.ItemList.Single().Owner, Is.Null);
         }
     }
 }
