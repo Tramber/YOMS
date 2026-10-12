@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.Connections.Client;
 using Microsoft.AspNetCore.SignalR.Client;
 using Oms.Transport.Contracts;
 using Oms.Transport.Contracts.Dto;
@@ -14,10 +15,11 @@ namespace Oms.Client.Services
     {
         private readonly HubConnection _connection;
 
-        public OrderServiceProxy(string serverUrl = "http://localhost:9001")
+        /// <param name="configureConnection">Adjusts the HTTP connection (transport, message handler); the tests use it to reach an in-memory server.</param>
+        public OrderServiceProxy(string serverUrl = "http://localhost:9001", Action<HttpConnectionOptions> configureConnection = null)
         {
             _connection = new HubConnectionBuilder()
-                .WithUrl(serverUrl + OrderHubMethods.Path)
+                .WithUrl(serverUrl + OrderHubMethods.Path, options => configureConnection?.Invoke(options))
                 .WithAutomaticReconnect()
                 .Build();
         }

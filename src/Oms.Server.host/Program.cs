@@ -40,3 +40,5 @@ app.Services.GetRequiredService<OrderServiceContract>().OrderListUpdated += (typ
     hub.Clients.Group(OrderHub.SubscribersGroup).SendAsync(OrderHubMethods.OrderListUpdated, type, orders);
 
 app.Run();
+
+public partial class Program;
