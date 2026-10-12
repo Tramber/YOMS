@@ -149,10 +149,10 @@ namespace Oms.Server.Domain.Tests.Models.Orders
             Assert.That(order.OrderState, Is.EqualTo(State.Working));
         }
 
-        // Terminated is not covered: IsFilled() reports an order with no execution as filled (see AGENTS.md).
         [TestCase(State.Draft, OrderStatus.Pending)]
         [TestCase(State.Accepting, OrderStatus.New)]
         [TestCase(State.Working, OrderStatus.New)]
+        [TestCase(State.Terminated, OrderStatus.Cancelled)]
         public void Should_derive_the_order_status_from_the_state(State state, OrderStatus expected)
         {
             Assert.That(CreateOrder(state).OrderStatus, Is.EqualTo(expected));

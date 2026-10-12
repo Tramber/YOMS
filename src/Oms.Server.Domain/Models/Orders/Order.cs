@@ -63,14 +63,17 @@ namespace Oms.Server.Domain.Models.Orders
                 .SetOrderState(lastValidEvent.State)
                 .SetTrigger(lastValidEvent.Trigger)
                 .SetPendingTrigger(lastPendingEvent?.Trigger);
+            result.SetExecutionQuantity(ComputeExecutionQuantity(result.Side));
             return result.SetOrderStatus(ComputeOrderStatus(result));
         }
 
+        /// <summary>Quantity executed so far: the trades of the dealing events, minus the cancelled ones; opposite-side trades count against it.</summary>
         private double ComputeExecutionQuantity(Side side)
         {
-            return EventLogs.OfType<OrderParameterEventLog<OrderDealingEventParameter>>()
+            return EventLogs.Where(e => e.TriggerStatus.IsValid())
+                .OfType<OrderParameterEventLog<IOrderDealingData>>()
                 .Select(e => e.Parameters.Trade)
-                .Where(t => t.TradeState != TradeState.Cancelled)
+                .Where(t => t != null && t.TradeState != TradeState.Cancelled)
                 .Sum(t => t.Side == side ? t.ExecutionQuantity : -t.ExecutionQuantity);
         }
 
@@ -91,7 +94,8 @@ namespace Oms.Server.Domain.Models.Orders
                 case OrderStateMachine.State.Working:
                     if (orderData.PendingTrigger == OrderStateMachine.Trigger.Cancel) return OrderStatus.CancelPending;
                     if (orderData.PendingTrigger == OrderStateMachine.Trigger.Update) return OrderStatus.UpdatePending;
-                    if (orderData.RemainingQuantity > Epsilon)
+                    // Partially filled: something was executed and something remains.
+                    if (orderData.RemainingQuantity > Epsilon && orderData.Quantity - orderData.RemainingQuantity > Epsilon)
                         return OrderStatus.PartiallyFilled;
                     goto case OrderStateMachine.State.Accepting;
                 case OrderStateMachine.State.Accepting:
@@ -105,7 +109,8 @@ namespace Oms.Server.Domain.Models.Orders
 
         private bool IsFilled(OrderData orderData)
         {
-            return Math.Abs(orderData.Quantity - orderData.RemainingQuantity) <= Epsilon;
+            // Filled: something was ordered and nothing remains to execute.
+            return orderData.Quantity > Epsilon && Math.Abs(orderData.RemainingQuantity) <= Epsilon;
         }
     }
 }
