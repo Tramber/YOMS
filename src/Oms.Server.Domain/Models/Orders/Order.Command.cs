@@ -227,11 +227,11 @@ namespace Oms.Server.Domain.Models.Orders
                 else if (dealingData != null)
                 {
                     EventLogs.Add(new OrderParameterEventLog<IOrderDealingData>(context, trigger, status, _workingData.OrderState, this, dealingData));
-                    if (dealingData.Trade != null)
-                        _workingData.SetExecutionQuantity(ComputeExecutionQuantity(_workingData.Side));
                 }
                 else
                     EventLogs.Add(new OrderEventLog(context, trigger, status, _workingData.OrderState, this));
+                // After the event is logged: new trades, and a new quantity from an update, both change what remains.
+                _workingData.SetExecutionQuantity(ComputeExecutionQuantity(_workingData.Side));
                 _workingData.SetOrderStatus(ComputeOrderStatus(_workingData));
                 RefreshCurrentData(_workingData);
             }

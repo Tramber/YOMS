@@ -55,6 +55,7 @@ namespace Oms.Server.Domain.Models.Orders
             return this;
         }
 
+        /// <summary>Sets what remains to execute: the quantity minus the executed quantity.</summary>
         public void SetExecutionQuantity(double executionQuantity)
         {
             this.RemainingQuantity = Quantity - executionQuantity;

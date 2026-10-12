@@ -26,7 +26,6 @@ Guidance for AI coding agents working in this repository. See `README.md` for th
 
 ## Known issues
 
-- Unfinished domain logic: `CancelTrade` from `Validating`/`Booking` throws because the state machine has two targets and no guards. `Trade` implements only Create and Cancel (no booking lifecycle), and `Order.AddTrade` cannot succeed yet: its targets (Dealing/Validating) have no guard clauses wired.
-- Suspected domain bugs, not covered by tests: `Order.IsFilled` compares `Quantity - RemainingQuantity` (the executed quantity) to zero, so an order with no execution counts as filled and a cancelled one gets `CancelledFilled`; `RemainingQuantity` is never initialised to `Quantity`.
+- Unfinished domain logic: `CancelTrade` from `Validating`/`Booking` throws because the state machine has two targets and no guards. `Trade` implements only Create and Cancel (no booking lifecycle), and `Order.AddTrade` cannot succeed yet: its targets (Dealing/Validating) have no guard clauses wired (`Order.CreateStateMachine` has the intended ones, `IsFilled` on the working data, but is never used).
 - Persistence: NHibernate maps the domain through `NHibernateHelper` (automapping). Interface-typed associations are pointed to their entity class by `InterfaceReferenceConvention`; the generic event logs (`OrderParameterEventLog<IOrderEditableData>`, ...) are added by `ExplicitTypeSource` because assembly scanning cannot find closed generics. The SQLite schema is created once, when the database file is missing or empty (never dropped or migrated), so delete `oms.sqlite` after changing a mapping.
 - `OrderServiceContract.Handle*` still return `null` (work in progress).
