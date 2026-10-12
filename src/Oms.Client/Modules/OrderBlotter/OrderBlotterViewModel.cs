@@ -1,4 +1,6 @@
-﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -23,9 +25,9 @@ namespace Oms.Client.Modules.OrderBlotter
 
         private readonly CollectionViewSource _orderViewSource = new CollectionViewSource();
 
-        protected override void OnInitialize()
+        protected override Task OnInitializeAsync(CancellationToken cancellationToken)
         {
-            base.OnInitialize();
+            
             _orderViewSource.Source = _orderAdapters;
             _orderViewSource.Filter += (sender, args) => args.Accepted = fastSearch.Predicate((OrderAdapter)args.Item);
             _orderViewSource.GroupDescriptions.Add(new PropertyGroupDescription("GroupId"));
@@ -34,11 +36,12 @@ namespace Oms.Client.Modules.OrderBlotter
             _orderViewSource.IsLiveGroupingRequested = true;
             _orderViewSource.IsLiveSortingRequested = true;
             CreateOrders();
+            return base.OnInitializeAsync(cancellationToken);
         }
 
         public void Exit()
         {
-            base.TryClose(true);
+            base.TryCloseAsync(true);
         }
 
         public bool CanUnGroupOrders(object arg)

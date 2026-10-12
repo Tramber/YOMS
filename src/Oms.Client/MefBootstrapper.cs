@@ -63,7 +63,7 @@ namespace Oms.Client
 
         protected override void OnStartup(object sender, StartupEventArgs e)
         {
-            DisplayRootViewFor<IShell>();
+            DisplayRootViewForAsync<IShell>();
         }
 
         

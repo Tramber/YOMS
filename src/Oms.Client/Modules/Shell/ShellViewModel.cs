@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.Composition;
+using System.Threading;
+using System.Threading.Tasks;
+using System.ComponentModel.Composition;
 using System.Linq;
 using Caliburn.Micro;
 using Oms.Client.Framework.Observables;
@@ -27,13 +29,14 @@ namespace Oms.Client.Modules.Shell
             Notifications = new BindableCollectionEx<NotificationViewModel>();
         }
 
-        protected override void OnInitialize()
+        protected override Task OnInitializeAsync(CancellationToken cancellationToken)
         {
-            base.OnInitialize();
+            
             Items.Add(new OrderBlotterViewModel());
-            Items.First().Activate();
+            ActivateItemAsync(Items.First(), cancellationToken);
 
-            _eventAggregator.Subscribe(this);
+            _eventAggregator.SubscribeOnPublishedThread(this);
+            return base.OnInitializeAsync(cancellationToken);
         }
 
         public IObservableCollection<IScreen> Documents
@@ -48,7 +51,7 @@ namespace Oms.Client.Modules.Shell
 
         public void CreateOrder()
         {
-            _windowManager.ShowDialog(new OrderEditorViewModel());
+            _windowManager.ShowDialogAsync(new OrderEditorViewModel());
         }
 
         public void CreateNotification()
@@ -56,9 +59,10 @@ namespace Oms.Client.Modules.Shell
             _notificationService.ProcessInfo("hello", "Ding Ding Dong");
         }
 
-        public void Handle(INotification message)
+        public Task HandleAsync(INotification message, CancellationToken cancellationToken)
         {
             Notifications.Add(new NotificationViewModel(message));
+            return Task.CompletedTask;
         }
 
         public IObservableCollection<NotificationViewModel> Notifications { get; private set; } 

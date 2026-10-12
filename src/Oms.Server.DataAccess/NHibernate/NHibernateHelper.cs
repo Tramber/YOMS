@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
@@ -32,7 +32,9 @@ namespace Oms.Server.DataAccess.NHibernate
             switch (connectionNode.ProviderName)
             {
                 case "SQLite" :
-                    return SQLiteConfiguration.Standard.UsingFile(Path.Combine(Assembly.GetExecutingAssembly().Location));
+                    return SQLiteConfiguration.Standard
+                        .ConnectionString("Data Source=" + connectionNode.ConnectionString)
+                        .Driver<MicrosoftDataSqliteDriver>();
                 case "Oracle" :
                     return OracleManagedDataClientConfiguration.Oracle10.ConnectionString(connectionNode.ConnectionString);
                 default :

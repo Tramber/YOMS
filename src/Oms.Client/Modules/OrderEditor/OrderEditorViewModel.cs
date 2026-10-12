@@ -1,4 +1,6 @@
-﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
@@ -15,9 +17,9 @@ namespace Oms.Client.Modules.OrderEditor
     {
         private string _searchText;
 
-        protected override void OnInitialize()
+        protected override Task OnInitializeAsync(CancellationToken cancellationToken)
         {
-            base.OnInitialize();
+            
             LogData = new BindableCollection<string>();
             SearchResults = new BindableCollectionEx<string>();
 
@@ -48,12 +50,13 @@ namespace Oms.Client.Modules.OrderEditor
                 .SubscribeOn(Scheduler.CurrentThread)
                 .Subscribe(r => SearchResults.Reload(r.Results.ToList()));
 
+            return base.OnInitializeAsync(cancellationToken);
         }
 
 
         public void Close()
         {
-            TryClose();
+            TryCloseAsync();
         }
 
         public void Search()

@@ -14,7 +14,7 @@ namespace Oms.Client.Services.Notifications
         public void Process(string title, string description, NotificationType notificationType = NotificationType.Info)
         {
             var notification = new Notification(title, description, notificationType);
-            _eventAggregator.Publish(notification, action => action());
+            _eventAggregator.PublishOnUIThreadAsync(notification);
         }
 
         [ImportingConstructor]
