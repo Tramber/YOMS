@@ -20,5 +20,4 @@ Guidance for AI coding agents working in this repository. See `README.md` for th
 ## Known issues
 
 - `Oms.Server.Domain.Tests` has 4 failing tests (order state resolves to `Undefined`); they predate or were unverified by the .NET 10 migration.
-- `Oms.Server.host/log4net.config` is not a valid log4net configuration (appender attributes and root logger).
 - `OrderServiceContract.Handle*` still return `null` (work in progress).

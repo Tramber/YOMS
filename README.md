@@ -2,6 +2,8 @@
 
 Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence, SignalR transport) and a WPF client.
 
+> **Legacy project.** YOMS is very old: it was written for .NET Framework 4.5 (WCF, Unity, NUnit 2, `packages.config`) and left untouched for years. The .NET 10 migration was a quick update just to make it compile and start again, not a modernization. Expect rough edges: unfinished features (the service `Handle*` methods return `null`), 4 failing domain tests, and a WPF client that compiles but has not been run. See `AGENTS.md` for known issues.
+
 ## Layout (`src/`)
 
 | Project | Role |
