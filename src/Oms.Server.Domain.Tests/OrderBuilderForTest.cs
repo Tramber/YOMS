@@ -12,7 +12,7 @@ namespace Oms.Server.Domain.Tests
     public class OrderBuilderForTest : OrderBuilder
     {
        
-        private Queue<ITrade> trades = new Queue<ITrade>();
+        private Queue<ITrade> _trades = new Queue<ITrade>();
         private OrderStateMachine.State? _orderStateOverride;
         private DateTime _currentDateTime = DateTime.Now;
 
@@ -20,7 +20,7 @@ namespace Oms.Server.Domain.Tests
 
         public OrderBuilderForTest WithTrade(Trade trade)
         {
-            trades.Enqueue(trade);
+            _trades.Enqueue(trade);
             return this;
         }
 
@@ -42,12 +42,12 @@ namespace Oms.Server.Domain.Tests
 
         private void AddDataEvent(Order order)
         {
-            order.EventLogs.Add(new OrderParameterEventLog<IOrderEditableData>(CreateTriggerContext(), OrderStateMachine.Trigger.Create, TriggerStatus.Done, _orderStateOverride ?? OrderStateMachine.State.Undefined, order, _editableData));
+            order.EventLogs.Add(new OrderParameterEventLog<IOrderEditableData>(CreateTriggerContext(), OrderStateMachine.Trigger.Create, TriggerStatus.Done, _orderStateOverride ?? OrderStateMachine.State.Undefined, order, EditableData));
         }
 
         private void AddDealEvents(Order order)
         {
-            foreach (var trade in trades)
+            foreach (var trade in _trades)
             {
                 order.EventLogs.Add(new OrderParameterEventLog<IOrderDealingData>(CreateTriggerContext(), OrderStateMachine.Trigger.AddTrade, TriggerStatus.Done, _orderStateOverride ?? OrderStateMachine.State.Undefined, order, new OrderDealingEventParameter(trade)));
             }

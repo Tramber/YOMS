@@ -8,6 +8,7 @@ using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Orders;
+using Oms.Server.Domain.Models.Securities;
 using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
 using Oms.Transport.Contracts.Messages.Orders;
@@ -19,7 +20,7 @@ namespace Oms.Server.Core.Services
     {
         private readonly IRepositoryFacade _repositoryFacade;
 
-        private Dictionary<Enum, Func<Order, ITriggerContext,  IOrderCoreData, IOrderEditableData, IOrderDealingData, GenericResult>> OrderCommandMappings = new Dictionary<Enum, Func<Order, ITriggerContext, IOrderCoreData, IOrderEditableData, IOrderDealingData, GenericResult>>
+        private Dictionary<Enum, Func<Order, ITriggerContext,  IOrderCoreData, IOrderEditableData, IOrderDealingData, GenericResult>> _orderCommandMappings = new Dictionary<Enum, Func<Order, ITriggerContext, IOrderCoreData, IOrderEditableData, IOrderDealingData, GenericResult>>
         {
             {EditionCommand.Stash, (o, c, cd, ed, dd) => o.Create(c, cd, ed)},
             {EditionCommand.Create, (o, c, cd, ed, dd) => o.SendRequest(c, cd, ed)},
@@ -73,6 +74,25 @@ namespace Oms.Server.Core.Services
                 .ToList();
         }
 
+        /// <summary>Every order, with its event log.</summary>
+        public IList<Order> GetOrders()
+        {
+            return _repositoryFacade.Orders.GetOrderList();
+        }
+
+        /// <summary>The active securities an order can be placed on (those the DTOs can describe).</summary>
+        public IList<Security> GetSecurities()
+        {
+            return _repositoryFacade.Securities.GetActiveList()
+                .Where(s => s.Currency != Currency.Undefined && s.Type != SecurityType.Undefined)
+                .ToList();
+        }
+
+        public IList<IFund> GetFunds()
+        {
+            return _repositoryFacade.Funds.GetAll();
+        }
+
         private OrderCommandResult Execute(IUser requester, Enum command, int orderId, Func<Target> prepare)
         {
             if (requester == null)
@@ -91,7 +111,7 @@ namespace Oms.Server.Core.Services
             if (target.Order == null)
                 return new OrderCommandResult(orderId, null, GenericResult.FailureFormat("Order {0} not found", orderId));
 
-            var result = OrderCommandMappings[command](target.Order, new TriggerContext(requester), target.Core, target.Editable, target.Dealing);
+            var result = _orderCommandMappings[command](target.Order, new TriggerContext(requester), target.Core, target.Editable, target.Dealing);
             if (result.IsSuccess())
             {
                 if (target.Order.Id == 0)
@@ -111,6 +131,7 @@ namespace Oms.Server.Core.Services
                 .WithCoreData(requester, owner ?? requester, orderBasket, orderDto.ClientOrderRef)
                 .WithFund(fund)
                 .WithSecurity(security)
+                .WithSide(orderDto.Way.ToMappingEnum<Side>())
                 .WithPrices(orderDto.OrderType.ToMappingEnum<OrderType>(), orderDto.Quantity, orderDto.PriceLimit, orderDto.PriceStop)
                 .WithDates(orderDto.SettlementDate, orderDto.Validity.ToMappingEnum<OrderValidityType>(), orderDto.ExpiryDate);
             return new Target

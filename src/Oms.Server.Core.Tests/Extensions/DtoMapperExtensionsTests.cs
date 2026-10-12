@@ -27,7 +27,17 @@ namespace Oms.Server.Core.Tests.Extensions
         [Test]
         public void Should_refuse_to_map_an_enum_value_that_has_no_dto_equivalent()
         {
-            Assert.Throws<NotSupportedException>(() => Currency.Undefined.ToMappingEnum<CurrencyDto>());
+            // "Buy" is a side, the order types are Market, Limit and Stop.
+            Assert.Throws<NotSupportedException>(() => Side.Buy.ToMappingEnum<OrderDtoType>());
+        }
+
+        [Test]
+        public void Should_map_a_security_without_currency_or_type_instead_of_failing()
+        {
+            var dto = new Security { Id = 3 }.ToDto();
+
+            Assert.That(dto.Currency, Is.EqualTo(CurrencyDto.Undefined));
+            Assert.That(dto.Type, Is.EqualTo(SecurityDtoType.Undefined));
         }
 
         [Test]
@@ -53,7 +63,7 @@ namespace Oms.Server.Core.Tests.Extensions
                 Name = "ACME",
                 IsinCode = "FR0000000001",
                 BloombergTicker = "ACME FP",
-                Currency = Currency.EUR,
+                Currency = Currency.Eur,
                 Type = SecurityType.Bond,
                 IsActive = true,
                 CreationDate = created,
@@ -66,7 +76,7 @@ namespace Oms.Server.Core.Tests.Extensions
             Assert.That(dto.Name, Is.EqualTo("ACME"));
             Assert.That(dto.IsinCode, Is.EqualTo("FR0000000001"));
             Assert.That(dto.BloombergTicker, Is.EqualTo("ACME FP"));
-            Assert.That(dto.Currency, Is.EqualTo(CurrencyDto.EUR));
+            Assert.That(dto.Currency, Is.EqualTo(CurrencyDto.Eur));
             Assert.That(dto.Type, Is.EqualTo(SecurityDtoType.Bond));
             Assert.That(dto.IsActive, Is.True);
             Assert.That(dto.CreationDate, Is.EqualTo(created));
@@ -114,7 +124,7 @@ namespace Oms.Server.Core.Tests.Extensions
             var builder = new OrderBuilder()
                 .WithCoreData(user, user, new OrderBasket(), "client-ref")
                 .WithFund(new Fund { Id = 6, Name = "Alpha" })
-                .WithSecurity(new Security { Id = 8, Name = "ACME", Currency = Currency.EUR, Type = SecurityType.Equity })
+                .WithSecurity(new Security { Id = 8, Name = "ACME", Currency = Currency.Eur, Type = SecurityType.Equity })
                 .WithPrices(OrderType.Limit, 100, 12.5, 11)
                 .WithDates(new DateTime(2030, 1, 3), OrderValidityType.Gtd, new DateTime(2030, 2, 1))
                 .WithInitialReferentialData("instCode", SecurityCodeType.Isin, "fundCode", FundCodeType.Other, "folioCode");
@@ -137,6 +147,27 @@ namespace Oms.Server.Core.Tests.Extensions
             Assert.That(dto.Creator.Login, Is.EqualTo("trader"));
             Assert.That(dto.Security.Name, Is.EqualTo("ACME"));
             Assert.That(dto.Fund.Name, Is.EqualTo("Alpha"));
+        }
+
+        [Test]
+        public void Should_map_the_state_status_and_remaining_quantity_of_an_order()
+        {
+            var user = new User { Id = 2, Login = "trader" };
+            var builder = new OrderBuilder()
+                .WithCoreData(user, user, new OrderBasket(), "ref")
+                .WithFund(new Fund())
+                .WithSecurity(new Security { Currency = Currency.Eur, Type = SecurityType.Equity })
+                .WithPrices(OrderType.Limit, 100, 10, null)
+                .WithInitialReferentialData("instCode", SecurityCodeType.Isin, "fundCode", FundCodeType.Other, "folioCode");
+            var order = new Order { Id = 5 };
+            order.SendRequest(new TriggerContext(user), builder.BuildOrderCoreData(), builder.BuildOrderEditableData());
+            order.Cancel(new TriggerContext(user));
+
+            var dto = order.ToDto();
+
+            Assert.That(dto.State, Is.EqualTo("Accepting"));
+            Assert.That(dto.Status, Is.EqualTo("CancelPending"));
+            Assert.That(dto.RemainingQuantity, Is.EqualTo(100));
         }
     }
 }

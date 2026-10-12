@@ -1,8 +1,20 @@
 # YOMS
 
-Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence, SignalR transport) and a cross-platform Avalonia client.
+Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence, SignalR transport) and a cross-platform Avalonia client. Traders create orders, the server takes each order through its workflow (draft, acceptance, working, dealing, validation, booking), keeps the full history of every order, and pushes the changes to every connected client.
 
-> **Legacy project.** YOMS is very old: it was written for .NET Framework 4.5 (WCF, Unity, NUnit 2, `packages.config`) and left untouched for years. The .NET 10 migration was a quick update just to make it compile and start again, not a modernization. Expect rough edges: unfinished features (the service `Handle*` methods return `null`), and a client that has only been smoke-tested. See `AGENTS.md` for known issues.
+> **Legacy project.** YOMS is very old: it was written for .NET Framework 4.5 (WCF, Unity, NUnit 2, `packages.config`) and left untouched for years. The .NET 10 migration was a quick update to make it compile and run again, then the domain, the persistence and the client were finished on top of it. Expect rough edges: there is no authentication, the database is not migrated, and trades cannot be booked from the client yet. See `AGENTS.md` for the known issues.
+
+## Getting started
+
+You need the .NET 10 SDK (`global.json` pins it).
+
+```
+dotnet build src/Oms.sln
+dotnet run --project src/Oms.Server.host     # the server, http://localhost:9001
+dotnet run --project src/Oms.Client         # the client, in another terminal
+```
+
+In the client, keep the login `trader` and press **Connect**, then **Create Order**. The first start of the server creates the SQLite database `oms.sqlite` in the working directory and fills it with demo data (the user `trader`, two funds, three securities). Delete the file to start again; set `SeedDevelopmentData=false` to start with an empty database, and `OMS_SERVER` on the client to use another server address. See [`docs/client.md`](docs/client.md) for what the client does.
 
 ## Layout (`src/`)
 
@@ -10,20 +22,25 @@ Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence
 |---|---|
 | `Oms.Server.Domain` | Orders, trades, validation (FluentValidation) and the Stateless order workflow |
 | `Oms.Server.DataAccess` | NHibernate/FluentNHibernate repositories on SQLite |
-| `Oms.Server.Core` | Application services and DTO mapping |
+| `Oms.Server.Core` | Application services, DTO mapping and the demo data |
 | `Oms.Server.host` | ASP.NET Core host exposing the SignalR `OrderHub` at `http://localhost:9001/orders` |
 | `Oms.Transport` | DTOs, messages and the shared service contract |
 | `Oms.Client` | Avalonia desktop client (CommunityToolkit.Mvvm, Microsoft DI); runs on Windows, macOS and Linux |
-| `Oms.Framework` | Shared utilities |
+| `Oms.Framework` | Shared utilities (task dispatchers) |
 
-See [`docs/architecture.md`](docs/architecture.md) for the server architecture, request flow and order workflow, and [`docs/client.md`](docs/client.md) for the client.
+Each of these has a `*.Tests` project (NUnit) except `Oms.Server.host` and `Oms.Transport`, which are covered by the tests of the projects that use them. `Oms.Server.DataAccess.Tests` runs the repositories and the order service against a real SQLite file.
+
+## Documentation
+
+- [`docs/architecture.md`](docs/architecture.md): components, request flow, the order model (event sourcing), the order and trade workflows, persistence, hosting and configuration.
+- [`docs/client.md`](docs/client.md): using the client, its modules and its link to the server.
+- `AGENTS.md` (also read by `CLAUDE.md`): commands, conventions and known issues, for people and coding agents.
 
 ## Build and test
 
 ```
 dotnet build src/Oms.sln
 dotnet test src/Oms.sln
-dotnet run --project src/Oms.Server.host
-dotnet run --project src/Oms.Client
 ```
 
+CI (`.github/workflows/ci.yml`) runs both on Ubuntu for every pull request.

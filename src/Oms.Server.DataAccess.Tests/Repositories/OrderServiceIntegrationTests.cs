@@ -34,7 +34,7 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             _login = "trader-" + suffix;
             var user = new User { Login = _login, IsActive = true };
             _fund = new Fund { Name = "Fund " + suffix };
-            _security = new Security { Name = "Security " + suffix, Creator = user, BloombergTicker = "T", CreationDate = DateTime.Now, Currency = Currency.EUR, Type = SecurityType.Equity };
+            _security = new Security { Name = "Security " + suffix, Creator = user, BloombergTicker = "T", CreationDate = DateTime.Now, Currency = Currency.Eur, Type = SecurityType.Equity, IsActive = true };
             _repositories = new RepositoryFacade();
             _repositories.Users.Add(user);
             _repositories.Funds.Add(_fund);
@@ -127,6 +127,34 @@ namespace Oms.Server.DataAccess.Tests.Repositories
             Assert.That(response.ResultList.Single().Item2.ErrorMessage, Does.Contain("not allowed"));
             Assert.That(_repositories.Orders.GetOrderById(id).EventLogs.Count, Is.EqualTo(1));
             Assert.That(_published, Is.Empty);
+        }
+
+        [Test]
+        public void Should_list_the_orders_securities_and_funds_that_were_saved()
+        {
+            var id = CreateOrder();
+
+            var order = _contract.GetOrders().Single(o => o.Id == id);
+
+            Assert.That(order.State, Is.EqualTo("Accepting"));
+            Assert.That(order.Status, Is.EqualTo("New"));
+            Assert.That(order.RemainingQuantity, Is.EqualTo(100));
+            Assert.That(order.Security.Id, Is.EqualTo(_security.Id));
+            Assert.That(_contract.GetSecurities().Select(sec => sec.Id), Does.Contain(_security.Id));
+            Assert.That(_contract.GetFunds().Select(f => f.Id), Does.Contain(_fund.Id));
+        }
+
+        [Test]
+        public void Should_keep_the_side_of_a_sell_order()
+        {
+            var dto = NewOrder();
+            dto.Way = OrderDtoWay.Sell;
+
+            var response = _contract.Handle(new OrderEditionRequest(_login, EditionCommand.Create, new List<OrderDto> { dto }, default(TransactionMode)));
+
+            Assert.That(response.ResultList.Single().Item2.ErrorMessage, Is.Null);
+            Assert.That(response.ResultList.Single().Item1.Way, Is.EqualTo(OrderDtoWay.Sell));
+            Assert.That(_contract.GetOrders().Single(o => o.Id == response.ResultList.Single().Item1.Id).Way, Is.EqualTo(OrderDtoWay.Sell));
         }
 
         [Test]

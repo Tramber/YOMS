@@ -6,10 +6,12 @@ namespace Oms.Transport.Contracts.Dto
     public enum CurrencyDto
     {
         [EnumMember]
-        USD,
+        Usd,
         [EnumMember]
-        EUR,
+        Eur,
         [EnumMember]
-        GBP,
+        Gbp,
+        [EnumMember]
+        Undefined,
     }
 }

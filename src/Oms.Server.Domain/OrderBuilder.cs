@@ -10,52 +10,58 @@ namespace Oms.Server.Domain
     /// <summary>Collects the data of an order to create. Build the core and editable data for the order commands, or <see cref="Build"/> for an empty order.</summary>
     public class OrderBuilder
     {
-        protected OrderCoreData _orderCoreData = new OrderCoreData();
-        protected OrderEditableEventParameter _editableData = new OrderEditableEventParameter();
+        protected OrderCoreData OrderCoreData = new OrderCoreData();
+        protected OrderEditableEventParameter EditableData = new OrderEditableEventParameter();
 
         public OrderBuilder WithCoreData(IUser creator, IUser owner, OrderBasket orderBasket, string orderClientRef)
         {
-            _orderCoreData.Creator = creator;
-            _orderCoreData.CreationDate = DateTime.Now;
-            _orderCoreData.ClientOrderRef = orderClientRef;
-            _orderCoreData.OrderBasket = orderBasket;
-            _orderCoreData.Owner = owner;
+            OrderCoreData.Creator = creator;
+            OrderCoreData.CreationDate = DateTime.Now;
+            OrderCoreData.ClientOrderRef = orderClientRef;
+            OrderCoreData.OrderBasket = orderBasket;
+            OrderCoreData.Owner = owner;
             return this;
         }
 
         public OrderBuilder WithSecurity(ISecurity security)
         {
-            _editableData.Security = security;
+            EditableData.Security = security;
             return this;
         }
 
         public OrderBuilder WithFund(IFund fund)
         {
-            _editableData.Fund = fund;
+            EditableData.Fund = fund;
+            return this;
+        }
+
+        public OrderBuilder WithSide(Side side)
+        {
+            EditableData.Side = side;
             return this;
         }
 
         public OrderBuilder WithPrices(OrderType orderType, double quantity, double? priceLimit, double? priceStop)
         {
-            _editableData.OrderType = orderType;
-            _editableData.PriceLimit = priceLimit;
-            _editableData.PriceStop = priceStop;
-            _editableData.Quantity = quantity;
+            EditableData.OrderType = orderType;
+            EditableData.PriceLimit = priceLimit;
+            EditableData.PriceStop = priceStop;
+            EditableData.Quantity = quantity;
             return this;
         }
 
         public OrderBuilder WithDates(DateTime? settlementDate, OrderValidityType orderValidity, DateTime? expiryDate)
         {
-            _editableData.SettlementDate = settlementDate;
-            _editableData.ExpiryDate = expiryDate;
-            _editableData.OrderValidity = orderValidity;
-            _editableData.ExpiryDate = expiryDate;
+            EditableData.SettlementDate = settlementDate;
+            EditableData.ExpiryDate = expiryDate;
+            EditableData.OrderValidity = orderValidity;
+            EditableData.ExpiryDate = expiryDate;
             return this;
         }
 
         public OrderBuilder WithBasket(OrderBasket orderBasket)
         {
-            _orderCoreData.OrderBasket = orderBasket;
+            OrderCoreData.OrderBasket = orderBasket;
             return this;
         }
 
@@ -66,7 +72,7 @@ namespace Oms.Server.Domain
             FundCodeType fundCodeType,
             string fundFolioCode)
         {
-            _orderCoreData.InitialReferentialData = new OrderInitialReferentialData
+            OrderCoreData.InitialReferentialData = new OrderInitialReferentialData
             {
                 FundCode = fundCode,
                 FundCodeType = fundCodeType,
@@ -80,13 +86,13 @@ namespace Oms.Server.Domain
         /// <summary>The core data (creator, owner, basket, client reference, initial referential data) set so far.</summary>
         public OrderCoreData BuildOrderCoreData()
         {
-            return _orderCoreData;
+            return OrderCoreData;
         }
 
         /// <summary>The editable data (fund, security, prices, dates) set so far.</summary>
         public IOrderEditableData BuildOrderEditableData()
         {
-            return _editableData;
+            return EditableData;
         }
 
         public virtual Order Build()

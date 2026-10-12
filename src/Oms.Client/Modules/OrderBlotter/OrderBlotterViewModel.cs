@@ -1,20 +1,34 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Collections;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Oms.Client.Framework.Observables;
 using Oms.Client.Model;
 using Oms.Client.Modules.Shell;
+using Oms.Client.Services;
+using Oms.Client.Services.Notifications;
+using Oms.Transport.Contracts;
 using Oms.Transport.Contracts.Dto;
+using Oms.Transport.Contracts.Messages;
+using Oms.Transport.Contracts.Messages.Orders;
 
 namespace Oms.Client.Modules.OrderBlotter
 {
-    /// <summary>Grid of orders, grouped by <c>GroupId</c> and sortable. Starts with sample data until the server pushes real orders.</summary>
+    /// <summary>
+    /// Grid of the orders of the server, grouped by <c>GroupId</c> (a local grouping) and sortable. It is filled by
+    /// <see cref="LoadAsync"/>, follows the changes pushed by the server, and sends the commands of the toolbar for the selected orders.
+    /// </summary>
     public partial class OrderBlotterViewModel : DocumentViewModel
     {
+        private readonly IOrderServiceProxy _proxy;
+        private readonly INotificationService _notifications;
+        private readonly Session _session;
         private readonly ObservableCollection<OrderAdapter> _orders = new ObservableCollection<OrderAdapter>();
         private readonly FastSearch<OrderAdapter> _fastSearch = new FastSearch<OrderAdapter>();
         private int _lastFreeGroupId = 4000;
@@ -22,27 +36,22 @@ namespace Oms.Client.Modules.OrderBlotter
         [ObservableProperty]
         private string _filterText = "";
 
-        public OrderBlotterViewModel()
+        public OrderBlotterViewModel(IOrderServiceProxy proxy, INotificationService notifications, Session session)
         {
-            // Sample data until the server pushes real orders.
-            var random = new Random();
-            for (var i = 0; i < 50; i++)
-                _orders.Add(new OrderAdapter
-                {
-                    Id = i,
-                    Price = random.NextDouble() * 100.0,
-                    Quantity = random.Next(100, 100000),
-                    GroupId = i % 5,
-                });
+            _proxy = proxy;
+            _notifications = notifications;
+            _session = session;
 
             OrdersView = new DataGridCollectionView(_orders) { Filter = item => _fastSearch.Predicate((OrderAdapter)item) };
             OrdersView.GroupDescriptions.Add(new DataGridPathGroupDescription(nameof(OrderAdapter.GroupId)));
             OrdersView.SortDescriptions.Add(DataGridSortDescription.FromPath(nameof(OrderAdapter.Id)));
+
+            // Pushed changes arrive on a background thread.
+            proxy.Subscribe(new ChangeObserver(change => Dispatcher.UIThread.Post(() => Apply(change.Item1, change.Item2))));
         }
 
         public override string DisplayName => "Order Blotter";
 
-        /// <summary>The grouped, sorted and filtered rows bound to the grid.</summary>
         public DataGridCollectionView OrdersView { get; }
 
         /// <summary>Accepts <c>Property = "value"</c> (nested paths allowed, e.g. <c>Security.IsinCode = "X"</c>); anything else shows all rows.</summary>
@@ -64,11 +73,42 @@ namespace Oms.Client.Modules.OrderBlotter
             OrdersView.Refresh();
         }
 
-        /// <summary>Adds the orders pushed by the server. Call it on the UI thread.</summary>
-        public void AddOrders(OrderDto[] dtos)
+        /// <summary>Replaces the rows by the orders of the server. The local groups of the orders that stay are kept.</summary>
+        public async Task LoadAsync()
+        {
+            var dtos = await _proxy.GetOrdersAsync();
+            var groups = _orders.ToDictionary(o => o.Id, o => o.GroupId);
+            _orders.Clear();
+            foreach (var dto in dtos)
+            {
+                var adapter = OrderAdapter.From(dto);
+                int groupId;
+                if (groups.TryGetValue(dto.Id, out groupId))
+                    adapter.GroupId = groupId;
+                _orders.Add(adapter);
+            }
+        }
+
+        /// <summary>Applies a change pushed by the server: add or update the orders, or remove the deleted ones. Call it on the UI thread.</summary>
+        public void Apply(ItemOperationType operationType, OrderDto[] dtos)
         {
             foreach (var dto in dtos)
-                _orders.Add(new OrderAdapter { Id = dto.Id, Price = dto.PriceLimit ?? 0, Quantity = dto.Quantity });
+            {
+                var existing = _orders.FirstOrDefault(o => o.Id == dto.Id);
+                if (operationType == ItemOperationType.Delete || operationType == ItemOperationType.Remove)
+                {
+                    if (existing != null) _orders.Remove(existing);
+                }
+                else if (existing != null)
+                {
+                    existing.UpdateFrom(dto);
+                }
+                else
+                {
+                    _orders.Add(OrderAdapter.From(dto));
+                }
+            }
+            OrdersView.Refresh();
         }
 
         [RelayCommand]
@@ -88,6 +128,78 @@ namespace Oms.Client.Modules.OrderBlotter
             if (orders == null || orders.Count == 0 || orders.Any(o => o.GroupId == 0)) return;
             foreach (var order in orders) order.GroupId = 0;
             OrdersView.Refresh();
+        }
+
+        [RelayCommand]
+        private Task CancelOrdersAsync(IList selected) => SendStateAsync("Cancel", OrderStateCommand.Cancel, selected);
+
+        [RelayCommand]
+        private Task RecallOrdersAsync(IList selected) => SendStateAsync("Recall", OrderStateCommand.Recall, selected);
+
+        [RelayCommand]
+        private Task DeleteOrdersAsync(IList selected) => SendStateAsync("Delete", OrderStateCommand.Delete, selected);
+
+        [RelayCommand]
+        private Task AcceptPendingAsync(IList selected) => SendStateAsync("Accept", OrderStateCommand.AcceptPending, selected);
+
+        [RelayCommand]
+        private Task RejectPendingAsync(IList selected) => SendStateAsync("Reject", OrderStateCommand.RejectPending, selected);
+
+        [RelayCommand]
+        private Task SendToMarketAsync(IList selected) => SendMarketAsync("Send to market", OrderMarketCommand.MarketSend, selected);
+
+        [RelayCommand]
+        private Task CancelAtMarketAsync(IList selected) => SendMarketAsync("Cancel at market", OrderMarketCommand.MarketCancel, selected);
+
+        private async Task SendStateAsync(string label, OrderStateCommand command, IList selected)
+        {
+            var ids = SelectedIds(selected);
+            if (ids.Count == 0) return;
+            try
+            {
+                var response = await _proxy.SendAsync(new OrderRequest(_session.Login, command, ids, default(TransactionMode)));
+                Report(label, response.ResultList);
+            }
+            catch (Exception ex)
+            {
+                _notifications.ProcessError(label, ex.Message);
+            }
+        }
+
+        private async Task SendMarketAsync(string label, OrderMarketCommand command, IList selected)
+        {
+            var ids = SelectedIds(selected);
+            if (ids.Count == 0) return;
+            try
+            {
+                var response = await _proxy.SendAsync(new OrderMarketRequest(_session.Login, command, ids, default(TransactionMode)));
+                Report(label, response.ResultList);
+            }
+            catch (Exception ex)
+            {
+                _notifications.ProcessError(label, ex.Message);
+            }
+        }
+
+        private static List<int> SelectedIds(IList selected)
+        {
+            return selected == null ? new List<int>() : selected.OfType<OrderAdapter>().Select(o => o.Id).ToList();
+        }
+
+        /// <summary>A refused order is shown as an error; the accepted ones show up through the changes pushed by the server.</summary>
+        private void Report(string label, IEnumerable<Tuple<int, GenericResultDto>> results)
+        {
+            foreach (var result in results.Where(r => r.Item2.ErrorCode != 0))
+                _notifications.ProcessError(label + ": order " + result.Item1, result.Item2.ErrorMessage);
+        }
+
+        private sealed class ChangeObserver : IObserver<Tuple<ItemOperationType, OrderDto[]>>
+        {
+            private readonly Action<Tuple<ItemOperationType, OrderDto[]>> _onChange;
+            public ChangeObserver(Action<Tuple<ItemOperationType, OrderDto[]>> onChange) { _onChange = onChange; }
+            public void OnNext(Tuple<ItemOperationType, OrderDto[]> value) => _onChange(value);
+            public void OnError(Exception error) { }
+            public void OnCompleted() { }
         }
     }
 }

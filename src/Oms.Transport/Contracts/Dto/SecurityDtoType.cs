@@ -10,6 +10,8 @@ namespace Oms.Transport.Contracts.Dto
         [EnumMember]
         Bond,
         [EnumMember]
-        Future
+        Future,
+        [EnumMember]
+        Undefined,
     }
 }

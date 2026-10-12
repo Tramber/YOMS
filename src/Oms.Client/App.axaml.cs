@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -22,6 +23,9 @@ namespace Oms.Client
                     .AddSingleton<IMessenger>(WeakReferenceMessenger.Default)
                     .AddSingleton<INotificationService, NotificationService>()
                     .AddSingleton<IWindowService, WindowService>()
+                    .AddSingleton<Session>()
+                    // OMS_SERVER overrides the default address of the server.
+                    .AddSingleton<IOrderServiceProxy>(_ => new OrderServiceProxy(Environment.GetEnvironmentVariable("OMS_SERVER") ?? "http://localhost:9001"))
                     .AddSingleton<ShellViewModel>()
                     .BuildServiceProvider();
 

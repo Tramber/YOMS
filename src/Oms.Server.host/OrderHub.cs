@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Oms.Transport.Contracts;
@@ -23,6 +24,12 @@ public class OrderHub : Hub
     public Response<Tuple<int, GenericResultDto>, OrderStateCommand> HandleOrder(OrderRequest request) => _service.Handle(request);
 
     public Response<Tuple<int, GenericResultDto>, OrderMarketCommand> HandleOrderMarket(OrderMarketRequest request) => _service.Handle(request);
+
+    public List<OrderDto> GetOrders() => _service.GetOrders();
+
+    public List<SecurityDto> GetSecurities() => _service.GetSecurities();
+
+    public List<FundDto> GetFunds() => _service.GetFunds();
 
     public Task SubscribeToEvents() => Groups.AddToGroupAsync(Context.ConnectionId, SubscribersGroup);
 

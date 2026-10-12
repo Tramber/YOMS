@@ -16,15 +16,15 @@ flowchart LR
     Transport -.shared by.- Host
 ```
 
-| Project | Responsibility |
-|---|---|
-| `Oms.Transport` | DTOs, request/response messages and `IOrderServiceContract`. The only assembly shared by client and server. |
-| `Oms.Server.Domain` | Business model: `Order`, `Trade`, `Security`, `Fund`, `User`; the order workflow; FluentValidation validators; repository interfaces. No persistence or transport types. |
-| `Oms.Server.DataAccess` | NHibernate/FluentNHibernate automapping and repositories behind `IRepositoryFacade`. Runs on SQLite through `MicrosoftDataSqliteDriver`. |
-| `Oms.Server.Core` | Application layer: `OrderManagementService` maps request commands to domain operations, `DtoMapperExtensions` maps domain to DTOs. |
-| `Oms.Server.host` | ASP.NET Core process, DI registration and the SignalR `OrderHub`. |
-| `Oms.Client` | Cross-platform Avalonia UI (CommunityToolkit.Mvvm, Microsoft DI). |
-| `Oms.Framework` | Task dispatcher queues/bags and other shared utilities. |
+| Project                 | Responsibility                                                                                                                                                           |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Oms.Transport`         | DTOs, request/response messages and `IOrderServiceContract`. The only assembly shared by client and server.                                                              |
+| `Oms.Server.Domain`     | Business model: `Order`, `Trade`, `Security`, `Fund`, `User`; the order workflow; FluentValidation validators; repository interfaces. No persistence or transport types. |
+| `Oms.Server.DataAccess` | NHibernate/FluentNHibernate automapping and repositories behind `IRepositoryFacade`. Runs on SQLite through `MicrosoftDataSqliteDriver`.                                 |
+| `Oms.Server.Core`       | Application layer: `OrderManagementService` maps request commands to domain operations, `DtoMapperExtensions` maps domain to DTOs.                                       |
+| `Oms.Server.host`       | ASP.NET Core process, DI registration and the SignalR `OrderHub`.                                                                                                        |
+| `Oms.Client`            | Cross-platform Avalonia UI (CommunityToolkit.Mvvm, Microsoft DI).                                                                                                        |
+| `Oms.Framework`         | Task dispatcher queues/bags and other shared utilities.                                                                                                                  |
 
 ## Request flow
 
@@ -35,6 +35,13 @@ flowchart LR
 5. `OrderServiceContract` answers with one outcome per order: `Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>` for edition requests (the order as saved, or as submitted when it failed) and `Response<Tuple<int, GenericResultDto>, ...>` (order id and outcome) for state and market requests.
 6. It then raises `OrderListUpdated` with the orders that changed: Add for created orders, Update for edited, state and market changes, Delete for deleted orders. Nothing is raised when every order failed. Clients call `SubscribeToEvents` to join a SignalR group, and the host forwards the event to it as `OrderListUpdated(ItemOperationType, OrderDto[])`.
 
+### Queries and the order DTO
+
+Besides the three commands the hub has three queries, without arguments, so that a client can fill itself before it follows the pushed changes: `GetOrders` (every order, with its state), `GetSecurities` (the active securities an order can be placed on, i.e. with a currency and a type) and `GetFunds`.
+
+An `OrderDto` carries the editable data (security, fund, way, type, quantity, prices, validity, dates, client reference), who created and owns it, and what the server computed: `State` (Draft, Accepting, Working, ...), `Status` (New, PartiallyFilled, CancelPending, ...) and `RemainingQuantity`. Both are strings, so a client does not need the domain enums.
+
+Request messages carry the login of the user in `Token`, the command, the list of items (DTOs or order ids) and a `TransactionMode` that is not used yet.
 
 ## Order model: event sourcing
 
@@ -103,8 +110,27 @@ stateDiagram-v2
 
 ## Persistence
 
-`NHibernateHelper` (internal singleton) builds the session factory with FluentNHibernate automapping over the `Order` assembly (`DefaultLazy.Never`, event-log base types ignored) and creates the schema on start-up. The provider comes from the `OmsDB` connection string in `App.config`; SQLite is wired through `Microsoft.Data.Sqlite`, an Oracle branch exists but needs a .NET provider package.
+`NHibernateHelper` (internal singleton) builds the session factory with FluentNHibernate automapping over the domain assembly. Four pieces make the domain mappable:
+
+- `InterfaceReferenceConvention` points every association typed as an interface (`IUser`, `IFund`, `ISecurity`, `IOrder`, `ITrade`, `ITriggerContext`, the event parameters, ...) to the entity class that implements it, and saves the objects an order owns (basket, initial referential data, trigger contexts, event parameters) together with it.
+- `ExplicitTypeSource` adds the closed generic event logs (`OrderParameterEventLog<IOrderEditableData>`, ...), which assembly scanning cannot find. Each event log hierarchy is one table with a discriminator (`EventLogDiscriminatorConvention` gives readable values) and one parameter column per parameter type.
+- The mapping overrides of `Order` and `Trade` ignore the computed members and map the event logs as lists.
+- `Microsoft.Data.Sqlite` cannot describe its schema, so reserved-word discovery is turned off.
+
+The provider comes from the `OmsDB` connection string in the host's `App.config` (an Oracle branch exists but needs a .NET provider package). For SQLite the string is the database file, relative to the working directory (`oms.sqlite`). The schema is created once, when that file is missing or empty; it is never dropped or migrated, so delete the file after changing a mapping.
+
+## Hosting and configuration
+
+`Oms.Server.host` is an ASP.NET Core application listening on `http://localhost:9001`. `Program.cs` registers the repositories, `OrderManagementService` and `OrderServiceContract` as singletons, maps `OrderHub` at `/orders` and forwards `OrderServiceContract.OrderListUpdated` to the hub's subscriber group.
+
+| Setting | Effect |
+|---|---|
+| `OmsDB` connection string (`App.config`) | SQLite database file, default `oms.sqlite` in the working directory |
+| `SeedDevelopmentData` (environment variable or command line, default `true`) | Adds demo data when the database has no active user: the user `trader`, the funds Alpha Fund and Beta Fund, and three securities (equity, bond, future). `DevelopmentData` is the code. Set it to `false` for a real database. |
+| `log4net.config` | Console logging, read from the application directory |
+
+There is no authentication: a request is run as the user whose login it carries.
 
 ## Known gaps
 
-See `AGENTS.md`. In short: unfinished service responses and notifications, a client that has only been smoke-tested and untested SignalR round trip.
+See `AGENTS.md`. In short: no authentication and no database migrations; trades (`AddTrade`, `CancelTrade`, the booking steps and `TradeBooked`) work in the domain but no hub command reaches them, so a client cannot book executions yet; and there is no query for the event log of a single order.

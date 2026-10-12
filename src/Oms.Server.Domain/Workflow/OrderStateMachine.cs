@@ -47,7 +47,7 @@ namespace Oms.Server.Domain.Workflow
       Terminated,
     }
 
-    private readonly StateMachine<State, Trigger> stateMachine = null;
+    private readonly StateMachine<State, Trigger> _stateMachine = null;
 
     public EntryExitDelegate OnUndefinedEntry = null;
     public EntryExitDelegate OnUndefinedExit = null;
@@ -98,21 +98,21 @@ namespace Oms.Server.Domain.Workflow
 
     public OrderStateMachine()
     {
-      stateMachine = new StateMachine<State, Trigger>(State.Undefined);
-      stateMachine.Configure(State.Undefined)
+      _stateMachine = new StateMachine<State, Trigger>(State.Undefined);
+      _stateMachine.Configure(State.Undefined)
         .OnEntry(() => { if (OnUndefinedEntry != null) OnUndefinedEntry(); })
         .OnExit(() => { if (OnUndefinedExit != null) OnUndefinedExit(); })
         .PermitIf(Trigger.Create, State.Draft , () => { if (GuardClauseFromUndefinedToDraftUsingTriggerCreate != null) return GuardClauseFromUndefinedToDraftUsingTriggerCreate(); return true; } )
         .PermitIf(Trigger.SendRequest, State.Accepting , () => { if (GuardClauseFromUndefinedToAcceptingUsingTriggerSendRequest != null) return GuardClauseFromUndefinedToAcceptingUsingTriggerSendRequest(); return true; } )
       ;
-      stateMachine.Configure(State.Draft)
+      _stateMachine.Configure(State.Draft)
         .OnEntry(() => { if (OnDraftEntry != null) OnDraftEntry(); })
         .OnExit(() => { if (OnDraftExit != null) OnDraftExit(); })
         .PermitIf(Trigger.SendRequest, State.Accepting , () => { if (GuardClauseFromDraftToAcceptingUsingTriggerSendRequest != null) return GuardClauseFromDraftToAcceptingUsingTriggerSendRequest(); return true; } )
         .PermitIf(Trigger.Delete, State.Terminated , () => { if (GuardClauseFromDraftToTerminatedUsingTriggerDelete != null) return GuardClauseFromDraftToTerminatedUsingTriggerDelete(); return true; } )
         .PermitReentryIf(Trigger.Update , () => { if (GuardClauseFromDraftToDraftUsingTriggerUpdate != null) return GuardClauseFromDraftToDraftUsingTriggerUpdate(); return true; } )
       ;
-      stateMachine.Configure(State.Accepting)
+      _stateMachine.Configure(State.Accepting)
         .OnEntry(() => { if (OnAcceptingEntry != null) OnAcceptingEntry(); })
         .OnExit(() => { if (OnAcceptingExit != null) OnAcceptingExit(); })
         .PermitIf(Trigger.SendReject, State.Terminated , () => { if (GuardClauseFromAcceptingToTerminatedUsingTriggerSendReject != null) return GuardClauseFromAcceptingToTerminatedUsingTriggerSendReject(); return true; } )
@@ -121,7 +121,7 @@ namespace Oms.Server.Domain.Workflow
         .PermitIf(Trigger.Recall, State.Draft , () => { if (GuardClauseFromAcceptingToDraftUsingTriggerRecall != null) return GuardClauseFromAcceptingToDraftUsingTriggerRecall(); return true; } )
         .PermitIf(Trigger.Update, State.Working , () => { if (GuardClauseFromAcceptingToWorkingUsingTriggerUpdate != null) return GuardClauseFromAcceptingToWorkingUsingTriggerUpdate(); return true; } )
       ;
-      stateMachine.Configure(State.Working)
+      _stateMachine.Configure(State.Working)
         .OnEntry(() => { if (OnWorkingEntry != null) OnWorkingEntry(); })
         .OnExit(() => { if (OnWorkingExit != null) OnWorkingExit(); })
         .PermitIf(Trigger.Cancel, State.Terminated , () => { if (GuardClauseFromWorkingToTerminatedUsingTriggerCancel != null) return GuardClauseFromWorkingToTerminatedUsingTriggerCancel(); return true; } )
@@ -129,7 +129,7 @@ namespace Oms.Server.Domain.Workflow
         .PermitIf(Trigger.AddTrade, State.Validating , () => { if (GuardClauseFromWorkingToValidatingUsingTriggerAddTrade != null) return GuardClauseFromWorkingToValidatingUsingTriggerAddTrade(); return true; } )
         .PermitIf(Trigger.MarketSend, State.Dealing , () => { if (GuardClauseFromWorkingToDealingUsingTriggerMarketSend != null) return GuardClauseFromWorkingToDealingUsingTriggerMarketSend(); return true; } )
       ;
-      stateMachine.Configure(State.Dealing)
+      _stateMachine.Configure(State.Dealing)
         .OnEntry(() => { if (OnDealingEntry != null) OnDealingEntry(); })
         .OnExit(() => { if (OnDealingExit != null) OnDealingExit(); })
         .PermitIf(Trigger.Cancel, State.Terminated , () => { if (GuardClauseFromDealingToTerminatedUsingTriggerCancel != null) return GuardClauseFromDealingToTerminatedUsingTriggerCancel(); return true; } )
@@ -139,7 +139,7 @@ namespace Oms.Server.Domain.Workflow
         .PermitReentryIf(Trigger.MarketSend , () => { if (GuardClauseFromDealingToDealingUsingTriggerMarketSend != null) return GuardClauseFromDealingToDealingUsingTriggerMarketSend(); return true; } )
         .PermitReentryIf(Trigger.MarketCancel , () => { if (GuardClauseFromDealingToDealingUsingTriggerMarketCancel != null) return GuardClauseFromDealingToDealingUsingTriggerMarketCancel(); return true; } )
       ;
-      stateMachine.Configure(State.Validating)
+      _stateMachine.Configure(State.Validating)
         .OnEntry(() => { if (OnValidatingEntry != null) OnValidatingEntry(); })
         .OnExit(() => { if (OnValidatingExit != null) OnValidatingExit(); })
         .PermitIf(Trigger.Cancel, State.Terminated , () => { if (GuardClauseFromValidatingToTerminatedUsingTriggerCancel != null) return GuardClauseFromValidatingToTerminatedUsingTriggerCancel(); return true; } )
@@ -147,7 +147,7 @@ namespace Oms.Server.Domain.Workflow
         .PermitIf(Trigger.CancelTrade, State.Dealing , () => { if (GuardClauseFromValidatingToDealingUsingTriggerCancelTrade != null) return GuardClauseFromValidatingToDealingUsingTriggerCancelTrade(); return true; } )
         .PermitReentryIf(Trigger.CancelTrade , () => { if (GuardClauseFromValidatingToValidatingUsingTriggerCancelTrade != null) return GuardClauseFromValidatingToValidatingUsingTriggerCancelTrade(); return true; } )
       ;
-      stateMachine.Configure(State.Booking)
+      _stateMachine.Configure(State.Booking)
         .OnEntry(() => { if (OnBookingEntry != null) OnBookingEntry(); })
         .OnExit(() => { if (OnBookingExit != null) OnBookingExit(); })
         .PermitReentryIf(Trigger.CancelTrade , () => { if (GuardClauseFromBookingToBookingUsingTriggerCancelTrade != null) return GuardClauseFromBookingToBookingUsingTriggerCancelTrade(); return true; } )
@@ -155,21 +155,21 @@ namespace Oms.Server.Domain.Workflow
         .PermitReentryIf(Trigger.TradeBooked , () => { if (GuardClauseFromBookingToBookingUsingTriggerTradeBooked != null) return GuardClauseFromBookingToBookingUsingTriggerTradeBooked(); return true; } )
         .PermitIf(Trigger.TradeBooked, State.Terminated , () => { if (GuardClauseFromBookingToTerminatedUsingTriggerTradeBooked != null) return GuardClauseFromBookingToTerminatedUsingTriggerTradeBooked(); return true; } )
       ;
-      stateMachine.Configure(State.Terminated)
+      _stateMachine.Configure(State.Terminated)
         .OnEntry(() => { if (OnTerminatedEntry != null) OnTerminatedEntry(); })
         .OnExit(() => { if (OnTerminatedExit != null) OnTerminatedExit(); })
         .PermitIf(Trigger.AddTrade, State.Dealing , () => { if (GuardClauseFromTerminatedToDealingUsingTriggerAddTrade != null) return GuardClauseFromTerminatedToDealingUsingTriggerAddTrade(); return true; } )
       ;
-      stateMachine.OnUnhandledTrigger((state, trigger) => { if (OnUnhandledTrigger != null) OnUnhandledTrigger(state, trigger); });
+      _stateMachine.OnUnhandledTrigger((state, trigger) => { if (OnUnhandledTrigger != null) OnUnhandledTrigger(state, trigger); });
     }
 
     public bool TryFireTrigger(Trigger trigger)
     {
-      if (!stateMachine.CanFire(trigger))
+      if (!_stateMachine.CanFire(trigger))
       {
         return false;
       }
-      stateMachine.Fire(trigger);
+      _stateMachine.Fire(trigger);
       return true;
     }
 
@@ -177,7 +177,7 @@ namespace Oms.Server.Domain.Workflow
     {
       get
       {
-        return stateMachine.State;
+        return _stateMachine.State;
       }
     }
   }

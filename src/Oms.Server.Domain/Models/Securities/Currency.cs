@@ -6,8 +6,8 @@
     public enum Currency
     {
         Undefined,
-        USD,
-        EUR,
-        GBP,
+        Usd,
+        Eur,
+        Gbp,
     }
 }

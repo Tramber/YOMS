@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using Oms.Server.Domain.Interfaces.Models;
+using Oms.Server.Domain.Models.Orders;
+using Oms.Server.Domain.Models.Securities;
 using Oms.Transport.Contracts.Messages.Orders;
 
 namespace Oms.Server.Core.Services
@@ -12,5 +15,13 @@ namespace Oms.Server.Core.Services
         IList<OrderCommandResult> HandleRequest(OrderEditionRequest request);
         IList<OrderCommandResult> HandleRequest(OrderMarketRequest request);
         IList<OrderCommandResult> HandleRequest(OrderRequest request);
+
+        /// <summary>Every order, with its event log.</summary>
+        IList<Order> GetOrders();
+
+        /// <summary>The active securities an order can be placed on.</summary>
+        IList<Security> GetSecurities();
+
+        IList<IFund> GetFunds();
     }
 }

@@ -15,21 +15,14 @@ namespace Oms.Server.Core.Contracts
     /// Server implementation of the order service: runs the request through <see cref="IOrderManagementService"/>, answers
     /// with one outcome per order and raises <see cref="OrderListUpdated"/> for the orders that changed.
     /// </summary>
-    public class OrderServiceContract : IOrderServiceContract
+    public class OrderServiceContract(IOrderManagementService orderManagementService) : IOrderServiceContract
     {
-        private readonly IOrderManagementService _orderManagementService;
-
-        public OrderServiceContract(IOrderManagementService orderManagementService)
-        {
-            _orderManagementService = orderManagementService;
-        }
-
         /// <summary>Raised when orders change; the SignalR host forwards it to subscribed clients.</summary>
         public event Action<ItemOperationType, OrderDto[]> OrderListUpdated;
 
         public Response<Tuple<OrderDto, GenericResultDto>, EditionCommand> Handle(OrderEditionRequest request)
         {
-            var results = _orderManagementService.HandleRequest(request);
+            var results = orderManagementService.HandleRequest(request);
             Publish(request.Command == EditionCommand.Update ? ItemOperationType.Update : ItemOperationType.Add, results);
             // An order that failed is answered with the DTO that was submitted.
             var items = results
@@ -40,16 +33,31 @@ namespace Oms.Server.Core.Contracts
 
         public Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderRequest request)
         {
-            var results = _orderManagementService.HandleRequest(request);
+            var results = orderManagementService.HandleRequest(request);
             Publish(request.Command == OrderStateCommand.Delete ? ItemOperationType.Delete : ItemOperationType.Update, results);
             return new Response<Tuple<int, GenericResultDto>, OrderStateCommand>(request.Command, Outcomes(results));
         }
 
         public Response<Tuple<int, GenericResultDto>, OrderMarketCommand> Handle(OrderMarketRequest request)
         {
-            var results = _orderManagementService.HandleRequest(request);
+            var results = orderManagementService.HandleRequest(request);
             Publish(ItemOperationType.Update, results);
             return new Response<Tuple<int, GenericResultDto>, OrderMarketCommand>(request.Command, Outcomes(results));
+        }
+
+        public List<OrderDto> GetOrders()
+        {
+            return orderManagementService.GetOrders().Select(o => o.ToDto()).ToList();
+        }
+
+        public List<SecurityDto> GetSecurities()
+        {
+            return orderManagementService.GetSecurities().Select(s => s.ToDto()).ToList();
+        }
+
+        public List<FundDto> GetFunds()
+        {
+            return orderManagementService.GetFunds().Select(f => f.ToDto()).ToList();
         }
 
         private static List<Tuple<int, GenericResultDto>> Outcomes(IEnumerable<OrderCommandResult> results)

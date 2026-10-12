@@ -10,20 +10,20 @@ namespace Oms.Server.Domain.Workflow
         public static OrderStateMachine CreateInitializable()
         {
             var result = new OrderStateMachine();
-            result.stateMachine.Configure(State.Undefined).PermitDynamic(result._initializeTrigger, state => state);
+            result._stateMachine.Configure(State.Undefined).PermitDynamic(result._initializeTrigger, state => state);
             return result;
         }
 
         /// <summary>Puts the machine in the given state without running entry or exit actions. Only valid while it is still Undefined.</summary>
         public void Initialize(State state)
         {
-            stateMachine.Fire(_initializeTrigger, state);
+            _stateMachine.Fire(_initializeTrigger, state);
         }
 
         /// <summary>True when the trigger is allowed in the current state.</summary>
         public bool CanFireTrigger(Trigger trigger)
         {
-            return stateMachine.CanFire(trigger);
+            return _stateMachine.CanFire(trigger);
         }
     }
 }

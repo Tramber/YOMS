@@ -1,27 +1,33 @@
-﻿using System;
+using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Oms.Transport.Contracts.Dto;
 
-
 namespace Oms.Client.Model
 {
-    /// <summary>Bindable order row of the blotter. <c>GroupId</c> 0 means not grouped.</summary>
-    public class OrderAdapter : ObservableObject
+    /// <summary>Bindable order row of the blotter. <c>GroupId</c> 0 means not grouped; it is local to this client.</summary>
+    public partial class OrderAdapter : ObservableObject
     {
-        private double _quantity;
-        private int _groupId;
         public int Id { get; set; }
 
-        public double Quantity
-        {
-            get { return _quantity; }
-            set
-            {
-                SetProperty(ref _quantity, value);
-            }
-        }
+        [ObservableProperty]
+        private double _quantity;
 
-        public double Price { get; set; }
+        [ObservableProperty]
+        private double _remainingQuantity;
+
+        [ObservableProperty]
+        private double _price;
+
+        [ObservableProperty]
+        private string _state;
+
+        [ObservableProperty]
+        private string _status;
+
+        [ObservableProperty]
+        private int _groupId;
+
+        public string ClientOrderRef { get; set; }
 
         public OrderDtoWay Way { get; set; }
 
@@ -41,13 +47,37 @@ namespace Oms.Client.Model
 
         public DateTime? ExpiryDate { get; set; }
 
-        public int GroupId
+        public string SecurityName
         {
-            get { return _groupId; }
-            set
-            {
-                SetProperty(ref _groupId, value);
-            }
+            get { return Security == null ? null : Security.Name; }
+        }
+
+        public static OrderAdapter From(OrderDto dto)
+        {
+            var adapter = new OrderAdapter { Id = dto.Id };
+            adapter.UpdateFrom(dto);
+            return adapter;
+        }
+
+        /// <summary>Takes the values the server sent; the local group is kept.</summary>
+        public void UpdateFrom(OrderDto dto)
+        {
+            ClientOrderRef = dto.ClientOrderRef;
+            Way = dto.Way;
+            Security = dto.Security;
+            Owner = dto.Owner;
+            Creator = dto.Creator;
+            Version = dto.Version;
+            CreationDate = dto.CreationDate;
+            OrderType = dto.OrderType;
+            Validity = dto.Validity;
+            ExpiryDate = dto.ExpiryDate;
+            Quantity = dto.Quantity;
+            RemainingQuantity = dto.RemainingQuantity;
+            Price = dto.PriceLimit ?? 0;
+            State = dto.State;
+            Status = dto.Status;
+            OnPropertyChanged(nameof(SecurityName));
         }
     }
 }
