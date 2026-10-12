@@ -27,4 +27,4 @@ MahApps.Metro window chrome and themes, AvalonDock docking (`Dock.Avalonia` is t
 
 ## Status
 
-Builds, and starts and stays up on macOS (checked for 8 seconds). The UI was not inspected (no screenshot access in the test environment) and the server connection was not exercised, so grouping, filtering and **Connect** are untested. The server only pushes orders once the `Handle*` work in `AGENTS.md` is done.
+Builds and runs on macOS; the maintainer confirmed the app works there. Not individually verified: grouping, filtering and **Connect to server** against a running host. The server only pushes orders once the `Handle*` work in `AGENTS.md` is done.
