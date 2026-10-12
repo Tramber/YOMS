@@ -35,3 +35,44 @@ The server writes `oms.sqlite` in its working directory and seeds demo data on a
 - Trades work in the domain (`AddTrade`, `CancelTrade`, the booking steps, `TradeBooked`) but no hub command reaches them, so a client cannot book executions yet. `OrderStateCommand` only has Cancel, AcceptPending, StartBooking, RejectPending, Recall and Delete.
 - The SignalR layer itself has no automated test: the hub's method names are not checked against the `OrderHubMethods` constants the client uses, and no test runs the client's `OrderServiceProxy` against the running host. The service, the messages and the persistence below it are tested.
 - The client's Update of an existing order is not offered in the UI, although the server supports it.
+
+## GitHub issues
+
+One problem or task per issue, so each can be closed by one PR. Search the open issues first to avoid duplicates.
+
+**Title:** a short statement of the problem or the missing capability, in the present tense, no prefix and no trailing period ("Client cannot update an existing order", not "[BUG] update"). Under about 70 characters.
+
+**Body**, in this order, leaving out a section that has nothing to say:
+
+1. **Context:** what is wrong or missing, and where. Name classes, methods, settings and layers (`OrderHub`, `Oms.Client`), not file dumps. Say what happens today and what is expected.
+2. **Steps to reproduce:** numbered, with the exact command or input (bugs only).
+3. **Actual / Expected:** the observed behaviour with the exact error text, and what should happen instead (bugs only).
+4. **Impact:** who or what is affected and how badly (data loss, wrong result, missing feature, warning only).
+5. **To do:** a checklist (`- [ ]`) of concrete steps, small enough that each is obvious. Mention the tests to add.
+6. **Acceptance criteria:** how we know it is done (a behaviour or a passing test), when the To do list alone does not say.
+7. **References:** related issues (`#12`), PRs, advisories or docs.
+
+**Labels:** `bug` (wrong behaviour), `enhancement` (new capability), `tech-debt` (internal cleanup, tests, CI, warnings), `documentation`. Use one type label; add `security` when it is a vulnerability or an access problem.
+
+**Lifecycle:**
+- A PR that fixes an issue says `Closes #n` in its description.
+- Keep the "Known issues" list above in sync: open an issue for each entry and remove the entry when the issue is closed.
+- Edit the issue instead of adding a comment when its scope changes; use comments for discussion and progress.
+- Do not put secrets, personal data or customer content in an issue.
+
+**Example**
+
+> **Title:** Trades are unreachable from the hub
+>
+> **Context:** Trades work in the domain (`AddTrade`, `CancelTrade`, the booking steps) but no hub command reaches them, so a client cannot book executions.
+>
+> **Impact:** Orders can never be filled from a client; feature missing.
+>
+> **To do:**
+> - [ ] Add trade commands to `IOrderServiceContract`, `OrderHub` and `OrderManagementService`
+> - [ ] Add tests at service and contract level
+> - [ ] Add the matching client actions
+>
+> **Acceptance criteria:** a client can book an execution and the order reaches `Filled`.
+>
+> **References:** #12
