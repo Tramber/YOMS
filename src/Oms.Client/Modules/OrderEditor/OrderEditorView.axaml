@@ -1,12 +1,13 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mi="using:Material.Icons.Avalonia"
         xmlns:vm="using:Oms.Client.Modules.OrderEditor"
         xmlns:dto="using:Oms.Transport.Contracts.Dto"
         x:Class="Oms.Client.Modules.OrderEditor.OrderEditorView"
         x:DataType="vm:OrderEditorViewModel"
-        Title="{Binding Title}" Width="460" SizeToContent="Height" WindowStartupLocation="CenterOwner">
-  <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="16" RowSpacing="8">
-    <TextBlock Grid.Row="0" Text="Security" VerticalAlignment="Center" />
+        Title="{Binding Title}" Width="480" SizeToContent="Height" WindowStartupLocation="CenterOwner">
+  <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="24" RowSpacing="14" ColumnSpacing="12">
+    <TextBlock Classes="label" Grid.Row="0" Text="Security" />
     <ComboBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Securities}" SelectedItem="{Binding SelectedSecurity}">
       <ComboBox.ItemTemplate>
         <DataTemplate x:DataType="dto:SecurityDto">
@@ -15,7 +16,7 @@
       </ComboBox.ItemTemplate>
     </ComboBox>
 
-    <TextBlock Grid.Row="1" Text="Fund" VerticalAlignment="Center" />
+    <TextBlock Classes="label" Grid.Row="1" Text="Fund" />
     <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Funds}" SelectedItem="{Binding SelectedFund}">
       <ComboBox.ItemTemplate>
         <DataTemplate x:DataType="dto:FundDto">
@@ -24,31 +25,39 @@
       </ComboBox.ItemTemplate>
     </ComboBox>
 
-    <TextBlock Grid.Row="2" Text="Way" VerticalAlignment="Center" />
+    <TextBlock Classes="label" Grid.Row="2" Text="Way" />
     <ComboBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Ways}" SelectedItem="{Binding SelectedWay}" />
 
-    <TextBlock Grid.Row="3" Text="Type" VerticalAlignment="Center" />
+    <TextBlock Classes="label" Grid.Row="3" Text="Type" />
     <ComboBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding OrderTypes}" SelectedItem="{Binding SelectedOrderType}" />
 
-    <TextBlock Grid.Row="4" Text="Quantity" VerticalAlignment="Center" />
+    <TextBlock Classes="label" Grid.Row="4" Text="Quantity" />
     <NumericUpDown Grid.Row="4" Grid.Column="1" Minimum="0" Increment="100" FormatString="N0" Value="{Binding Quantity}" />
 
-    <TextBlock Grid.Row="5" Text="Limit price" VerticalAlignment="Center" IsVisible="{Binding IsLimit}" />
+    <TextBlock Classes="label" Grid.Row="5" Text="Limit price" IsVisible="{Binding IsLimit}" />
     <NumericUpDown Grid.Row="5" Grid.Column="1" Minimum="0" Increment="0.1" FormatString="N2" Value="{Binding PriceLimit}" IsVisible="{Binding IsLimit}" />
 
-    <TextBlock Grid.Row="6" Text="Validity" VerticalAlignment="Center" />
+    <TextBlock Classes="label" Grid.Row="6" Text="Validity" />
     <ComboBox Grid.Row="6" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Validities}" SelectedItem="{Binding SelectedValidity}" />
 
-    <TextBlock Grid.Row="7" Text="Reference" VerticalAlignment="Center" />
-    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding ClientOrderRef}" Watermark="Optional" />
+    <TextBlock Classes="label" Grid.Row="7" Text="Reference" />
+    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding ClientOrderRef}" PlaceholderText="Optional" />
 
-    <TextBlock Grid.Row="8" Grid.ColumnSpan="2" Text="{Binding ErrorMessage}" Foreground="OrangeRed" TextWrapping="Wrap" />
+    <TextBlock Grid.Row="8" Grid.ColumnSpan="2" Text="{Binding ErrorMessage}" Foreground="{StaticResource Sell}" TextWrapping="Wrap" FontSize="12" MinHeight="18" />
 
     <StackPanel Grid.Row="9" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-      <Button Content="Save draft" Command="{Binding StashCommand}" IsVisible="{Binding IsNew}" />
-      <Button Content="Send" Command="{Binding SendCommand}" IsVisible="{Binding IsNew}" />
-      <Button Content="Update" Command="{Binding UpdateCommand}" IsVisible="{Binding IsEditing}" />
-      <Button Content="Close" Command="{Binding CloseCommand}" />
+      <Button Command="{Binding StashCommand}" IsVisible="{Binding IsNew}">
+          <StackPanel><mi:MaterialIcon Kind="ContentSave" /><TextBlock Text="Save draft" /></StackPanel>
+        </Button>
+      <Button Classes="accent" Command="{Binding SendCommand}" IsVisible="{Binding IsNew}">
+          <StackPanel><mi:MaterialIcon Kind="Send" /><TextBlock Text="Send" /></StackPanel>
+        </Button>
+      <Button Classes="accent" Command="{Binding UpdateCommand}" IsVisible="{Binding IsEditing}">
+          <StackPanel><mi:MaterialIcon Kind="Check" /><TextBlock Text="Update" /></StackPanel>
+        </Button>
+      <Button Command="{Binding CloseCommand}">
+          <StackPanel><mi:MaterialIcon Kind="Close" /><TextBlock Text="Close" /></StackPanel>
+        </Button>
     </StackPanel>
   </Grid>
 </Window>
