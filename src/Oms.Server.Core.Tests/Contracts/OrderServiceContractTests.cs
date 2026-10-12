@@ -6,7 +6,10 @@ using NUnit.Framework;
 using Oms.Server.Core.Contracts;
 using Oms.Server.Core.Services;
 using Oms.Server.Domain.Framework;
+using Oms.Server.Domain.Interfaces.Models;
+using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Orders;
+using Oms.Server.Domain.Models.Securities;
 using Oms.Transport.Contracts;
 using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
@@ -134,6 +137,18 @@ namespace Oms.Server.Core.Tests.Contracts
             _contract.Handle(request);
 
             Assert.That(_published, Is.Empty);
+        }
+
+        [Test]
+        public void Should_list_the_orders_securities_and_funds_as_dtos()
+        {
+            _service.GetOrders().Returns(new List<Order> { new Order { Id = 8 } });
+            _service.GetSecurities().Returns(new List<Security> { new Security { Id = 9, Name = "ACME", Currency = Currency.Eur, Type = SecurityType.Equity } });
+            _service.GetFunds().Returns(new List<IFund> { new Fund { Id = 10, Name = "Alpha" } });
+
+            Assert.That(_contract.GetOrders().Single().Id, Is.EqualTo(8));
+            Assert.That(_contract.GetSecurities().Single().Name, Is.EqualTo("ACME"));
+            Assert.That(_contract.GetFunds().Single().Name, Is.EqualTo("Alpha"));
         }
 
         [Test]

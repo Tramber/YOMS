@@ -10,23 +10,23 @@ namespace Oms.Client.Tests.Framework.Observables
     [TestFixture]
     public class FastSearchTests
     {
-        private List<OrderAdapter> orders = new List<OrderAdapter>
+        private List<OrderAdapter> _orders = new()
         {
             new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode1"}},
             new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode2"}},
             new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode3"}},
             new OrderAdapter { Security = new SecurityDto() { IsinCode = "MyIsinCode1"}},
         };
-            
-            
-            
+
+
+
         [TestCase("MyIsinCode1", ExpectedResult = 2)]
         [TestCase("MyIsinCode2", ExpectedResult = 1)]
         public int Should_filter_by_isin_when_isin_only_is_set(string isinCode)
         {
             var fastSearch = new FastSearch<OrderAdapter>();
             fastSearch.AddPredicate(o => o.Security.IsinCode == isinCode);
-            return orders.Count(s => fastSearch.Predicate(s));
+            return _orders.Count(s => fastSearch.Predicate(s));
         }
 
         [TestCase("IsinCode = \"MyIsinCode1\"", ExpectedResult = 2)]
@@ -35,7 +35,7 @@ namespace Oms.Client.Tests.Framework.Observables
         {
             var fastSearch = new FastSearch<OrderAdapter>();
             fastSearch.AddPredicate(filterSearch);
-            return orders.Count(s => fastSearch.Predicate(s));
+            return _orders.Count(s => fastSearch.Predicate(s));
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace Oms.Client.Tests.Framework.Observables
             fastSearch.AddPredicate("IsinCode = \"MyIsinCode1\"");
             fastSearch.Clear();
 
-            Assert.That(orders.All(fastSearch.Predicate), Is.True);
+            Assert.That(_orders.All(fastSearch.Predicate), Is.True);
         }
 
         [Test]
@@ -64,7 +64,7 @@ namespace Oms.Client.Tests.Framework.Observables
             fastSearch.AddPredicate(o => o.Security.IsinCode == "MyIsinCode1");
             fastSearch.AddPredicate(o => o.Security.IsinCode == "MyIsinCode2");
 
-            Assert.That(orders.Any(fastSearch.Predicate), Is.False);
+            Assert.That(_orders.Any(fastSearch.Predicate), Is.False);
         }
     }
 }

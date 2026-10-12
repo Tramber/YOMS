@@ -1,20 +1,53 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Oms.Client.Modules.OrderEditor"
+        xmlns:dto="using:Oms.Transport.Contracts.Dto"
         x:Class="Oms.Client.Modules.OrderEditor.OrderEditorView"
         x:DataType="vm:OrderEditorViewModel"
-        Title="Order Editor" Width="760" Height="480" WindowStartupLocation="CenterOwner">
-  <Grid ColumnDefinitions="260,*" RowDefinitions="Auto,*,Auto" Margin="12">
-    <AutoCompleteBox Grid.Row="0" Grid.Column="0" Margin="0,0,12,0"
-                     ItemsSource="{Binding SearchResults}"
-                     Text="{Binding SearchText, Mode=TwoWay}"
-                     FilterMode="None" MinimumPrefixLength="0" Watermark="Search..." />
-    <Button Grid.Row="1" Grid.Column="0" Content="Search" Command="{Binding SearchCommand}"
-            VerticalAlignment="Top" Margin="0,12,12,0" />
+        Title="New order" Width="460" SizeToContent="Height" WindowStartupLocation="CenterOwner">
+  <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="16" RowSpacing="8">
+    <TextBlock Grid.Row="0" Text="Security" VerticalAlignment="Center" />
+    <ComboBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Securities}" SelectedItem="{Binding SelectedSecurity}">
+      <ComboBox.ItemTemplate>
+        <DataTemplate x:DataType="dto:SecurityDto">
+          <TextBlock Text="{Binding Name}" />
+        </DataTemplate>
+      </ComboBox.ItemTemplate>
+    </ComboBox>
 
-    <ListBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" ItemsSource="{Binding LogData}" />
+    <TextBlock Grid.Row="1" Text="Fund" VerticalAlignment="Center" />
+    <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Funds}" SelectedItem="{Binding SelectedFund}">
+      <ComboBox.ItemTemplate>
+        <DataTemplate x:DataType="dto:FundDto">
+          <TextBlock Text="{Binding Name}" />
+        </DataTemplate>
+      </ComboBox.ItemTemplate>
+    </ComboBox>
 
-    <Button Grid.Row="2" Grid.Column="1" Content="Close" Command="{Binding CloseCommand}"
-            HorizontalAlignment="Right" Margin="0,12,0,0" />
+    <TextBlock Grid.Row="2" Text="Way" VerticalAlignment="Center" />
+    <ComboBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Ways}" SelectedItem="{Binding SelectedWay}" />
+
+    <TextBlock Grid.Row="3" Text="Type" VerticalAlignment="Center" />
+    <ComboBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding OrderTypes}" SelectedItem="{Binding SelectedOrderType}" />
+
+    <TextBlock Grid.Row="4" Text="Quantity" VerticalAlignment="Center" />
+    <NumericUpDown Grid.Row="4" Grid.Column="1" Minimum="0" Increment="100" FormatString="N0" Value="{Binding Quantity}" />
+
+    <TextBlock Grid.Row="5" Text="Limit price" VerticalAlignment="Center" IsVisible="{Binding IsLimit}" />
+    <NumericUpDown Grid.Row="5" Grid.Column="1" Minimum="0" Increment="0.1" FormatString="N2" Value="{Binding PriceLimit}" IsVisible="{Binding IsLimit}" />
+
+    <TextBlock Grid.Row="6" Text="Validity" VerticalAlignment="Center" />
+    <ComboBox Grid.Row="6" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Validities}" SelectedItem="{Binding SelectedValidity}" />
+
+    <TextBlock Grid.Row="7" Text="Reference" VerticalAlignment="Center" />
+    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding ClientOrderRef}" Watermark="Optional" />
+
+    <TextBlock Grid.Row="8" Grid.ColumnSpan="2" Text="{Binding ErrorMessage}" Foreground="OrangeRed" TextWrapping="Wrap" />
+
+    <StackPanel Grid.Row="9" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Content="Save draft" Command="{Binding StashCommand}" />
+      <Button Content="Send" Command="{Binding SendCommand}" />
+      <Button Content="Close" Command="{Binding CloseCommand}" />
+    </StackPanel>
   </Grid>
 </Window>

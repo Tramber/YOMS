@@ -10,7 +10,7 @@ namespace Oms.Server.DataAccess.Tests.NHibernate
         [Test]
         public void DisplaySchema()
         {
-            NHibernateHelper.Instance.ClearDatabase(false);
+            TestContext.Out.WriteLine(NHibernateHelper.Instance.GetSchemaScript());
         }
     }
 }

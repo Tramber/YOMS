@@ -46,7 +46,7 @@ namespace Oms.Client.Framework.Observables
             _predicates.Add(innerExpr.Compile());
         }
 
-        private readonly Dictionary<string, string> PropertyMappings = new Dictionary<string, string>
+        private readonly Dictionary<string, string> _propertyMappings = new Dictionary<string, string>
         {
             {"IsinCode", "Security.IsinCode"}
         };
@@ -54,7 +54,7 @@ namespace Oms.Client.Framework.Observables
         private string CleanPropertyName(string propertyName)
         {
             string result;
-            return PropertyMappings.TryGetValue(propertyName, out result) ? result : propertyName;
+            return _propertyMappings.TryGetValue(propertyName, out result) ? result : propertyName;
         }
 
         private Expression GetPropertyInfo<T>(string propertyName, Expression variable, out Type propertyType)

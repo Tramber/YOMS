@@ -5,20 +5,39 @@
              x:Class="Oms.Client.Modules.OrderBlotter.OrderBlotterView"
              x:DataType="vm:OrderBlotterViewModel">
   <DockPanel>
-    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-      <TextBlock Text="Filter" VerticalAlignment="Center" />
-      <TextBox Width="260" Text="{Binding FilterText}" Watermark="Security.IsinCode = &quot;FR0000&quot;" />
-      <Button Content="Group" Command="{Binding GroupOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
-      <Button Content="Ungroup" Command="{Binding UnGroupOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+    <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="Filter" VerticalAlignment="Center" />
+        <TextBox Width="260" Text="{Binding FilterText}" Watermark="Security.IsinCode = &quot;FR0000000001&quot;" />
+        <Button Content="Group" Command="{Binding GroupOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Ungroup" Command="{Binding UnGroupOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+      </StackPanel>
+      <!-- Commands for the selected orders; the server refuses the ones the order state does not allow. -->
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Recall" Command="{Binding RecallOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Delete" Command="{Binding DeleteOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Cancel" Command="{Binding CancelOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Accept pending" Command="{Binding AcceptPendingCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Reject pending" Command="{Binding RejectPendingCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Send to market" Command="{Binding SendToMarketCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Cancel at market" Command="{Binding CancelAtMarketCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+      </StackPanel>
     </StackPanel>
 
     <DataGrid x:Name="Grid" ItemsSource="{Binding OrdersView}" SelectionMode="Extended"
               IsReadOnly="True" CanUserSortColumns="True" AutoGenerateColumns="False">
       <DataGrid.Columns>
         <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Id" Binding="{Binding Id}" />
-        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Price" Binding="{Binding Price, StringFormat=N2}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Reference" Binding="{Binding ClientOrderRef}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Security" Binding="{Binding SecurityName}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Way" Binding="{Binding Way}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Type" Binding="{Binding OrderType}" />
         <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Quantity" Binding="{Binding Quantity}" />
-        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="GroupId" Binding="{Binding GroupId}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Remaining" Binding="{Binding RemainingQuantity}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Price" Binding="{Binding Price, StringFormat=N2}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="State" Binding="{Binding State}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Status" Binding="{Binding Status}" />
+        <DataGridTextColumn x:DataType="model:OrderAdapter" Header="Group" Binding="{Binding GroupId}" />
       </DataGrid.Columns>
     </DataGrid>
   </DockPanel>

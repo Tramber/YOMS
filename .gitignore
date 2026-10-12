@@ -185,3 +185,6 @@ FakesAssemblies/
 
 # JetBrains IDEs
 .idea/
+
+# Local SQLite database
+*.sqlite

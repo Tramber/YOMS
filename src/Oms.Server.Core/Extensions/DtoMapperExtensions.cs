@@ -20,7 +20,7 @@ namespace Oms.Server.Core.Extensions
 
         public static OrderDto ToDto(this IOrder order)
         {
-            return new OrderDto
+            var dto = new OrderDto
             {
                 Id = order.Id,
                 PriceLimit = order.PriceLimit,
@@ -38,6 +38,15 @@ namespace Oms.Server.Core.Extensions
                 Security = order.Security == null ? null : order.Security.ToDto(),
                 Fund = order.Fund == null ? null : order.Fund.ToDto(),
             };
+            // Orders know their state; a plain IOrder may not.
+            var computed = order as IOrderComputedData;
+            if (computed != null)
+            {
+                dto.State = computed.OrderState.ToString();
+                dto.Status = computed.OrderStatus.ToString();
+                dto.RemainingQuantity = computed.RemainingQuantity;
+            }
+            return dto;
         }
 
         public static FundDto ToDto(this IFund fund)

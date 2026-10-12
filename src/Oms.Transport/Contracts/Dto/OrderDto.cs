@@ -54,6 +54,17 @@ namespace Oms.Transport.Contracts.Dto
 
         [DataMember]
         public DateTime? SettlementDate { get; set; }
+
+        /// <summary>Workflow state of the order (Draft, Accepting, Working, ...). Set by the server.</summary>
+        [DataMember]
+        public string State { get; set; }
+
+        /// <summary>Business status (New, PartiallyFilled, CancelPending, ...). Set by the server.</summary>
+        [DataMember]
+        public string Status { get; set; }
+
+        [DataMember]
+        public double RemainingQuantity { get; set; }
     }
 }
 

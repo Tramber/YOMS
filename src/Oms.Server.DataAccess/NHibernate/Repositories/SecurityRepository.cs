@@ -71,7 +71,7 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
             private readonly IRepository<T> _repository;
             private Dictionary<string, Dictionary<string, int[]>> _cacheByCode;
 
-            private static readonly Dictionary<string, RepositoryIndexerItem<T>> _columnValueToProperty = new Dictionary<string, RepositoryIndexerItem<T>>();
+            private static readonly Dictionary<string, RepositoryIndexerItem<T>> ColumnValueToProperty = new Dictionary<string, RepositoryIndexerItem<T>>();
 
             public RepositoryIndexer(IRepository<T> repository)
             {
@@ -80,13 +80,13 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
 
             public void AddColumnIndex(string columnName, Func<T, string> propertyGetter, string propertyName)
             {
-                _columnValueToProperty.Add(columnName, new RepositoryIndexerItem<T>(propertyGetter, propertyName));
+                ColumnValueToProperty.Add(columnName, new RepositoryIndexerItem<T>(propertyGetter, propertyName));
             }
 
             public void DoCaching(IEnumerable<T> entitiesToCache)
             {
                 //TODO Call directly repository
-                _cacheByCode = _columnValueToProperty.ToDictionary(v => v.Key, v =>
+                _cacheByCode = ColumnValueToProperty.ToDictionary(v => v.Key, v =>
                     entitiesToCache.Where(s => string.IsNullOrWhiteSpace(v.Value.PropertyGetter (s)))
                     .GroupBy(s => v.Value.PropertyGetter(s))
                     .ToDictionary(s => s.Key, s => s.Select(x => x.Id).ToArray()));

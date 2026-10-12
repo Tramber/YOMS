@@ -2,15 +2,24 @@
 
 Cross-platform desktop UI (Windows, macOS, Linux) built with Avalonia 12, `Avalonia.Controls.DataGrid`, CommunityToolkit.Mvvm (source-generated MVVM and messenger) and `Microsoft.Extensions.DependencyInjection`. It replaced a WPF client (Caliburn.Micro, MEF, MahApps.Metro, AvalonDock) that only ran on Windows.
 
+## Running it
+
+Start the server first (`dotnet run --project src/Oms.Server.host`, see the [README](../README.md)), then:
+
 ```
 dotnet run --project src/Oms.Client
 ```
 
-> **State of the client:** a UI prototype. The order blotter shows 50 randomly generated orders and the order editor searches a hard-coded list of phrases. The only server link is the **Connect to server** button, and the server does not push orders yet (see `AGENTS.md`).
+The client looks for the server at `http://localhost:9001`; set the `OMS_SERVER` environment variable to use another address.
+
+1. Type your **login** (the demo data has the user `trader`, which is the default) and press **Connect**. The login is sent with every request, as the server has no authentication. The status line at the bottom shows `Connected as trader`; a failure appears as an error notification.
+2. The **order blotter** fills with the orders of the server and then follows the changes the server pushes, including the ones made by other clients.
+3. **Create Order** (enabled once connected) opens the order editor. **Save draft** stashes the order, **Send** sends it for acceptance; the dialog closes when the server accepts it and shows the server's message when it refuses.
+4. Select one or more orders in the blotter and use the toolbar buttons to act on them. The server decides what is allowed in the order's state; a refused order appears as an error notification (`Cancel: order 12`, with the reason) and nothing changes.
 
 ## Start-up
 
-`Program.Main` starts Avalonia with the Inter font. `App.OnFrameworkInitializationCompleted` builds a `ServiceProvider` (`IMessenger` = `WeakReferenceMessenger.Default`, `INotificationService`, `IWindowService`, `ShellViewModel`) and opens a window whose content is `ShellView` and whose `DataContext` is the resolved `ShellViewModel`.
+`Program.Main` starts Avalonia with the Inter font. `App.OnFrameworkInitializationCompleted` builds a `ServiceProvider` and opens a window whose content is `ShellView` and whose `DataContext` is the resolved `ShellViewModel`. Registered services: `IMessenger` (`WeakReferenceMessenger.Default`), `INotificationService`, `IWindowService`, `Session` (the login), `IOrderServiceProxy` (the SignalR client) and `ShellViewModel`.
 
 `App.axaml` declares the theme (Fluent, dark, plus the DataGrid theme) and the implicit `DataTemplate`s that map `OrderBlotterViewModel` and `NotificationViewModel` to their views. Compiled bindings are on (`AvaloniaUseCompiledBindingsByDefault`), so every view sets `x:DataType`; DataGrid columns set it to `OrderAdapter` individually.
 
@@ -20,53 +29,67 @@ dotnet run --project src/Oms.Client
 Oms.Client/
   Program.cs, App.axaml(.cs)     entry point, DI, theme, view-model-to-view templates
   Modules/                       one folder per screen: View.axaml(.cs) + ViewModel
-    Shell/                       tab host, toolbar, notification overlay, connection status; DocumentViewModel base
-    OrderBlotter/                order grid with grouping, sorting and filtering
-    OrderEditor/                 order entry dialog with search-as-you-type
+    Shell/                       login, connection, tab host, notification overlay; DocumentViewModel base
+    OrderBlotter/                order grid: live orders, commands, local grouping, filter
+    OrderEditor/                 order entry dialog
     Notification/                toast item
   Services/
+    IOrderServiceProxy.cs        the server's order service as the client sees it
+    OrderServiceProxy.cs         SignalR implementation (OrderHub)
+    Session.cs                   the login sent with every request
     WindowService.cs             IWindowService (modal dialogs) and IRequestClose
-    OrderServiceProxy.cs         SignalR client for the OrderHub
     Notifications/               INotificationService + INotification sent over the messenger
-  Model/OrderAdapter.cs          bindable order row
+  Model/OrderAdapter.cs          bindable order row, built from an OrderDto
   Framework/Observables/FastSearch.cs   text filter compiled to a predicate
 ```
 
 ## Modules
 
 ### Shell
-`ShellViewModel` holds `Documents` (an `ObservableCollection<DocumentViewModel>`, initially one `OrderBlotterViewModel`), the `ActiveDocument`, `Notifications` and `ConnectionStatus`. `ShellView` shows a toolbar (**Create Order**, **Create Notification**, **Connect to server**), a `TabControl` over `Documents` (tab header from `DocumentViewModel.DisplayName`, content through the implicit templates), a bottom-right notification overlay and a status line.
-
-- **Create Order** opens `OrderEditorViewModel` through `IWindowService.ShowDialogAsync`.
-- **Create Notification** sends an info notification.
-- **Connect to server** creates an `OrderServiceProxy`, subscribes to `OrderListUpdated` and starts the connection; incoming orders are posted to the UI thread and added to the blotter.
+`ShellViewModel` owns the connection. **Connect** calls `IOrderServiceProxy.ConnectAsync` (which also subscribes to the pushed changes), loads the blotter and sets `IsConnected`; the login box is disabled from then on. **Create Order** loads the securities and funds, then opens `OrderEditorViewModel` through `IWindowService.ShowDialogAsync`; if the lists cannot be loaded, an error notification is shown instead of the dialog. The view is a toolbar (login, **Connect**, **Create Order**), a `TabControl` over `Documents` (tab header from `DocumentViewModel.DisplayName`, content through the implicit templates), a bottom-right notification overlay and the status line.
 
 ### Order blotter
-`OrderBlotterViewModel` exposes a `DataGridCollectionView` (`OrdersView`) over an `ObservableCollection<OrderAdapter>`, grouped by `GroupId` and sorted by `Id`.
+`OrderBlotterViewModel` exposes a `DataGridCollectionView` (`OrdersView`) over an `ObservableCollection<OrderAdapter>`, grouped by `GroupId` and sorted by `Id`. The columns are Id, Reference, Security, Way, Type, Quantity, Remaining, Price, State, Status and Group.
 
-- **Group / Ungroup** buttons act on the grid's selected rows: grouping assigns the next free group id (from 4000) to ungrouped rows, ungrouping resets them to 0. The handlers refuse invalid selections, so the buttons are not greyed out.
-- **Filter** accepts `Property = "value"` (nested paths allowed, for example `Security.IsinCode = "FR0000"`) through `FastSearch<OrderAdapter>`. Incomplete or invalid text shows all rows, and only string properties can be compared.
+- **Content.** `LoadAsync` replaces the rows by `GetOrdersAsync()` (it keeps the local group of the orders that stay). The proxy's pushed changes go through `Apply` on the UI thread: Add and Update insert or refresh the row (the cells update in place), Delete and Remove drop it.
+- **Commands** act on the selected rows and send one request with their ids, with the login as token: **Recall**, **Delete**, **Cancel**, **Accept pending** and **Reject pending** (`OrderRequest`), **Send to market** and **Cancel at market** (`OrderMarketRequest`). The buttons are always enabled: the server refuses what the state does not allow. The accepted orders are not reported; they show up through the pushed changes. Each refused order becomes an error notification with the server's message, and a failed call (server unreachable) a single error notification.
+- **Group / Ungroup** are local to the client: grouping assigns the next free group id (from 4000) to ungrouped rows, ungrouping resets them to 0. The handlers refuse invalid selections, so the buttons are not greyed out.
+- **Filter** accepts `Property = "value"` (nested paths allowed, for example `Security.IsinCode = "FR0000000001"`) through `FastSearch<OrderAdapter>`. Incomplete or invalid text shows all rows, and only string properties can be compared.
 - Sorting is by clicking the column headers.
 
 ### Order editor
-`OrderEditorViewModel` builds an Rx pipeline over changes to `SearchText`: short input (under 3 characters) is throttled 500 ms, longer input 300 ms, then `DistinctUntilChanged`. Each term is searched on a background thread (`Observable.ToAsync`) and `TakeUntil(input)` drops stale results; results and the log are observed on the UI `SynchronizationContext` captured in the constructor. The view is an `AutoCompleteBox` for the suggestions plus a log list; `DoSearch` filters a hard-coded array, so this demonstrates the pattern rather than real order entry. **Close** raises `CloseRequested`, which `WindowService` turns into `Window.Close()`.
+`OrderEditorViewModel` is a form for a new order: security and fund (lists from the server), way (Buy or Sell), type (Market or Limit), quantity, limit price (only for a limit order), validity (Day, EndOfDay or Gtc) and an optional reference. **Save draft** and **Send** are enabled once a security, a fund and a positive quantity (and a positive price for a limit order) are set. They send an `OrderEditionRequest` (`Stash` or `Create`) and, on success, raise `CloseRequested`, which `WindowService` turns into `Window.Close()`. A refusal by the server (its message) or a failed call is shown in the dialog, which stays open. **Close** closes it without sending anything.
+
+Not offered yet: stop orders, the Gtd validity, settlement and expiry dates, and editing an existing order (the server supports `Update`).
 
 ### Notifications
 `INotificationService.Process(title, description, type)` sends a `Notification` (random 64-bit id, timestamp, `NotificationType` Info/Warn/Error) as `INotification` through `IMessenger`; `ProcessInfo/Warn/Error` extension methods wrap it. `ShellViewModel` receives it and adds a `NotificationViewModel` to the overlay. Notifications are never removed.
 
 ## Server connection
 
-The server is a SignalR hub at `http://localhost:9001/orders` (see [architecture.md](architecture.md)); method and event names are the constants in `OrderHubMethods` (`Oms.Transport`). `OrderServiceProxy` wraps a `HubConnection` with automatic reconnect: `StartAsync()` connects and calls `SubscribeToEvents`, and the proxy is an `IObservable<Tuple<ItemOperationType, OrderDto[]>>` fed by `OrderListUpdated`. The hub's `Handle*` methods now answer with one outcome per order, but the client does not call them yet.
+`IOrderServiceProxy` is the only thing the view models know about the server, which keeps them testable with a fake. `OrderServiceProxy` implements it over a SignalR `HubConnection` with automatic reconnect, to the hub at `/orders` (see [architecture.md](architecture.md)); method and event names are the constants in `OrderHubMethods` (`Oms.Transport`).
+
+| Member | Hub call |
+|---|---|
+| `ConnectAsync()` | starts the connection, then `SubscribeToEvents` |
+| `GetOrdersAsync()`, `GetSecuritiesAsync()`, `GetFundsAsync()` | `GetOrders`, `GetSecurities`, `GetFunds` |
+| `SendAsync(OrderEditionRequest)` | `HandleOrderEdition`: one `(OrderDto, GenericResultDto)` per order |
+| `SendAsync(OrderRequest)` | `HandleOrder`: one `(orderId, GenericResultDto)` per order |
+| `SendAsync(OrderMarketRequest)` | `HandleOrderMarket`: one `(orderId, GenericResultDto)` per order |
+| `Subscribe(observer)` | the `OrderListUpdated(ItemOperationType, OrderDto[])` event |
+
+A call throws when the server cannot be reached; the view models turn that into a notification or an error message. A result with `ErrorCode != 0` is a refusal, and `ErrorMessage` says why.
 
 ## What changed from the WPF client
 
-| WPF client | Avalonia client |
-|---|---|
-| Caliburn.Micro (conventions, `Conductor`, `IEventAggregator`, `IWindowManager`) | CommunityToolkit.Mvvm (`ObservableObject`, `[RelayCommand]`, `IMessenger`) and `IWindowService` |
-| MEF composition, one interface per view model | `Microsoft.Extensions.DependencyInjection`, concrete view models |
-| `ListView` + `GridView` + `CollectionViewSource` | `DataGrid` + `DataGridCollectionView` |
-| AvalonDock docking | `TabControl` (one document today; `Dock.Avalonia` would be the docking equivalent) |
-| MahApps.Metro windows and the VS2013 theme dictionaries | Fluent dark theme |
-| `x:Name` and `cal:ActionMessage` bindings, group header context menu ("Disband Group") | `Command` bindings, toolbar buttons |
+| WPF client                                                                             | Avalonia client                                                                                 |
+|----------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| Caliburn.Micro (conventions, `Conductor`, `IEventAggregator`, `IWindowManager`)        | CommunityToolkit.Mvvm (`ObservableObject`, `[RelayCommand]`, `IMessenger`) and `IWindowService` |
+| MEF composition, one interface per view model                                          | `Microsoft.Extensions.DependencyInjection`, concrete view models                                |
+| `ListView` + `GridView` + `CollectionViewSource`                                       | `DataGrid` + `DataGridCollectionView`                                                           |
+| AvalonDock docking                                                                     | `TabControl` (one document today; `Dock.Avalonia` would be the docking equivalent)              |
+| MahApps.Metro windows and the VS2013 theme dictionaries                                | Fluent dark theme                                                                               |
+| `x:Name` and `cal:ActionMessage` bindings, group header context menu ("Disband Group") | `Command` bindings, toolbar buttons                                                             |
+| Random sample orders, a search-as-you-type demo                                        | Live orders from the server and a real order form                                               |
 
 Dropped without replacement: `HeaderPersister` (sticky group headers), the custom list behaviours (multi-select, sorting adorner, auto-complete), `DynamicStyle`, the grayscale pixel shader, the `ThemeManager` classes and the `Observable*` Caliburn helpers (all unused).

@@ -265,6 +265,50 @@ namespace Oms.Server.Core.Tests.Services
         }
 
         [Test]
+        public void Should_create_the_order_on_the_side_of_the_dto()
+        {
+            var dto = Dto(100);
+            dto.Way = OrderDtoWay.Sell;
+
+            var results = _service.HandleRequest(Edition(EditionCommand.Create, dto));
+
+            Assert.That(results.Single().Result.IsSuccess(), Is.True, results.Single().Result.ErrorMessage);
+            Assert.That(results.Single().Order.Side, Is.EqualTo(Side.Sell));
+        }
+
+        [Test]
+        public void Should_list_the_orders_of_the_repository()
+        {
+            var orders = new List<Order> { AcceptingOrder(1), AcceptingOrder(2) };
+            _orders.GetOrderList().Returns(orders);
+
+            Assert.That(_service.GetOrders(), Is.EqualTo(orders));
+        }
+
+        [Test]
+        public void Should_only_list_the_active_securities_that_a_dto_can_describe()
+        {
+            var usable = new Security { Id = 1, Currency = Currency.Eur, Type = SecurityType.Equity };
+            _securities.GetActiveList().Returns(new List<Security>
+            {
+                usable,
+                new Security { Id = 2, Currency = Currency.Undefined, Type = SecurityType.Bond },
+                new Security { Id = 3, Currency = Currency.Usd, Type = SecurityType.Undefined },
+            });
+
+            Assert.That(_service.GetSecurities().Select(s => s.Id), Is.EqualTo(new[] { 1 }));
+        }
+
+        [Test]
+        public void Should_list_the_funds_of_the_repository()
+        {
+            var funds = new List<IFund> { new Fund { Id = 1 }, new Fund { Id = 2 } };
+            _funds.GetAll().Returns(funds);
+
+            Assert.That(_service.GetFunds(), Is.EqualTo(funds));
+        }
+
+        [Test]
         public void Should_send_a_working_order_to_the_market()
         {
             var order = WorkingOrder(3);

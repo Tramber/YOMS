@@ -1,7 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -10,18 +9,15 @@ using Oms.Client.Modules.OrderBlotter;
 using Oms.Client.Modules.OrderEditor;
 using Oms.Client.Services;
 using Oms.Client.Services.Notifications;
-using Oms.Transport.Contracts;
-using Oms.Transport.Contracts.Dto;
 
 namespace Oms.Client.Modules.Shell
 {
-    /// <summary>Main window: hosts the documents as tabs, the toolbar commands, the notification overlay and the server connection.</summary>
+    /// <summary>Main window: hosts the documents as tabs, the login and connection to the server, the notification overlay and the order editor.</summary>
     public partial class ShellViewModel : ObservableObject, IRecipient<INotification>
     {
         private readonly IWindowService _windowService;
         private readonly INotificationService _notificationService;
-        private readonly OrderBlotterViewModel _blotter = new OrderBlotterViewModel();
-        private OrderServiceProxy _proxy;
+        private readonly IOrderServiceProxy _proxy;
 
         [ObservableProperty]
         private DocumentViewModel _activeDocument;
@@ -29,60 +25,73 @@ namespace Oms.Client.Modules.Shell
         [ObservableProperty]
         private string _connectionStatus = "Not connected";
 
-        public ShellViewModel(IWindowService windowService, INotificationService notificationService, IMessenger messenger)
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(CreateOrderCommand))]
+        private bool _isConnected;
+
+        public ShellViewModel(IWindowService windowService, INotificationService notificationService, IMessenger messenger,
+            IOrderServiceProxy proxy, Session session)
         {
             _windowService = windowService;
             _notificationService = notificationService;
-            Documents = new ObservableCollection<DocumentViewModel> { _blotter };
-            ActiveDocument = _blotter;
+            _proxy = proxy;
+            Session = session;
+            Blotter = new OrderBlotterViewModel(proxy, notificationService, session);
+            Documents = new ObservableCollection<DocumentViewModel> { Blotter };
+            ActiveDocument = Blotter;
             Notifications = new ObservableCollection<NotificationViewModel>();
             messenger.RegisterAll(this);
         }
 
-        /// <summary>Open tabs.</summary>
+        public Session Session { get; }
+
+        public OrderBlotterViewModel Blotter { get; }
+
         public ObservableCollection<DocumentViewModel> Documents { get; }
 
         /// <summary>Notifications shown in the overlay. They are never removed.</summary>
         public ObservableCollection<NotificationViewModel> Notifications { get; }
 
-        [RelayCommand]
-        private Task CreateOrderAsync() => _windowService.ShowDialogAsync(new OrderEditorViewModel());
-
-        [RelayCommand]
-        private void CreateNotification() => _notificationService.ProcessInfo("hello", "Ding Ding Dong");
-
+        /// <summary>Connects to the server and loads the orders. The blotter then follows the changes pushed by the server.</summary>
         [RelayCommand]
         private async Task ConnectAsync()
         {
-            if (_proxy != null) return;
+            if (IsConnected) return;
             ConnectionStatus = "Connecting...";
             try
             {
-                _proxy = new OrderServiceProxy();
-                _proxy.Subscribe(new OrderObserver(orders => Dispatcher.UIThread.Post(() => _blotter.AddOrders(orders))));
-                await _proxy.StartAsync();
-                ConnectionStatus = "Connected to http://localhost:9001/orders";
+                await _proxy.ConnectAsync();
+                await Blotter.LoadAsync();
+                IsConnected = true;
+                ConnectionStatus = "Connected as " + Session.Login;
             }
             catch (Exception ex)
             {
-                _proxy = null;
-                ConnectionStatus = "Connection failed: " + ex.Message;
+                ConnectionStatus = "Not connected";
+                _notificationService.ProcessError("Connection failed", ex.Message);
             }
+        }
+
+        [RelayCommand(CanExecute = nameof(IsConnected))]
+        private async Task CreateOrderAsync()
+        {
+            var editor = new OrderEditorViewModel(_proxy, Session);
+            try
+            {
+                await editor.LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                _notificationService.ProcessError("Order editor", ex.Message);
+                return;
+            }
+            await _windowService.ShowDialogAsync(editor);
         }
 
         /// <summary>Adds each notification sent on the messenger to the overlay.</summary>
         public void Receive(INotification message)
         {
             Notifications.Add(new NotificationViewModel(message));
-        }
-
-        private sealed class OrderObserver : IObserver<Tuple<ItemOperationType, OrderDto[]>>
-        {
-            private readonly Action<OrderDto[]> _onOrders;
-            public OrderObserver(Action<OrderDto[]> onOrders) { _onOrders = onOrders; }
-            public void OnNext(Tuple<ItemOperationType, OrderDto[]> value) => _onOrders(value.Item2);
-            public void OnError(Exception error) { }
-            public void OnCompleted() { }
         }
     }
 }
