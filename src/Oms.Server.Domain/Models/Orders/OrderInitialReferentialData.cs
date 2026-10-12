@@ -1,11 +1,15 @@
-using Oms.Server.Domain.Interfaces.Models;
+﻿using Oms.Server.Domain.Interfaces.Models;
+using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Securities;
 
 namespace Oms.Server.Domain.Models.Orders
 {
-    internal class OrderInitialReferentialData : IOrderInitialReferentialData
+    internal class OrderInitialReferentialData : IOrderInitialReferentialData, IIdentifiable
     {
+        public int Id { get; set; }
+
+
         public string InstrumentCode { get; internal set; }
         public SecurityCodeType SecurityCodeType { get; internal set; }
         public string FundCode { get; internal set; }

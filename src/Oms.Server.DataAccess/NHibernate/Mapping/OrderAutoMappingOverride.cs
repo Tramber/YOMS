@@ -18,7 +18,7 @@ namespace Oms.Server.DataAccess.NHibernate.Mapping
                ((IPropertyIgnorer)mapping).IgnoreProperty(propertyInfo.Name);
             }
 
-            mapping.HasMany<OrderEventLog>(x => x.EventLogs).AsSet().Cascade.AllDeleteOrphan();
+            mapping.HasMany<OrderEventLog>(x => x.EventLogs).AsBag().Cascade.AllDeleteOrphan();
         }
     }
 }

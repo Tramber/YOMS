@@ -7,7 +7,7 @@ namespace Oms.Server.Domain.Models.Orders
     public class OrderBasket : IOrderBasket
     {
         public int Id { get; set; }
-        public List<Order> Orders { get; set; }
+        public IList<Order> Orders { get; set; } = new List<Order>();
         public User Creator { get; set; }
     }
 }

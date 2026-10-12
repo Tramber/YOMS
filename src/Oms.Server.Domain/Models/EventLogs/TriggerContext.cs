@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Oms.Server.Domain.Interfaces.Models;
 
 namespace Oms.Server.Domain.Models.EventLogs
@@ -6,6 +6,8 @@ namespace Oms.Server.Domain.Models.EventLogs
     /// <summary>Who fired a trigger, when and from which platform.</summary>
     public class TriggerContext : ITriggerContext
     {
+        public int Id { get; set; }
+
         public TriggerContext()
         {
         }
