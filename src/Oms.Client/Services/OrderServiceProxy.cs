@@ -64,6 +64,11 @@ namespace Oms.Client.Services
             return _connection.InvokeAsync<Response<Tuple<int, GenericResultDto>, OrderMarketCommand>>(OrderHubMethods.HandleOrderMarket, request);
         }
 
+        public Task<Response<Tuple<int, GenericResultDto>, OrderTradeCommand>> SendAsync(OrderTradeRequest request)
+        {
+            return _connection.InvokeAsync<Response<Tuple<int, GenericResultDto>, OrderTradeCommand>>(OrderHubMethods.HandleOrderTrade, request);
+        }
+
         /// <summary>Calls the observer for each batch of orders pushed by the server. Dispose the result to stop.</summary>
         public IDisposable Subscribe(IObserver<Tuple<ItemOperationType, OrderDto[]>> observer)
         {

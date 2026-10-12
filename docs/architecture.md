@@ -28,7 +28,7 @@ flowchart LR
 
 ## Request flow
 
-1. The client sends a request (`OrderEditionRequest`, `OrderRequest` or `OrderMarketRequest`) to a hub method: `HandleOrderEdition`, `HandleOrder` or `HandleOrderMarket`. SignalR does not allow overloaded hub methods, hence three names.
+1. The client sends a request (`OrderEditionRequest`, `OrderRequest`, `OrderMarketRequest` or `OrderTradeRequest`) to a hub method: `HandleOrderEdition`, `HandleOrder`, `HandleOrderMarket` or `HandleOrderTrade`. SignalR does not allow overloaded hub methods, hence four names.
 2. `OrderHub` forwards to `IOrderServiceContract` (`OrderServiceContract`), which calls `OrderManagementService.HandleRequest`.
 3. `OrderManagementService` resolves the requester from the request token (the user's login; an unknown user fails every order of the request). For each order of the request it loads the order (or builds a new one for Create and Stash), looks up the command (`EditionCommand`, `OrderStateCommand`, `OrderMarketCommand`) in `OrderCommandMappings` and runs the matching `Order` method with the requester as trigger context.
 4. Each call fires a trigger on the order's state machine and returns a `GenericResult`. A successful order is saved (`Add` when new, `Update` otherwise); a failed one is reported and does not stop the others. The service returns one `OrderCommandResult` per order, in request order.
@@ -90,7 +90,7 @@ Cancel and Update are pending commands: they are logged as Pending and only take
 
 ## Trade life cycle
 
-A `Trade` is created by `Order.AddTrade` and records its own event log.
+A `Trade` is created by `Order.AddTrade` and records its own event log. Clients reach it with `OrderTradeRequest`: `AddTrade` (order id, way, quantity, net amount), `CancelTrade` and `BookTrade` (order id and trade id). `BookTrade` first forces a New or BookingError trade to Booked, since there is no booking system, then books it on the order. The trades of an order, cancelled ones included, are in `OrderDto.Trades`.
 
 ```mermaid
 stateDiagram-v2
@@ -114,7 +114,7 @@ stateDiagram-v2
 
 - `InterfaceReferenceConvention` points every association typed as an interface (`IUser`, `IFund`, `ISecurity`, `IOrder`, `ITrade`, `ITriggerContext`, the event parameters, ...) to the entity class that implements it, and saves the objects an order owns (basket, initial referential data, trigger contexts, event parameters) together with it.
 - `ExplicitTypeSource` adds the closed generic event logs (`OrderParameterEventLog<IOrderEditableData>`, ...), which assembly scanning cannot find. Each event log hierarchy is one table with a discriminator (`EventLogDiscriminatorConvention` gives readable values) and one parameter column per parameter type.
-- The mapping overrides of `Order` and `Trade` ignore the computed members and map the event logs as lists.
+- The mapping override of `Order` ignores the computed members; `Trade` stores its own quantity, amount, state and side. Both map the event logs as lists. A `Trade` is owned by the dealing event parameter that references it, so it is saved with the order.
 - `Microsoft.Data.Sqlite` cannot describe its schema, so reserved-word discovery is turned off.
 
 The provider comes from the `OmsDB` connection string in the host's `App.config` (an Oracle branch exists but needs a .NET provider package). For SQLite the string is the database file, relative to the working directory (`oms.sqlite`). The schema is created once, when that file is missing or empty; it is never dropped or migrated, so delete the file after changing a mapping.
@@ -133,4 +133,4 @@ There is no authentication: a request is run as the user whose login it carries.
 
 ## Known gaps
 
-See `AGENTS.md`. In short: no authentication and no database migrations; trades (`AddTrade`, `CancelTrade`, the booking steps and `TradeBooked`) work in the domain but no hub command reaches them, so a client cannot book executions yet; and there is no query for the event log of a single order.
+See `AGENTS.md`. In short: no authentication and no database migrations; there is no booking system (`BookTrade` forces trades to booked by hand); and there is no query for the event log of a single order.

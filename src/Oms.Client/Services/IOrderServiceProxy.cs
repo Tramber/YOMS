@@ -33,5 +33,8 @@ namespace Oms.Client.Services
 
         /// <summary>Sends orders to the market or cancels them there: one outcome per order id.</summary>
         Task<Response<Tuple<int, GenericResultDto>, OrderMarketCommand>> SendAsync(OrderMarketRequest request);
+
+        /// <summary>Adds, cancels or books the executions of orders: one outcome per submitted trade, keyed by its order id.</summary>
+        Task<Response<Tuple<int, GenericResultDto>, OrderTradeCommand>> SendAsync(OrderTradeRequest request);
     }
 }

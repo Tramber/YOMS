@@ -146,6 +146,33 @@ namespace Oms.Client.Modules.OrderBlotter
         private Task RejectPendingAsync(IList selected) => SendStateAsync("Reject", OrderStateCommand.RejectPending, selected);
 
         [RelayCommand]
+        private Task StartBookingAsync(IList selected) => SendStateAsync("Start booking", OrderStateCommand.StartBooking, selected);
+
+        /// <summary>Executes what remains of the selected orders in one trade, at the limit price (0 for an order without one).</summary>
+        [RelayCommand]
+        private Task ExecuteOrdersAsync(IList selected)
+        {
+            var trades = Orders(selected).Where(o => o.RemainingQuantity > 0).Select(o => new TradeDto
+            {
+                OrderId = o.Id,
+                Way = o.Way,
+                ExecutionQuantity = o.RemainingQuantity,
+                ExecutionAmountNet = o.RemainingQuantity * o.Price,
+            }).ToList();
+            return SendTradesAsync("Execute", OrderTradeCommand.AddTrade, trades);
+        }
+
+        /// <summary>Books the executions of the selected orders that are not booked yet.</summary>
+        [RelayCommand]
+        private Task BookTradesAsync(IList selected)
+        {
+            var trades = Orders(selected)
+                .SelectMany(o => o.Trades.Where(t => t.State == "New" || t.State == "BookingSent" || t.State == "BookingError"))
+                .ToList();
+            return SendTradesAsync("Book trades", OrderTradeCommand.BookTrade, trades);
+        }
+
+        [RelayCommand]
         private Task SendToMarketAsync(IList selected) => SendMarketAsync("Send to market", OrderMarketCommand.MarketSend, selected);
 
         [RelayCommand]
@@ -179,6 +206,25 @@ namespace Oms.Client.Modules.OrderBlotter
             {
                 _notifications.ProcessError(label, ex.Message);
             }
+        }
+
+        private async Task SendTradesAsync(string label, OrderTradeCommand command, List<TradeDto> trades)
+        {
+            if (trades.Count == 0) return;
+            try
+            {
+                var response = await _proxy.SendAsync(new OrderTradeRequest(_session.Login, command, trades, default(TransactionMode)));
+                Report(label, response.ResultList);
+            }
+            catch (Exception ex)
+            {
+                _notifications.ProcessError(label, ex.Message);
+            }
+        }
+
+        private static List<OrderAdapter> Orders(IList selected)
+        {
+            return selected == null ? new List<OrderAdapter>() : selected.OfType<OrderAdapter>().ToList();
         }
 
         private static List<int> SelectedIds(IList selected)

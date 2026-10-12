@@ -1,6 +1,5 @@
 ﻿using FluentNHibernate.Automapping;
 using FluentNHibernate.Automapping.Alterations;
-using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Trades;
 
@@ -10,11 +9,7 @@ namespace Oms.Server.DataAccess.NHibernate.Mapping
     {
         public void Override(AutoMapping<Trade> mapping)
         {
-            foreach (var propertyInfo in typeof(ITradeEditableData).GetProperties())
-            {
-                ((IPropertyIgnorer)mapping).IgnoreProperty(propertyInfo.Name);
-            }
-
+            // The quantity, amount, state and side are stored with the trade, unlike the computed data of an order.
             mapping.HasMany<TradeEventLog>(x => x.EventLogs).AsBag().Cascade.AllDeleteOrphan();
         }
     }

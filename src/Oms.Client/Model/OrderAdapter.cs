@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Oms.Transport.Contracts.Dto;
 
@@ -26,6 +27,9 @@ namespace Oms.Client.Model
 
         [ObservableProperty]
         private int _groupId;
+
+        /// <summary>The executions of the order, cancelled ones included.</summary>
+        public IReadOnlyList<TradeDto> Trades { get; private set; } = new List<TradeDto>();
 
         public string ClientOrderRef { get; set; }
 
@@ -77,6 +81,7 @@ namespace Oms.Client.Model
             Price = dto.PriceLimit ?? 0;
             State = dto.State;
             Status = dto.Status;
+            Trades = dto.Trades ?? new List<TradeDto>();
             OnPropertyChanged(nameof(SecurityName));
         }
     }

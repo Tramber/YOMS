@@ -25,6 +25,8 @@ public class OrderHub : Hub
 
     public Response<Tuple<int, GenericResultDto>, OrderMarketCommand> HandleOrderMarket(OrderMarketRequest request) => _service.Handle(request);
 
+    public Response<Tuple<int, GenericResultDto>, OrderTradeCommand> HandleOrderTrade(OrderTradeRequest request) => _service.Handle(request);
+
     public List<OrderDto> GetOrders() => _service.GetOrders();
 
     public List<SecurityDto> GetSecurities() => _service.GetSecurities();

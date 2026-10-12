@@ -18,6 +18,9 @@ namespace Oms.Transport.Contracts
         /// <summary>Sends orders to the market or cancels them there. One outcome per order id.</summary>
         Response<Tuple<int, GenericResultDto>, OrderMarketCommand> Handle(OrderMarketRequest request);
 
+        /// <summary>Adds, cancels or books the executions of orders. One outcome per submitted trade, keyed by its order id.</summary>
+        Response<Tuple<int, GenericResultDto>, OrderTradeCommand> Handle(OrderTradeRequest request);
+
         /// <summary>Every order, to fill a blotter; changes are then pushed as OrderListUpdated events.</summary>
         List<OrderDto> GetOrders();
 
@@ -34,6 +37,7 @@ namespace Oms.Transport.Contracts
         public const string HandleOrderEdition = "HandleOrderEdition";
         public const string HandleOrder = "HandleOrder";
         public const string HandleOrderMarket = "HandleOrderMarket";
+        public const string HandleOrderTrade = "HandleOrderTrade";
         public const string GetOrders = "GetOrders";
         public const string GetSecurities = "GetSecurities";
         public const string GetFunds = "GetFunds";

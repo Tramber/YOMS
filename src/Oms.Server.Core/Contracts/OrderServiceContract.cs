@@ -45,6 +45,13 @@ namespace Oms.Server.Core.Contracts
             return new Response<Tuple<int, GenericResultDto>, OrderMarketCommand>(request.Command, Outcomes(results));
         }
 
+        public Response<Tuple<int, GenericResultDto>, OrderTradeCommand> Handle(OrderTradeRequest request)
+        {
+            var results = orderManagementService.HandleRequest(request);
+            Publish(ItemOperationType.Update, results);
+            return new Response<Tuple<int, GenericResultDto>, OrderTradeCommand>(request.Command, Outcomes(results));
+        }
+
         public List<OrderDto> GetOrders()
         {
             return orderManagementService.GetOrders().Select(o => o.ToDto()).ToList();

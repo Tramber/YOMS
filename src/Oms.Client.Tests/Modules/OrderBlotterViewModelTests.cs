@@ -79,6 +79,12 @@ namespace Oms.Client.Tests.Modules
                 .Returns(Task.FromResult(new Response<Tuple<int, GenericResultDto>, OrderMarketCommand>(command, results.ToList())));
         }
 
+        private void ServerAnswersTrade(OrderTradeCommand command, params Tuple<int, GenericResultDto>[] results)
+        {
+            _proxy.SendAsync(Arg.Any<OrderTradeRequest>())
+                .Returns(Task.FromResult(new Response<Tuple<int, GenericResultDto>, OrderTradeCommand>(command, results.ToList())));
+        }
+
         [Test]
         public void Should_follow_the_changes_pushed_by_the_server()
         {
@@ -338,6 +344,70 @@ namespace Oms.Client.Tests.Modules
 
             await _proxy.DidNotReceive().SendAsync(Arg.Any<OrderRequest>());
             await _proxy.DidNotReceive().SendAsync(Arg.Any<OrderMarketRequest>());
+        }
+
+        [Test]
+        public async Task Should_execute_what_remains_of_the_selected_orders_at_the_limit_price()
+        {
+            var partial = Dto(1, 100);
+            partial.RemainingQuantity = 40;
+            await LoadAsync(partial, Dto(2, 50));
+            ServerAnswersTrade(OrderTradeCommand.AddTrade, Tuple.Create(1, Ok), Tuple.Create(2, Ok));
+
+            await _blotter.ExecuteOrdersCommand.ExecuteAsync(Rows().ToList());
+
+            await _proxy.Received(1).SendAsync(Arg.Is<OrderTradeRequest>(r =>
+                r.Command == OrderTradeCommand.AddTrade && r.Token == "trader" && r.ItemList.Count == 2
+                && r.ItemList[0].OrderId == 1 && r.ItemList[0].ExecutionQuantity == 40 && r.ItemList[0].ExecutionAmountNet == 500
+                && r.ItemList[0].Way == OrderDtoWay.Sell
+                && r.ItemList[1].OrderId == 2 && r.ItemList[1].ExecutionQuantity == 50));
+        }
+
+        [Test]
+        public async Task Should_book_the_trades_that_are_not_booked_yet()
+        {
+            var order = Dto(1);
+            order.Trades = new List<TradeDto>
+            {
+                new TradeDto { Id = 10, OrderId = 1, State = "New" },
+                new TradeDto { Id = 11, OrderId = 1, State = "Booked" },
+                new TradeDto { Id = 12, OrderId = 1, State = "Cancelled" },
+                new TradeDto { Id = 13, OrderId = 1, State = "BookingError" },
+            };
+            await LoadAsync(order);
+            ServerAnswersTrade(OrderTradeCommand.BookTrade, Tuple.Create(1, Ok), Tuple.Create(1, Ok));
+
+            await _blotter.BookTradesCommand.ExecuteAsync(Rows().ToList());
+
+            await _proxy.Received(1).SendAsync(Arg.Is<OrderTradeRequest>(r =>
+                r.Command == OrderTradeCommand.BookTrade && r.ItemList.Select(t => t.Id).SequenceEqual(new[] { 10, 13 })));
+        }
+
+        [Test]
+        public async Task Should_start_the_booking_through_the_state_request()
+        {
+            await LoadAsync(Dto(3));
+            ServerAnswersState(OrderStateCommand.StartBooking, Tuple.Create(3, Ok));
+
+            await _blotter.StartBookingCommand.ExecuteAsync(Rows().ToList());
+
+            await _proxy.Received(1).SendAsync(Arg.Is<OrderRequest>(r => r.Command == OrderStateCommand.StartBooking && r.ItemList.SequenceEqual(new[] { 3 })));
+        }
+
+        [Test]
+        public async Task Should_report_a_refused_trade_and_send_nothing_when_there_is_nothing_to_execute_or_book()
+        {
+            var filled = Dto(1);
+            filled.RemainingQuantity = 0;
+            await LoadAsync(filled, Dto(2));
+            ServerAnswersTrade(OrderTradeCommand.AddTrade, Tuple.Create(2, Refused("not allowed")));
+
+            await _blotter.BookTradesCommand.ExecuteAsync(Rows().ToList());
+            await _proxy.DidNotReceive().SendAsync(Arg.Any<OrderTradeRequest>());
+
+            await _blotter.ExecuteOrdersCommand.ExecuteAsync(Rows().ToList());
+
+            _notifications.Received(1).Process("Execute: order 2", "not allowed", NotificationType.Error);
         }
     }
 }

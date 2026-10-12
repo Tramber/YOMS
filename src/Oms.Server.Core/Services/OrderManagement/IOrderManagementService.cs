@@ -16,6 +16,9 @@ namespace Oms.Server.Core.Services
         IList<OrderCommandResult> HandleRequest(OrderMarketRequest request);
         IList<OrderCommandResult> HandleRequest(OrderRequest request);
 
+        /// <summary>Adds, cancels or books executions of orders, one result per trade of the request.</summary>
+        IList<OrderCommandResult> HandleRequest(OrderTradeRequest request);
+
         /// <summary>Every order, with its event log.</summary>
         IList<Order> GetOrders();
 

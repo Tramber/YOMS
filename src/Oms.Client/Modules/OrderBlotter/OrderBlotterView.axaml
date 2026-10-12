@@ -19,6 +19,9 @@
         <Button Content="Cancel" Command="{Binding CancelOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
         <Button Content="Accept pending" Command="{Binding AcceptPendingCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
         <Button Content="Reject pending" Command="{Binding RejectPendingCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Execute" Command="{Binding ExecuteOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Start booking" Command="{Binding StartBookingCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
+        <Button Content="Book trades" Command="{Binding BookTradesCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
         <Button Content="Send to market" Command="{Binding SendToMarketCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
         <Button Content="Cancel at market" Command="{Binding CancelAtMarketCommand}" CommandParameter="{Binding #Grid.SelectedItems}" />
       </StackPanel>
