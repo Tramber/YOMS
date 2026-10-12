@@ -41,15 +41,17 @@ namespace Oms.Server.Domain.Models.Orders
 
         private OrderData ComputeOrderData()
         {
-            var orderedEventLogs = EventLogs.Where(e => !e.TriggerStatus.IsFailure()).OrderByDescending(e => e.Context.Date).ToList();
+            var orderedEventLogs = EventLogs.Where(e => !e.TriggerStatus.IsFailure()).OrderBy(e => e.Context.Date).ThenBy(e => e.Id).ToList();
 
             var lastEditableEvent = orderedEventLogs.OfType<OrderParameterEventLog<IOrderEditableData>>().LastOrDefault(e => e.TriggerStatus.IsValid());
             var lastDealEvent = orderedEventLogs.OfType<OrderParameterEventLog<IOrderDealingData>>().LastOrDefault(e => e.TriggerStatus.IsValid());
             var lastValidEvent = orderedEventLogs.LastOrDefault();
             var lastPendingEvent = orderedEventLogs.LastOrDefault(e => e.TriggerStatus.IsPending());
-            if (lastPendingEvent != null)
+            // A pending trigger that was accepted or rejected since is no longer pending.
+            if (lastPendingEvent != null
+                && orderedEventLogs.Any(e => e.Trigger == lastPendingEvent.Trigger && e.Context.Date >= lastPendingEvent.Context.Date && e.TriggerStatus.IsPendingReply()))
             {
-                if(orderedEventLogs.Any(e => e.Trigger == lastPendingEvent.Trigger && e.Context.Date >= lastPendingEvent.Context.Date && e.TriggerStatus.IsPendingReply()));
+                lastPendingEvent = null;
             }
             if (lastValidEvent == null)
             {

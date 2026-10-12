@@ -6,18 +6,18 @@ namespace Oms.Server.Domain.Models.Orders
     {
 
 
-        /// <summary>Copies the core data (creator, owner, dates, references, ...) onto the order. Called when the order is first created.</summary>
+        /// <summary>Copies the core data (creator, owner, dates, references, ...) onto the order. Called when the order is first created. Does nothing when there is no core data.</summary>
         public static Order InsertDataFrom(this Order order, IOrderCoreData coreData)
         {
-            if (order != null)
+            if (order != null && coreData != null)
             {
-                //TODO handle coreData is null ?
                 order.Owner = coreData.Owner;
                 order.Creator = coreData.Creator;
                 order.CreationDate = coreData.CreationDate;
                 order.OrderBasket = coreData.OrderBasket;
-                order.InitialReferentialData = order.InitialReferentialData;
-                order.ClientOrderRef = order.ClientOrderRef;
+                order.InitialReferentialData = coreData.InitialReferentialData;
+                order.ClientOrderRef = coreData.ClientOrderRef;
+                order.IsAutoAccepted = coreData.IsAutoAccepted;
             }
             return order;
         }

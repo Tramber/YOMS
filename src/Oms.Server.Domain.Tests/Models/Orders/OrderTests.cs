@@ -85,6 +85,44 @@ namespace Oms.Server.Domain.Tests.Models.Orders
         }
 
         [Test]
+        public void Should_copy_the_core_data_onto_the_order_when_it_is_sent()
+        {
+            var creator = new User();
+            var owner = new User();
+            var basket = new OrderBasket();
+            var builder = new OrderBuilder()
+                .WithCoreData(creator, owner, basket, "client-ref")
+                .WithFund(new Fund())
+                .WithSecurity(new Security())
+                .WithPrices(OrderType.Limit, 100, 12.5, null)
+                .WithInitialReferentialData("instCode", SecurityCodeType.Isin, "fundCode", FundCodeType.Other, "folioCode");
+            var coreData = builder.BuildOrderCoreData();
+            coreData.IsAutoAccepted = true;
+            var order = new Order();
+
+            var result = order.SendRequest(new TriggerContext(creator), coreData, builder.BuildOrderEditableData());
+
+            Assert.That(result.IsSuccess(), Is.True, result.ErrorMessage);
+            Assert.That(order.Creator, Is.SameAs(creator));
+            Assert.That(order.Owner, Is.SameAs(owner));
+            Assert.That(order.OrderBasket, Is.SameAs(basket));
+            Assert.That(order.ClientOrderRef, Is.EqualTo("client-ref"));
+            Assert.That(order.IsAutoAccepted, Is.True);
+            Assert.That(order.InitialReferentialData, Is.SameAs(coreData.InitialReferentialData));
+            Assert.That(order.OrderState, Is.EqualTo(OrderStateMachine.State.Accepting));
+        }
+
+        [Test]
+        public void Should_leave_the_order_unchanged_when_there_is_no_core_data()
+        {
+            var order = CreateOrder(OrderStateMachine.State.Draft);
+            var reference = order.ClientOrderRef;
+
+            Assert.That(order.InsertDataFrom(null), Is.SameAs(order));
+            Assert.That(order.ClientOrderRef, Is.EqualTo(reference));
+        }
+
+        [Test]
         public void Should_refuse_to_cancel_a_trade_when_the_order_is_working()
         {
             var order = CreateOrder(OrderStateMachine.State.Working);

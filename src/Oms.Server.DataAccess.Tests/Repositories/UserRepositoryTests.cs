@@ -9,16 +9,8 @@ namespace Oms.Server.DataAccess.Tests.Repositories
 {
     /// <summary>Round trip through NHibernate and a real SQLite file (the schema is created on first use).</summary>
     [TestFixture]
-    [Ignore("NHibernate cannot build the session factory yet: associations typed as interfaces (Order.Creator: IUser, ...) are unmapped. Remove once the mapping is fixed.")]
     public class UserRepositoryTests
     {
-        [OneTimeSetUp]
-        public void UseTheTestConfiguration()
-        {
-            // ConfigurationManager would otherwise read testhost.dll.config.
-            AppContext.SetData("APP_CONFIG_FILE", Path.Combine(AppContext.BaseDirectory, "App.config"));
-        }
-
         [Test]
         public void Should_save_a_user_and_find_it_by_login_and_id()
         {

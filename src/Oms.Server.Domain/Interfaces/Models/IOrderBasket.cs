@@ -7,7 +7,7 @@ namespace Oms.Server.Domain.Interfaces.Models
 {
     public interface IOrderBasket : IIdentifiable
     {
-        List<Order> Orders { get; set; }
+        IList<Order> Orders { get; set; }
         User Creator { get; set; }
     }
 }

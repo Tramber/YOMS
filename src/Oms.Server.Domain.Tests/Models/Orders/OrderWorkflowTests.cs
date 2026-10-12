@@ -166,5 +166,58 @@ namespace Oms.Server.Domain.Tests.Models.Orders
 
             Assert.That(order.OrderStatus, Is.EqualTo(OrderStatus.CancelPending));
         }
+
+        private static Order Rebuilt(Order order)
+        {
+            // A new Order has no cached data: everything is recomputed from the event log, as after loading from the database.
+            return new Order { EventLogs = order.EventLogs.ToList() };
+        }
+
+        [Test]
+        public void Should_rebuild_the_latest_state_from_the_event_log()
+        {
+            var order = CreateOrder(State.Accepting);
+            order.SendAccept(new TriggerContext(new User(), DateTime.Now.AddMinutes(10)));
+
+            Assert.That(Rebuilt(order).OrderState, Is.EqualTo(State.Working));
+        }
+
+        [Test]
+        public void Should_rebuild_a_pending_cancel_from_the_event_log()
+        {
+            var order = CreateOrder(State.Working);
+            order.Cancel(new TriggerContext(new User(), DateTime.Now.AddMinutes(10)));
+
+            var rebuilt = Rebuilt(order);
+
+            Assert.That(rebuilt.OrderState, Is.EqualTo(State.Working));
+            Assert.That(rebuilt.PendingTrigger, Is.EqualTo(OrderStateMachine.Trigger.Cancel));
+        }
+
+        [Test]
+        public void Should_rebuild_an_accepted_cancel_without_a_pending_trigger()
+        {
+            var order = CreateOrder(State.Working);
+            order.Cancel(new TriggerContext(new User(), DateTime.Now.AddMinutes(10)));
+            order.AcceptPending(new TriggerContext(new User(), DateTime.Now.AddMinutes(20)));
+
+            var rebuilt = Rebuilt(order);
+
+            Assert.That(rebuilt.OrderState, Is.EqualTo(State.Terminated));
+            Assert.That(rebuilt.PendingTrigger, Is.Null);
+        }
+
+        [Test]
+        public void Should_rebuild_a_rejected_cancel_without_a_pending_trigger()
+        {
+            var order = CreateOrder(State.Working);
+            order.Cancel(new TriggerContext(new User(), DateTime.Now.AddMinutes(10)));
+            order.RejectPending(new TriggerContext(new User(), DateTime.Now.AddMinutes(20)));
+
+            var rebuilt = Rebuilt(order);
+
+            Assert.That(rebuilt.OrderState, Is.EqualTo(State.Working));
+            Assert.That(rebuilt.PendingTrigger, Is.Null);
+        }
     }
 }

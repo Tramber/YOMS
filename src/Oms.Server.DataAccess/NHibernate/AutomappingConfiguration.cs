@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using FluentNHibernate.Automapping;
+using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
 using Oms.Server.Domain.Models.Funds;
 using Oms.Server.Domain.Models.Orders;
@@ -22,33 +23,37 @@ namespace Oms.Server.DataAccess.NHibernate
             {
                 typeof (Order),
                 typeof (OrderBasket),
+                typeof (OrderInitialReferentialData),
                 typeof (Trade),
                 typeof (User),
                 typeof (Fund),
                 typeof (Security),
                 typeof (TriggerContext),
                 typeof (OrderEventLog),
-                typeof (OrderParameterEventLog<OrderDealingEventParameter>),
-                typeof (OrderParameterEventLog<OrderEditableEventParameter>),
+                typeof (OrderParameterEventLog<IOrderDealingData>),
+                typeof (OrderParameterEventLog<IOrderEditableData>),
                 typeof (TradeEventLog),
-                typeof (TradeParameterEventLog<TradeEditableEventParameter>),
+                typeof (TradeParameterEventLog<ITradeEditableData>),
                 typeof (OrderDealingEventParameter),
                 typeof (OrderEditableEventParameter),
+                typeof (TradeEditableEventParameter),
             };
 
-            _componentTypes = new HashSet<Type>
-            {
-                typeof (TriggerContext),
-                typeof (OrderDealingEventParameter),
-                typeof (OrderEditableEventParameter),
-                typeof (TradeEditableEventParameter)
-            };
+            _componentTypes = new HashSet<Type>();
 
             _isDiscriminatedTypes = new HashSet<Type>
             {
                 typeof (OrderEventLog),
             };
         }
+
+        /// <summary>The closed generic event logs; assembly scanning cannot find them.</summary>
+        public static readonly Type[] ClosedGenericTypes =
+        {
+            typeof (OrderParameterEventLog<IOrderDealingData>),
+            typeof (OrderParameterEventLog<IOrderEditableData>),
+            typeof (TradeParameterEventLog<ITradeEditableData>),
+        };
 
         public override string GetDiscriminatorColumn(Type type)
         {
@@ -67,7 +72,8 @@ namespace Oms.Server.DataAccess.NHibernate
 
         public override bool IsDiscriminated(Type type)
         {
-            return type.IsSubclassOf(typeof(OrderEventLog)) || type.IsSubclassOf(typeof(TradeEventLog));
+            // Asked for the root of a hierarchy, not for the subclass: each event log hierarchy is one table with a discriminator.
+            return typeof(OrderEventLog).IsAssignableFrom(type) || typeof(TradeEventLog).IsAssignableFrom(type);
         }
     }
 }
