@@ -1,26 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using Caliburn.Micro;
-
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace Oms.Client.Services.Notifications
 {
-    [Export(typeof(INotificationService))]
     public class NotificationService : INotificationService
     {
-        private readonly IEventAggregator _eventAggregator;
+        private readonly IMessenger _messenger;
+
+        public NotificationService(IMessenger messenger)
+        {
+            _messenger = messenger;
+        }
 
         public void Process(string title, string description, NotificationType notificationType = NotificationType.Info)
         {
-            var notification = new Notification(title, description, notificationType);
-            _eventAggregator.Publish(notification, action => action());
-        }
-
-        [ImportingConstructor]
-        public NotificationService(IEventAggregator eventAggregator)
-        {
-            _eventAggregator = eventAggregator;
+            _messenger.Send<INotification>(new Notification(title, description, notificationType));
         }
     }
 }

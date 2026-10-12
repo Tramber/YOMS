@@ -1,38 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 using Oms.Transport.Contracts.Dto;
 using Oms.Transport.Contracts.Messages;
 using Oms.Transport.Contracts.Messages.Orders;
+using System;
 
 namespace Oms.Transport.Contracts
 {
-    [ServiceContract(CallbackContract = typeof(IOrderServiceContractCallback), SessionMode = SessionMode.Required)]
     public interface IOrderServiceContract
     {
-        [OperationContract]
         EditionResponse<OrderDto> Handle(OrderEditionRequest request);
 
-        [OperationContract]
         Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderRequest request);
 
-        [OperationContract]
         Response<Tuple<int, GenericResultDto>, OrderStateCommand> Handle(OrderMarketRequest request);
-
-        [OperationContract(IsOneWay = true, IsInitiating = true)]
-        void SubscribeToEvents();
-
-        [OperationContract(IsOneWay = true, IsInitiating = true)]
-        void UnsubscribeToEvents();
     }
 
-    public interface IOrderServiceContractCallback
+    /// <summary>Names of the SignalR hub methods shared by server and client.</summary>
+    public static class OrderHubMethods
     {
-        [OperationContract]
-        void OrderListUpdated(ItemOperationType operationType, OrderDto[] orderDtoList);
+        public const string Path = "/orders";
+        public const string Subscribe = "SubscribeToEvents";
+        public const string Unsubscribe = "UnsubscribeToEvents";
+        public const string OrderListUpdated = "OrderListUpdated";
     }
 }
-

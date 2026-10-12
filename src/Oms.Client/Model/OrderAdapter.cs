@@ -1,17 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Management.Instrumentation;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
-using Caliburn.Micro;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Oms.Transport.Contracts.Dto;
 
 
 namespace Oms.Client.Model
 {
-    public class OrderAdapter : PropertyChangedBase
+    public class OrderAdapter : ObservableObject
     {
         private double _quantity;
         private int _groupId;
@@ -22,8 +21,7 @@ namespace Oms.Client.Model
             get { return _quantity; }
             set
             {
-                this._quantity = value;
-                this.NotifyOfPropertyChange(() => Quantity);
+                SetProperty(ref _quantity, value);
             }
         }
 
@@ -52,8 +50,7 @@ namespace Oms.Client.Model
             get { return _groupId; }
             set
             {
-                _groupId = value;
-                this.NotifyOfPropertyChange(() => GroupId);
+                SetProperty(ref _groupId, value);
             }
         }
     }

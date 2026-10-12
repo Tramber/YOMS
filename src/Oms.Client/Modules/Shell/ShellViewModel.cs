@@ -1,66 +1,84 @@
-﻿using System.ComponentModel.Composition;
-using System.Linq;
-using Caliburn.Micro;
-using Oms.Client.Framework.Observables;
+using System;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Oms.Client.Modules.Notification;
 using Oms.Client.Modules.OrderBlotter;
 using Oms.Client.Modules.OrderEditor;
+using Oms.Client.Services;
 using Oms.Client.Services.Notifications;
+using Oms.Transport.Contracts;
+using Oms.Transport.Contracts.Dto;
 
 namespace Oms.Client.Modules.Shell
 {
-    [Export(typeof(IShell))]
-    public class ShellViewModel : Conductor<IScreen>.Collection.OneActive, IShell, IHandle<INotification>
+    public partial class ShellViewModel : ObservableObject, IRecipient<INotification>
     {
-        private readonly IWindowManager _windowManager;
-        private readonly IEventAggregator _eventAggregator;
+        private readonly IWindowService _windowService;
         private readonly INotificationService _notificationService;
+        private readonly OrderBlotterViewModel _blotter = new OrderBlotterViewModel();
+        private OrderServiceProxy _proxy;
 
-        [ImportingConstructor]
-        public ShellViewModel(IWindowManager windowManager,
-            IEventAggregator eventAggregator,
-            INotificationService notificationService)
+        [ObservableProperty]
+        private DocumentViewModel _activeDocument;
+
+        [ObservableProperty]
+        private string _connectionStatus = "Not connected";
+
+        public ShellViewModel(IWindowService windowService, INotificationService notificationService, IMessenger messenger)
         {
-            _windowManager = windowManager;
-            _eventAggregator = eventAggregator;
+            _windowService = windowService;
             _notificationService = notificationService;
-            Notifications = new BindableCollectionEx<NotificationViewModel>();
+            Documents = new ObservableCollection<DocumentViewModel> { _blotter };
+            ActiveDocument = _blotter;
+            Notifications = new ObservableCollection<NotificationViewModel>();
+            messenger.RegisterAll(this);
         }
 
-        protected override void OnInitialize()
+        public ObservableCollection<DocumentViewModel> Documents { get; }
+
+        public ObservableCollection<NotificationViewModel> Notifications { get; }
+
+        [RelayCommand]
+        private Task CreateOrderAsync() => _windowService.ShowDialogAsync(new OrderEditorViewModel());
+
+        [RelayCommand]
+        private void CreateNotification() => _notificationService.ProcessInfo("hello", "Ding Ding Dong");
+
+        [RelayCommand]
+        private async Task ConnectAsync()
         {
-            base.OnInitialize();
-            Items.Add(new OrderBlotterViewModel());
-            Items.First().Activate();
-
-            _eventAggregator.Subscribe(this);
+            if (_proxy != null) return;
+            ConnectionStatus = "Connecting...";
+            try
+            {
+                _proxy = new OrderServiceProxy();
+                _proxy.Subscribe(new OrderObserver(orders => Dispatcher.UIThread.Post(() => _blotter.AddOrders(orders))));
+                await _proxy.StartAsync();
+                ConnectionStatus = "Connected to http://localhost:9001/orders";
+            }
+            catch (Exception ex)
+            {
+                _proxy = null;
+                ConnectionStatus = "Connection failed: " + ex.Message;
+            }
         }
 
-        public IObservableCollection<IScreen> Documents
-        {
-            get { return Items; }
-        }
-
-        public IObservableCollection<IScreen> Tools
-        {
-            get { return null; }
-        }
-
-        public void CreateOrder()
-        {
-            _windowManager.ShowDialog(new OrderEditorViewModel());
-        }
-
-        public void CreateNotification()
-        {
-            _notificationService.ProcessInfo("hello", "Ding Ding Dong");
-        }
-
-        public void Handle(INotification message)
+        public void Receive(INotification message)
         {
             Notifications.Add(new NotificationViewModel(message));
         }
 
-        public IObservableCollection<NotificationViewModel> Notifications { get; private set; } 
+        private sealed class OrderObserver : IObserver<Tuple<ItemOperationType, OrderDto[]>>
+        {
+            private readonly Action<OrderDto[]> _onOrders;
+            public OrderObserver(Action<OrderDto[]> onOrders) { _onOrders = onOrders; }
+            public void OnNext(Tuple<ItemOperationType, OrderDto[]> value) => _onOrders(value.Item2);
+            public void OnError(Exception error) { }
+            public void OnCompleted() { }
+        }
     }
 }

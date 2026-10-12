@@ -1,11 +1,8 @@
-﻿using System.ComponentModel.Composition;
-using Caliburn.Micro;
 using Oms.Client.Services.Notifications;
 
 namespace Oms.Client.Modules.Notification
 {
-    [Export(typeof(INotificationViewModel))]
-    public class NotificationViewModel : Screen, INotificationViewModel
+    public class NotificationViewModel
     {
         public NotificationViewModel(INotification notification)
         {
@@ -13,6 +10,5 @@ namespace Oms.Client.Modules.Notification
         }
 
         public INotification Notification { get; private set; }
-
     }
 }

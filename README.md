@@ -1,0 +1,29 @@
+# YOMS
+
+Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence, SignalR transport) and a cross-platform Avalonia client.
+
+> **Legacy project.** YOMS is very old: it was written for .NET Framework 4.5 (WCF, Unity, NUnit 2, `packages.config`) and left untouched for years. The .NET 10 migration was a quick update just to make it compile and start again, not a modernization. Expect rough edges: unfinished features (the service `Handle*` methods return `null`), and a client that has only been smoke-tested. See `AGENTS.md` for known issues.
+
+## Layout (`src/`)
+
+| Project | Role |
+|---|---|
+| `Oms.Server.Domain` | Orders, trades, validation (FluentValidation) and the Stateless order workflow |
+| `Oms.Server.DataAccess` | NHibernate/FluentNHibernate repositories on SQLite |
+| `Oms.Server.Core` | Application services and DTO mapping |
+| `Oms.Server.host` | ASP.NET Core host exposing the SignalR `OrderHub` at `http://localhost:9001/orders` |
+| `Oms.Transport` | DTOs, messages and the shared service contract |
+| `Oms.Client` | Avalonia desktop client (CommunityToolkit.Mvvm, Microsoft DI); runs on Windows, macOS and Linux |
+| `Oms.Framework` | Shared utilities |
+
+See [`docs/architecture.md`](docs/architecture.md) for the server architecture, request flow and order workflow, and [`docs/client.md`](docs/client.md) for the client.
+
+## Build and test
+
+```
+dotnet build src/Oms.sln
+dotnet test src/Oms.sln
+dotnet run --project src/Oms.Server.host
+dotnet run --project src/Oms.Client
+```
+

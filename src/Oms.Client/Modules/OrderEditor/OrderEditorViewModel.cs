@@ -1,31 +1,40 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using Caliburn.Micro;
-using Oms.Client.Framework.Observables;
+using System.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Oms.Client.Services;
 
 namespace Oms.Client.Modules.OrderEditor
 {
-    [Export(typeof (IOrderEditor))]
-    public class OrderEditorViewModel : Screen, IOrderEditor
+    public partial class OrderEditorViewModel : ObservableObject, IRequestClose
     {
+        [ObservableProperty]
         private string _searchText;
 
-        protected override void OnInitialize()
-        {
-            base.OnInitialize();
-            LogData = new BindableCollection<string>();
-            SearchResults = new BindableCollectionEx<string>();
+        [ObservableProperty]
+        private IReadOnlyList<string> _searchResults = new string[0];
 
+        private readonly string[] _phrases =
+        {
+            "Forums", "Blog", "Facebook", "LinkedIn", "Stack Overflow", "Twitter", "Visual Studio Events", "YouTube",
+        };
+
+        public OrderEditorViewModel()
+        {
+            var ui = SynchronizationContext.Current;
             var searchTextChanged = Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
-                ev => PropertyChanged += ev,
-                ev => PropertyChanged -= ev)
-                .Where(ev => ev.EventArgs.PropertyName == "SearchText")
+                    ev => PropertyChanged += ev,
+                    ev => PropertyChanged -= ev)
+                .Where(ev => ev.EventArgs.PropertyName == nameof(SearchText))
                 .Select(_ => SearchText);
+
+            // Short input waits longer than a real search term before it is used.
             var input = searchTextChanged
                 .Where(s => s == null || s.Length < 3)
                 .Throttle(TimeSpan.FromMilliseconds(500))
@@ -34,96 +43,35 @@ namespace Oms.Client.Modules.OrderEditor
                     .Throttle(TimeSpan.FromMilliseconds(300)))
                 .DistinctUntilChanged();
 
-            //for logging purpose
-            var logSubscriber = input
-                .ObserveOn(Scheduler.Default)
+            input.ObserveOn(ui)
                 .SubscribeOn(Scheduler.CurrentThread)
-                .Subscribe(a => LogData.Add(a.ToString()));
+                .Subscribe(term => LogData.Add(term ?? ""));
 
-            //The search in the repository
-            var search = Observable.ToAsync<string, SearchResult>(DoSearch);
-            var results = input.SelectMany(searchTerm => search(searchTerm).TakeUntil(input));
-            var resultSubscriber = results
-                .ObserveOn(Scheduler.Default)
+            // Search off the UI thread; a new term cancels the pending result of the previous one.
+            var search = Observable.ToAsync<string, IReadOnlyList<string>>(DoSearch);
+            input.SelectMany(term => search(term).TakeUntil(input))
+                .ObserveOn(ui)
                 .SubscribeOn(Scheduler.CurrentThread)
-                .Subscribe(r => SearchResults.Reload(r.Results.ToList()));
-
+                .Subscribe(results => SearchResults = results);
         }
 
+        public ObservableCollection<string> LogData { get; } = new ObservableCollection<string>();
 
-        public void Close()
+        public event EventHandler CloseRequested;
+
+        [RelayCommand]
+        private void Close() => CloseRequested?.Invoke(this, EventArgs.Empty);
+
+        [RelayCommand]
+        private void Search()
         {
-            TryClose();
         }
 
-        public void Search()
+        private IReadOnlyList<string> DoSearch(string term)
         {
-
-        }
-
-        public BindableCollection<string> LogData { get; private set; }
-
-        public BindableCollectionEx<string> SearchResults { get; private set; } 
-
-        public string SearchText
-        {
-            get { return _searchText; }
-            set
-            {
-                if (value == _searchText) return;
-                _searchText = value;
-                NotifyOfPropertyChange();
-            }
-        }
-
-        private SearchResult DoSearch(string searchTerm)
-        {
-            return new SearchResult(searchTerm,
-                string.IsNullOrWhiteSpace(searchTerm)
-                    ? new String[0]
-                    : phrases.Where(item => item.ToUpperInvariant().Contains(searchTerm.ToUpperInvariant())).OrderBy(s => s).ToArray());
-        }
-
-        private readonly string[] phrases = new[]
-        {
-           "Forums",
-           "Blog",
-           "Facebook",
-           "LinkedIn",
-           "Stack Overflow",
-           "Twitter",
-           "Visual Studio Events",
-           "YouTube"
-        };
-    }
-
-
-    public struct SearchResult : IEquatable<SearchResult>
-    {
-
-        public SearchResult(string searchTerm, IEnumerable<string> results) : this()
-        {
-            SearchTerm = searchTerm;
-            Results = results;
-        }
-
-        public string SearchTerm { get; set; }
-        public IEnumerable<string> Results { get; set; }
-
-        public bool Equals(SearchResult other)
-        {
-            return string.Equals(SearchTerm, other.SearchTerm);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            return obj is SearchResult && Equals((SearchResult) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return (SearchTerm != null ? SearchTerm.GetHashCode() : 0);
+            return string.IsNullOrWhiteSpace(term)
+                ? new string[0]
+                : _phrases.Where(p => p.Contains(term, StringComparison.OrdinalIgnoreCase)).OrderBy(p => p).ToArray();
         }
     }
 }
