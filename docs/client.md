@@ -61,7 +61,7 @@ Oms.Client/
 ### Order editor
 `OrderEditorViewModel` is a form for a new order: security and fund (lists from the server), way (Buy or Sell), type (Market or Limit), quantity, limit price (only for a limit order), validity (Day, EndOfDay or Gtc) and an optional reference. **Save draft** and **Send** are enabled once a security, a fund and a positive quantity (and a positive price for a limit order) are set. They send an `OrderEditionRequest` (`Stash` or `Create`) and, on success, raise `CloseRequested`, which `WindowService` turns into `Window.Close()`. A refusal by the server (its message) or a failed call is shown in the dialog, which stays open. **Close** closes it without sending anything.
 
-Not offered yet: stop orders, the Gtd validity, and settlement and expiry dates (so editing an order cannot change them).
+Stop orders, the Gtd validity and the settlement and expiry dates are not offered (#25), so editing an order cannot change them.
 
 ### Notifications
 `INotificationService.Process(title, description, type)` sends a `Notification` (random 64-bit id, timestamp, `NotificationType` Info/Warn/Error) as `INotification` through `IMessenger`; `ProcessInfo/Warn/Error` extension methods wrap it. `ShellViewModel` receives it and adds a `NotificationViewModel` to the overlay. Notifications are never removed.
