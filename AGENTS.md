@@ -36,12 +36,13 @@ Each open GitHub issue has an entry here, and an entry goes away when its issue 
 
 - No authentication (#10): requests identify the user by login (`Request.Token`) and the server trusts it.
 - Parts of the SignalR layer are untested (#12): the Avalonia UI itself, and the pushed-change path onto the UI thread. The client has not been run by hand against a live server.
+- The PostgreSQL persistence tests are not run in CI (#14).
+- No form to enter an execution (#23): the client's Execute button trades what remains of an order at its limit price.
+- No booking system (#24): `BookTrade` forces a new trade to booked by hand.
+- The order editor lacks stop price, settlement and expiry dates (#25), so editing an order cannot change them.
+- No database migrations (#26): see Persistence in "Conventions".
 
-Limits that are not tracked as issues:
-
-- There is no booking system: `BookTrade` forces a new trade to booked by hand. The client's Execute button trades what remains of an order at its limit price; there is no form to enter a quantity or an amount.
-- Editing an order sends `EditionCommand.Update`, which the server keeps pending (status `UpdatePending`, values unchanged) until Accept pending or Reject pending. The edit form does not cover stop prices, settlement or expiry dates.
-- The database has no migrations (see Persistence in "Conventions").
+Editing an order sends `EditionCommand.Update`, which the server keeps pending (status `UpdatePending`, values unchanged) until Accept pending or Reject pending. This is the designed behaviour, not an issue.
 
 ## GitHub issues
 
