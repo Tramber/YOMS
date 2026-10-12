@@ -86,6 +86,15 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
             }
         }
 
+        /// <summary>Every entity of the type.</summary>
+        public IList<T> GetAll()
+        {
+            using (var session = NHibernateHelper.Instance.OpenSession())
+            {
+                return session.CreateCriteria(typeof(T)).List<T>();
+            }
+        }
+
         /// <summary>Entities whose property equals the value.</summary>
         public IList<T> GetByColumn(string propertyName, object columnValue)
         {

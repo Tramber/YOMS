@@ -13,7 +13,7 @@ namespace Oms.Server.DataAccess.NHibernate.Repositories
 
         public IList<Order> GetOrderList()
         {
-            return base.GetByColumn("IsActive", true);
+            return base.GetAll();
         }
     }
 }
