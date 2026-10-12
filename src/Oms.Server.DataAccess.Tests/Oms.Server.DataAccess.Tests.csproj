@@ -5,6 +5,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.6.0" />
+    <!-- Testcontainers brings in a vulnerable SSH.NET (NU1903); pin the patched version. -->
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
     <PackageReference Include="NUnit" Version="5.0.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
   </ItemGroup>
