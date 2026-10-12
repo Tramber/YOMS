@@ -14,5 +14,10 @@ namespace Oms.Server.Domain.Interfaces.Models
         IOrder Order { get; set; }
         GenericResult Create(ITriggerContext context, ITradeEditableData  editableData);
         GenericResult Cancel(ITriggerContext context);
+        GenericResult BookingSend(ITriggerContext context);
+        GenericResult Booked(ITriggerContext context);
+        GenericResult ForceBooked(ITriggerContext context);
+        GenericResult BookingRefresh(ITriggerContext context);
+        GenericResult BookingFailed(ITriggerContext context);
     }
 }

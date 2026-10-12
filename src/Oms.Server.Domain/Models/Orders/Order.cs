@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Oms.Server.Domain.Interfaces.Models;
 using Oms.Server.Domain.Models.EventLogs;
@@ -10,9 +11,15 @@ namespace Oms.Server.Domain.Models.Orders
     public partial class Order : IOrder
     {
         private OrderData _currentDataDoNotUseDirectly;
-        private readonly OrderStateMachine _stateMachine = OrderStateMachine.CreateInitializable();
+        private ITrade _incomingTrade;
+        private readonly OrderStateMachine _stateMachine;
         private const double Epsilon = 0.000001;
         private static readonly OrderValidator OrderValidator = new OrderValidator();
+
+        public Order()
+        {
+            _stateMachine = CreateStateMachine();
+        }
 
         private OrderData CurrentData
         {
@@ -30,12 +37,30 @@ namespace Oms.Server.Domain.Models.Orders
             _stateMachine.Initialize(_currentDataDoNotUseDirectly.OrderState);
         }
 
+        /// <summary>
+        /// A state machine whose guards choose between the targets of a trigger, from the data being worked on
+        /// (<c>_workingData</c>, which already counts the incoming trade): fully executed orders go to Validating,
+        /// the others stay in or go back to Dealing.
+        /// </summary>
         private OrderStateMachine CreateStateMachine()
         {
             var stateMachine = OrderStateMachine.CreateInitializable();
-            stateMachine.GuardClauseFromDealingToValidatingUsingTriggerAddTrade = () => IsFilled(_workingData);
-            stateMachine.GuardClauseFromWorkingToValidatingUsingTriggerAddTrade = () => IsFilled(_workingData);
-            stateMachine.GuardClauseFromUndefinedToAcceptingUsingTriggerSendRequest = () => IsFilled(_workingData);
+            OrderStateMachine.GuardClauseDelegate executed = () => IsFullyExecuted(_workingData);
+            OrderStateMachine.GuardClauseDelegate notExecuted = () => !IsFullyExecuted(_workingData);
+
+            stateMachine.GuardClauseFromWorkingToDealingUsingTriggerAddTrade = notExecuted;
+            stateMachine.GuardClauseFromWorkingToValidatingUsingTriggerAddTrade = executed;
+            stateMachine.GuardClauseFromDealingToDealingUsingTriggerAddTrade = notExecuted;
+            stateMachine.GuardClauseFromDealingToValidatingUsingTriggerAddTrade = executed;
+
+            stateMachine.GuardClauseFromValidatingToDealingUsingTriggerCancelTrade = notExecuted;
+            stateMachine.GuardClauseFromValidatingToValidatingUsingTriggerCancelTrade = executed;
+            stateMachine.GuardClauseFromBookingToDealingUsingTriggerCancelTrade = notExecuted;
+            stateMachine.GuardClauseFromBookingToBookingUsingTriggerCancelTrade = executed;
+
+            // Booking ends with the last trade to book.
+            stateMachine.GuardClauseFromBookingToBookingUsingTriggerTradeBooked = () => !AllTradesBooked();
+            stateMachine.GuardClauseFromBookingToTerminatedUsingTriggerTradeBooked = AllTradesBooked;
             return stateMachine;
         }
 
@@ -67,21 +92,44 @@ namespace Oms.Server.Domain.Models.Orders
             return result.SetOrderStatus(ComputeOrderStatus(result));
         }
 
-        /// <summary>Quantity executed so far: the trades of the dealing events, minus the cancelled ones; opposite-side trades count against it.</summary>
-        private double ComputeExecutionQuantity(Side side)
+        /// <summary>The distinct, not cancelled trades of the dealing events, plus the incoming one.</summary>
+        private IEnumerable<ITrade> ActiveTrades(ITrade incomingTrade = null)
         {
             return EventLogs.Where(e => e.TriggerStatus.IsValid())
                 .OfType<OrderParameterEventLog<IOrderDealingData>>()
                 .Select(e => e.Parameters.Trade)
+                .Concat(new[] { incomingTrade })
                 .Where(t => t != null && t.TradeState != TradeState.Cancelled)
-                .Sum(t => t.Side == side ? t.ExecutionQuantity : -t.ExecutionQuantity);
+                .Distinct();
+        }
+
+        /// <summary>Quantity executed so far; opposite-side trades count against it.</summary>
+        private double ComputeExecutionQuantity(Side side, ITrade incomingTrade = null)
+        {
+            return ActiveTrades(incomingTrade).Sum(t => t.Side == side ? t.ExecutionQuantity : -t.ExecutionQuantity);
+        }
+
+        /// <summary>True when the order has trades and every one of them (counting the incoming one) is booked.</summary>
+        private bool AllTradesBooked()
+        {
+            var trades = ActiveTrades(_incomingTrade).ToList();
+            return trades.Count > 0 && trades.All(t => t.TradeState == TradeState.Booked);
         }
 
         private OrderStatus ComputeOrderStatus(OrderData orderData)
         {
+            // A pending Cancel or Update shows in whatever live state the order is.
+            if (orderData.OrderState != OrderStateMachine.State.Terminated && orderData.OrderState != OrderStateMachine.State.Undefined)
+            {
+                if (orderData.PendingTrigger == OrderStateMachine.Trigger.Cancel) return OrderStatus.CancelPending;
+                if (orderData.PendingTrigger == OrderStateMachine.Trigger.Update) return OrderStatus.UpdatePending;
+            }
             switch (orderData.OrderState)
             {
                 case OrderStateMachine.State.Terminated:
+                    // Terminated by the last booking: the order was executed, not cancelled.
+                    if (orderData.Trigger == OrderStateMachine.Trigger.TradeBooked)
+                        return orderData.RemainingQuantity < -Epsilon ? OrderStatus.OverFilled : OrderStatus.Filled;
                     return IsFilled(orderData) ? OrderStatus.CancelledFilled : OrderStatus.Cancelled;
                 case OrderStateMachine.State.Booking:
                 case OrderStateMachine.State.Validating:
@@ -92,8 +140,6 @@ namespace Oms.Server.Domain.Models.Orders
                     goto case OrderStateMachine.State.Dealing;
                 case OrderStateMachine.State.Dealing:
                 case OrderStateMachine.State.Working:
-                    if (orderData.PendingTrigger == OrderStateMachine.Trigger.Cancel) return OrderStatus.CancelPending;
-                    if (orderData.PendingTrigger == OrderStateMachine.Trigger.Update) return OrderStatus.UpdatePending;
                     // Partially filled: something was executed and something remains.
                     if (orderData.RemainingQuantity > Epsilon && orderData.Quantity - orderData.RemainingQuantity > Epsilon)
                         return OrderStatus.PartiallyFilled;
@@ -105,6 +151,12 @@ namespace Oms.Server.Domain.Models.Orders
                 default:
                     return OrderStatus.Undefined;
             }
+        }
+
+        /// <summary>Everything ordered is executed, or more (an over-fill still leaves Dealing).</summary>
+        private bool IsFullyExecuted(OrderData orderData)
+        {
+            return orderData.Quantity > Epsilon && orderData.RemainingQuantity <= Epsilon;
         }
 
         private bool IsFilled(OrderData orderData)

@@ -66,8 +66,6 @@ namespace Oms.Server.Domain.Tests.Models.Orders
             return order.OrderState;
         }
 
-        // Validating and Booking are not covered: the state machine has two CancelTrade targets there
-        // (Dealing or staying put) and no guard clauses to choose between them yet.
         [Test]
         public void Should_cancel_a_trade_when_the_order_is_dealing()
         {
