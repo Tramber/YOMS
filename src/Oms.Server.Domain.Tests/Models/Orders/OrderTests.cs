@@ -22,7 +22,7 @@ namespace Oms.Server.Domain.Tests.Models.Orders
         public OrderStateMachine.State Should_allow_create_a_new_order(bool isDraft)
         {
             return new OrderBuilderForTest()
-                .WithOrderState(OrderStateMachine.State.Draft)
+                .WithOrderState(isDraft ? OrderStateMachine.State.Draft : OrderStateMachine.State.Accepting)
                 .WithCoreData(new User(), new User(), new OrderBasket(), "nnn")
                 .WithFund(new Fund())
                 .WithSecurity(new Security())

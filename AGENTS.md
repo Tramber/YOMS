@@ -19,5 +19,5 @@ Guidance for AI coding agents working in this repository. See `README.md` for th
 
 ## Known issues
 
-- `Oms.Server.Domain.Tests` has 4 failing tests (order state resolves to `Undefined`); they predate or were unverified by the .NET 10 migration.
+- Suspected domain bugs not covered by tests: `Order.CancelTrade` fires `AddTrade`, and `Order.ComputeOrderData` orders events descending then takes `LastOrDefault`, so an order rebuilt from its log would get the oldest event's state.
 - `OrderServiceContract.Handle*` still return `null` (work in progress).

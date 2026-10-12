@@ -81,4 +81,4 @@ Where two transitions share a trigger (for example `AddTrade` from `Working`), g
 
 ## Known gaps
 
-See `AGENTS.md`. In short: unfinished service responses and notifications, 4 failing domain tests, a client that has only been smoke-tested and untested SignalR round trip.
+See `AGENTS.md`. In short: unfinished service responses and notifications, a client that has only been smoke-tested and untested SignalR round trip.

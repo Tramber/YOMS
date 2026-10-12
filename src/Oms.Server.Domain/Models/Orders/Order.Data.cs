@@ -23,7 +23,7 @@ namespace Oms.Server.Domain.Models.Orders
 
         public OrderStateMachine.State OrderState
         {
-            get { return _stateMachine.GetState; }
+            get { return CurrentData.OrderState; }
         }
 
         public OrderStateMachine.Trigger? PendingTrigger

@@ -40,7 +40,7 @@ namespace Oms.Server.Domain.Models.Orders
 
         public GenericResult Cancel(ITriggerContext context)
         {
-            return HandleCommand(OrderStateMachine.Trigger.Create, context);
+            return HandleCommand(OrderStateMachine.Trigger.Cancel, context);
         }
 
         public GenericResult HandleEditionCommand(OrderStateMachine.Trigger trigger,
@@ -162,7 +162,12 @@ namespace Oms.Server.Domain.Models.Orders
                     if(trigger != _workingData.PendingTrigger)
                         return GenericResult.FailureFormat("There is a {0} pending not a {1}. You cannot {0} it", _workingData.PendingTrigger, trigger, triggerStatus);
                     _workingData.SetPendingTrigger(null);
-                } else triggerStatus = TriggerStatus.Pending;
+                }
+                else
+                {
+                    triggerStatus = TriggerStatus.Pending;
+                    _workingData.SetPendingTrigger(trigger);
+                }
             }
             else if (triggerStatus.IsPending() || triggerStatus.IsPendingReply())
             {
@@ -186,7 +191,7 @@ namespace Oms.Server.Domain.Models.Orders
                 .SetRoutingData(dealingData)
                 .SetEditableData(editableData)
                 .SetTrigger(trigger)
-                .SetPendingTrigger(status.IsPendingReply() && this.PendingTrigger == trigger ? null : this.PendingTrigger);
+                .SetPendingTrigger(this.PendingTrigger);
             var result = EnforceTriggerStatus(trigger, ref status);
             if (result.IsFailure())
             {
