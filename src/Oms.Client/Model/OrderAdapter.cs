@@ -35,6 +35,8 @@ namespace Oms.Client.Model
 
         public OrderDtoWay Way { get; set; }
 
+        public bool IsBuy => Way == OrderDtoWay.Buy;
+
         public SecurityDto Security { get; set; }
 
         public FundDto Fund { get; set; }

@@ -32,12 +32,15 @@ namespace Oms.Client
                 desktop.MainWindow = new Window
                 {
                     Title = "OMS",
-                    Width = 900,
-                    Height = 600,
+                    Width = 1200,
+                    Height = 720,
+                    MinWidth = 900,
+                    MinHeight = 520,
                     Content = new ShellView(),
                     DataContext = services.GetRequiredService<ShellViewModel>(),
                 };
-                desktop.Exit += (_, _) => services.Dispose();
+                // OrderServiceProxy is IAsyncDisposable only, so the provider must be disposed asynchronously.
+                desktop.Exit += (_, _) => services.DisposeAsync().AsTask().GetAwaiter().GetResult();
             }
             base.OnFrameworkInitializationCompleted();
         }
