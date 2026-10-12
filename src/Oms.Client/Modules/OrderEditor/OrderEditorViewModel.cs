@@ -1,26 +1,26 @@
-using System.Threading;
-using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using Caliburn.Micro;
+using System.Collections.ObjectModel;
+using System.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Oms.Client.Services;
 using Oms.Client.Framework.Observables;
 
 namespace Oms.Client.Modules.OrderEditor
 {
-    [Export(typeof (IOrderEditor))]
-    public class OrderEditorViewModel : Screen, IOrderEditor
+    public partial class OrderEditorViewModel : ObservableObject, IRequestClose
     {
         private string _searchText;
 
-        protected override Task OnInitializeAsync(CancellationToken cancellationToken)
+        public OrderEditorViewModel()
         {
-            
-            LogData = new BindableCollection<string>();
+            var ui = SynchronizationContext.Current;
+            LogData = new ObservableCollection<string>();
             SearchResults = new BindableCollectionEx<string>();
 
             var searchTextChanged = Observable.FromEventPattern<PropertyChangedEventHandler, PropertyChangedEventArgs>(
@@ -38,7 +38,7 @@ namespace Oms.Client.Modules.OrderEditor
 
             //for logging purpose
             var logSubscriber = input
-                .ObserveOn(Scheduler.Default)
+                .ObserveOn(ui)
                 .SubscribeOn(Scheduler.CurrentThread)
                 .Subscribe(a => LogData.Add(a.ToString()));
 
@@ -46,25 +46,28 @@ namespace Oms.Client.Modules.OrderEditor
             var search = Observable.ToAsync<string, SearchResult>(DoSearch);
             var results = input.SelectMany(searchTerm => search(searchTerm).TakeUntil(input));
             var resultSubscriber = results
-                .ObserveOn(Scheduler.Default)
+                .ObserveOn(ui)
                 .SubscribeOn(Scheduler.CurrentThread)
                 .Subscribe(r => SearchResults.Reload(r.Results.ToList()));
 
-            return base.OnInitializeAsync(cancellationToken);
         }
 
 
-        public void Close()
+        public event EventHandler CloseRequested;
+
+        [RelayCommand]
+        private void Close()
         {
-            TryCloseAsync();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        public void Search()
+        [RelayCommand]
+        private void Search()
         {
 
         }
 
-        public BindableCollection<string> LogData { get; private set; }
+        public ObservableCollection<string> LogData { get; private set; }
 
         public BindableCollectionEx<string> SearchResults { get; private set; } 
 
@@ -73,9 +76,7 @@ namespace Oms.Client.Modules.OrderEditor
             get { return _searchText; }
             set
             {
-                if (value == _searchText) return;
-                _searchText = value;
-                NotifyOfPropertyChange();
+                SetProperty(ref _searchText, value);
             }
         }
 

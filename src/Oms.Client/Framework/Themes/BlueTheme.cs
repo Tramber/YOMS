@@ -17,11 +17,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 
 namespace Oms.Client.Framework.Themes
 {
-    [Export(typeof(ITheme))]
     public class BlueTheme : ITheme
     {
         public string Name

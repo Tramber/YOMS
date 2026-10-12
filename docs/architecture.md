@@ -23,7 +23,7 @@ flowchart LR
 | `Oms.Server.DataAccess` | NHibernate/FluentNHibernate automapping and repositories behind `IRepositoryFacade`. Runs on SQLite through `MicrosoftDataSqliteDriver`. |
 | `Oms.Server.Core` | Application layer: `OrderManagementService` maps request commands to domain operations, `DtoMapperExtensions` maps domain to DTOs. |
 | `Oms.Server.host` | ASP.NET Core process, DI registration and the SignalR `OrderHub`. |
-| `Oms.Client` | WPF UI (Caliburn.Micro, MahApps.Metro, MEF, AvalonDock). |
+| `Oms.Client` | WPF UI (CommunityToolkit.Mvvm, Microsoft DI, MahApps.Metro, AvalonDock). |
 | `Oms.Framework` | Task dispatcher queues/bags and other shared utilities. |
 
 ## Request flow

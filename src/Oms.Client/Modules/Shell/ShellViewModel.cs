@@ -1,70 +1,53 @@
-using System.Threading;
-using System.Threading.Tasks;
-using System.ComponentModel.Composition;
-using System.Linq;
-using Caliburn.Micro;
-using Oms.Client.Framework.Observables;
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Oms.Client.Modules.Notification;
 using Oms.Client.Modules.OrderBlotter;
 using Oms.Client.Modules.OrderEditor;
+using Oms.Client.Services;
 using Oms.Client.Services.Notifications;
 
 namespace Oms.Client.Modules.Shell
 {
-    [Export(typeof(IShell))]
-    public class ShellViewModel : Conductor<IScreen>.Collection.OneActive, IShell, IHandle<INotification>
+    public partial class ShellViewModel : ObservableObject, IRecipient<INotification>
     {
-        private readonly IWindowManager _windowManager;
-        private readonly IEventAggregator _eventAggregator;
+        private readonly IWindowService _windowService;
         private readonly INotificationService _notificationService;
 
-        [ImportingConstructor]
-        public ShellViewModel(IWindowManager windowManager,
-            IEventAggregator eventAggregator,
-            INotificationService notificationService)
+        [ObservableProperty]
+        private object _activeDocument;
+
+        public ShellViewModel(IWindowService windowService, INotificationService notificationService, IMessenger messenger)
         {
-            _windowManager = windowManager;
-            _eventAggregator = eventAggregator;
+            _windowService = windowService;
             _notificationService = notificationService;
-            Notifications = new BindableCollectionEx<NotificationViewModel>();
+            var blotter = new OrderBlotterViewModel();
+            Documents = new ObservableCollection<object> { blotter };
+            ActiveDocument = blotter;
+            Notifications = new ObservableCollection<NotificationViewModel>();
+            messenger.RegisterAll(this);
         }
 
-        protected override Task OnInitializeAsync(CancellationToken cancellationToken)
+        public ObservableCollection<object> Documents { get; }
+
+        public ObservableCollection<NotificationViewModel> Notifications { get; }
+
+        [RelayCommand]
+        private void CreateOrder()
         {
-            
-            Items.Add(new OrderBlotterViewModel());
-            ActivateItemAsync(Items.First(), cancellationToken);
-
-            _eventAggregator.SubscribeOnPublishedThread(this);
-            return base.OnInitializeAsync(cancellationToken);
+            _windowService.ShowDialog(new OrderEditorViewModel());
         }
 
-        public IObservableCollection<IScreen> Documents
-        {
-            get { return Items; }
-        }
-
-        public IObservableCollection<IScreen> Tools
-        {
-            get { return null; }
-        }
-
-        public void CreateOrder()
-        {
-            _windowManager.ShowDialogAsync(new OrderEditorViewModel());
-        }
-
-        public void CreateNotification()
+        [RelayCommand]
+        private void CreateNotification()
         {
             _notificationService.ProcessInfo("hello", "Ding Ding Dong");
         }
 
-        public Task HandleAsync(INotification message, CancellationToken cancellationToken)
+        public void Receive(INotification message)
         {
             Notifications.Add(new NotificationViewModel(message));
-            return Task.CompletedTask;
         }
-
-        public IObservableCollection<NotificationViewModel> Notifications { get; private set; } 
     }
 }

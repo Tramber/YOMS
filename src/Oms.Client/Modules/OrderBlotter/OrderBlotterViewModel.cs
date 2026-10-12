@@ -1,22 +1,19 @@
-using System.Threading;
-using System.Threading.Tasks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Windows.Data;
-using Caliburn.Micro;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Oms.Client.Framework.Observables;
 using Oms.Client.Model;
 
 namespace Oms.Client.Modules.OrderBlotter
 {
 
-    [Export(typeof(IOrderBlotter))]
-    public class OrderBlotterViewModel : Screen, IOrderBlotter
+    public partial class OrderBlotterViewModel : ObservableObject
     {
         private readonly BindableCollectionEx<OrderAdapter> _orderAdapters = new BindableCollectionEx<OrderAdapter>();
         private volatile int lastFreeGroupId = 4000;
@@ -25,9 +22,8 @@ namespace Oms.Client.Modules.OrderBlotter
 
         private readonly CollectionViewSource _orderViewSource = new CollectionViewSource();
 
-        protected override Task OnInitializeAsync(CancellationToken cancellationToken)
+        public OrderBlotterViewModel()
         {
-            
             _orderViewSource.Source = _orderAdapters;
             _orderViewSource.Filter += (sender, args) => args.Accepted = fastSearch.Predicate((OrderAdapter)args.Item);
             _orderViewSource.GroupDescriptions.Add(new PropertyGroupDescription("GroupId"));
@@ -36,56 +32,45 @@ namespace Oms.Client.Modules.OrderBlotter
             _orderViewSource.IsLiveGroupingRequested = true;
             _orderViewSource.IsLiveSortingRequested = true;
             CreateOrders();
-            return base.OnInitializeAsync(cancellationToken);
         }
 
-        public void Exit()
-        {
-            base.TryCloseAsync(true);
-        }
+        public string DisplayName => "Order Blotter";
 
-        public bool CanUnGroupOrders(object arg)
+        private bool CanUnGroupOrders(IList list)
         {
-            var list = arg as IList;
             if (list == null) return false;
-            return list.OfType<OrderAdapter>().All(o => o.GroupId != 0);;
+            return list.OfType<OrderAdapter>().All(o => o.GroupId != 0);
         }
 
-        public bool CanGroupOrders(IList list)
+        private bool CanGroupOrders(IList list)
         {
             if (list == null) return false;
             return list.OfType<OrderAdapter>().All(o => o.GroupId == 0);
         }
 
-        public void UnGroupOrders(object obj)
+        [RelayCommand(CanExecute = nameof(CanUnGroupOrders))]
+        private void UnGroupOrders(IList list)
         {
-            if (!CanUnGroupOrders(obj)) return;
-            var list = obj as IList;
-            if (list == null) return;
+            if (!CanUnGroupOrders(list)) return;
             var orders = list.OfType<OrderAdapter>().ToList();
             foreach (var orderAdapter in orders)
             {
                 orderAdapter.GroupId = 0;
             }
-            RefreshOrders(orders);
+            _orderAdapters.Refresh();
         }
 
-        private void RefreshOrders(List<OrderAdapter> orders)
-        {
-            _orderAdapters.Refresh(orders);
-        }
-
-        public void GroupOrders(IList list)
+        [RelayCommand(CanExecute = nameof(CanGroupOrders))]
+        private void GroupOrders(IList list)
         {
             if (!CanGroupOrders(list)) return;
-            if (list == null) return;
             var orders = list.OfType<OrderAdapter>().ToList();
             var groupId = lastFreeGroupId++;
             foreach (var orderAdapter in orders)
             {
                 orderAdapter.GroupId = groupId;
             }
-            RefreshOrders(orders);
+            _orderAdapters.Refresh();
         }
 
         private void CreateOrders()
@@ -113,7 +98,7 @@ namespace Oms.Client.Modules.OrderBlotter
                 fastSearch.Clear();
                 fastSearch.AddPredicate(_filterText);
                 _filterText = value;
-                this.NotifyOfPropertyChange(() => FilterText);
+                OnPropertyChanged();
 
             }
         }

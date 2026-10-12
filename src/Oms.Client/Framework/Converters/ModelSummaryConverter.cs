@@ -58,7 +58,7 @@ namespace Oms.Client.Framework.Converters
                 if (_isExpanded == value)
                     return;
                 _isExpanded = value;
-                base.NotifyOfPropertyChange(() => this.IsExpanded);
+                OnPropertyChanged();
             }
         }
     }

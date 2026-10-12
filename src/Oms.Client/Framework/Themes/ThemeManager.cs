@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Windows;
 
 namespace Oms.Client.Framework.Themes
 {
-    [Export(typeof(IThemeManager))]
     public class ThemeManager : IThemeManager
     {
         public event EventHandler CurrentThemeChanged;
@@ -22,8 +20,7 @@ namespace Oms.Client.Framework.Themes
 
         public ITheme CurrentTheme { get; private set; }
 
-        [ImportingConstructor]
-        public ThemeManager([ImportMany] ITheme[] themes)
+        public ThemeManager(ITheme[] themes)
         {
             _themes = themes;
         }
