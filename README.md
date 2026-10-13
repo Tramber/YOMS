@@ -12,7 +12,11 @@
 
 Order Management System: a .NET 10 server (domain, NHibernate/SQLite persistence, SignalR transport) and a cross-platform Avalonia client. Traders create orders, the server takes each order through its workflow (draft, acceptance, working, dealing, validation, booking), keeps the full history of every order, and pushes the changes to every connected client.
 
-> **Legacy project.** YOMS is very old: it was written for .NET Framework 4.5 (WCF, Unity, NUnit 2, `packages.config`) and left untouched for years. The .NET 10 migration was a quick update to make it compile and run again, then the domain, the persistence and the client were finished on top of it. Expect rough edges: there is no authentication, the database is not migrated and there is no real booking system. The known problems are tracked in the [GitHub issues](https://github.com/Tramber/YOMS/issues).
+> **Legacy project.**
+>
+> YOMS is very old (around 2013): it was written for .NET Framework 4.5 (WCF, Unity, NUnit 2, `packages.config`) was made in few days and left untouched for years, it was a prototype. The solution original is in **DDD**, **Hexagonal**, **Event Sourcing**, **Actor Like (no framework, mailbox, thread affinity)**, **Aggregate Root are explicit FSM**. The GUI was in WPF and reactive.
+>
+> The .NET 10 migration was a quick update to make it compile and run again, then the domain, the persistence and the client were completed on top of it. Expect rough edges: there is no authentication, the database is not migrated and there is no real booking system. The known problems are tracked in the [GitHub issues](https://github.com/Tramber/YOMS/issues).
 
 ## Getting started
 
