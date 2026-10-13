@@ -33,6 +33,7 @@ namespace Oms.Client.Modules.OrderBlotter
         private readonly FastSearch<OrderAdapter> _fastSearch = new FastSearch<OrderAdapter>();
         private readonly Func<OrderAdapter, Task> _editOrder;
         private int _lastFreeGroupId = 4000;
+        private bool _exactFilter;
 
         [ObservableProperty]
         private string _filterText = "";
@@ -61,11 +62,13 @@ namespace Oms.Client.Modules.OrderBlotter
         partial void OnFilterTextChanged(string value)
         {
             _fastSearch.Clear();
+            _exactFilter = false;
             if (!string.IsNullOrWhiteSpace(value))
             {
                 try
                 {
                     _fastSearch.AddPredicate(value);
+                    _exactFilter = true;
                 }
                 catch (Exception)
                 {
@@ -74,6 +77,32 @@ namespace Oms.Client.Modules.OrderBlotter
                 }
             }
             OrdersView.Refresh();
+        }
+
+        /// <summary>Enter in the filter box: text that is not <c>Property = "value"</c> is interpreted by the server ("alpha fund buys").</summary>
+        [RelayCommand]
+        private async Task InterpretFilter()
+        {
+            if (_exactFilter || string.IsNullOrWhiteSpace(FilterText)) return;
+            try
+            {
+                var filter = await _proxy.InterpretFilterAsync(FilterText);
+                if (filter == null)
+                {
+                    _notifications.ProcessWarn("Filter", "The server cannot interpret free text; use Property = \"value\"");
+                    return;
+                }
+                _fastSearch.Clear();
+                if (filter.Way.HasValue) _fastSearch.AddPredicate(o => o.Way == filter.Way.Value);
+                if (filter.FundId.HasValue) _fastSearch.AddPredicate(o => o.Fund.Id == filter.FundId.Value);
+                if (filter.SecurityId.HasValue) _fastSearch.AddPredicate(o => o.Security.Id == filter.SecurityId.Value);
+                if (filter.Status != null) _fastSearch.AddPredicate(o => o.Status == filter.Status);
+                OrdersView.Refresh();
+            }
+            catch (Exception ex)
+            {
+                _notifications.ProcessError("Filter", ex.Message);
+            }
         }
 
         /// <summary>Replaces the rows by the orders of the server. The local groups of the orders that stay are kept.</summary>

@@ -8,7 +8,8 @@
   <DockPanel>
     <StackPanel DockPanel.Dock="Top" Spacing="12" Margin="0,0,0,14">
       <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBox Width="340" Text="{Binding FilterText}" PlaceholderText="Filter, e.g. Security.IsinCode = &quot;FR0000000001&quot;" >
+        <TextBox Width="340" Text="{Binding FilterText}" PlaceholderText="Filter: alpha fund buys, or Security.IsinCode = &quot;FR0000000001&quot;" >
+          <TextBox.KeyBindings><KeyBinding Gesture="Enter" Command="{Binding InterpretFilterCommand}" /></TextBox.KeyBindings>
           <TextBox.InnerLeftContent><mi:MaterialIcon Kind="Magnify" Width="16" Height="16" Margin="10,0,0,0" Opacity="0.6" /></TextBox.InnerLeftContent>
         </TextBox>
         <Button Command="{Binding GroupOrdersCommand}" CommandParameter="{Binding #Grid.SelectedItems}">

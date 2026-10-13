@@ -3,6 +3,7 @@ using Oms.Transport.Contracts.Messages;
 using Oms.Transport.Contracts.Messages.Orders;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Oms.Transport.Contracts
 {
@@ -28,6 +29,9 @@ namespace Oms.Transport.Contracts
         List<SecurityDto> GetSecurities();
 
         List<FundDto> GetFunds();
+
+        /// <summary>Turns a free-text blotter filter into the values it restricts the orders to; null when the server has no interpreter.</summary>
+        Task<OrderFilterDto> InterpretFilter(string text);
     }
 
     /// <summary>Names of the SignalR hub methods shared by server and client.</summary>
@@ -41,6 +45,7 @@ namespace Oms.Transport.Contracts
         public const string GetOrders = "GetOrders";
         public const string GetSecurities = "GetSecurities";
         public const string GetFunds = "GetFunds";
+        public const string InterpretFilter = "InterpretFilter";
         public const string Subscribe = "SubscribeToEvents";
         public const string Unsubscribe = "UnsubscribeToEvents";
         public const string OrderListUpdated = "OrderListUpdated";

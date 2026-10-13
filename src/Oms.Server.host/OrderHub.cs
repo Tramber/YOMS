@@ -33,6 +33,8 @@ public class OrderHub : Hub
 
     public List<FundDto> GetFunds() => _service.GetFunds();
 
+    public Task<OrderFilterDto> InterpretFilter(string text) => _service.InterpretFilter(text);
+
     public Task SubscribeToEvents() => Groups.AddToGroupAsync(Context.ConnectionId, SubscribersGroup);
 
     public Task UnsubscribeToEvents() => Groups.RemoveFromGroupAsync(Context.ConnectionId, SubscribersGroup);

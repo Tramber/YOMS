@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Oms.Server.Core.Extensions;
 using Oms.Server.Core.Services;
+using Oms.Server.Core.Services.Filtering;
 using Oms.Server.Domain.Framework;
 using Oms.Transport.Contracts;
 using Oms.Transport.Contracts.Dto;
@@ -15,7 +17,7 @@ namespace Oms.Server.Core.Contracts
     /// Server implementation of the order service: runs the request through <see cref="IOrderManagementService"/>, answers
     /// with one outcome per order and raises <see cref="OrderListUpdated"/> for the orders that changed.
     /// </summary>
-    public class OrderServiceContract(IOrderManagementService orderManagementService) : IOrderServiceContract
+    public class OrderServiceContract(IOrderManagementService orderManagementService, IFilterInterpreter filterInterpreter = null) : IOrderServiceContract
     {
         /// <summary>Raised when orders change; the SignalR host forwards it to subscribed clients.</summary>
         public event Action<ItemOperationType, OrderDto[]> OrderListUpdated;
@@ -65,6 +67,11 @@ namespace Oms.Server.Core.Contracts
         public List<FundDto> GetFunds()
         {
             return orderManagementService.GetFunds().Select(f => f.ToDto()).ToList();
+        }
+
+        public Task<OrderFilterDto> InterpretFilter(string text)
+        {
+            return filterInterpreter == null ? Task.FromResult<OrderFilterDto>(null) : filterInterpreter.InterpretAsync(text, GetFunds(), GetSecurities());
         }
 
         private static List<Tuple<int, GenericResultDto>> Outcomes(IEnumerable<OrderCommandResult> results)

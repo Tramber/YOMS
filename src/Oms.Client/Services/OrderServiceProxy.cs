@@ -51,6 +51,11 @@ namespace Oms.Client.Services
             return _connection.InvokeAsync<List<FundDto>>(OrderHubMethods.GetFunds);
         }
 
+        public Task<OrderFilterDto> InterpretFilterAsync(string text)
+        {
+            return _connection.InvokeAsync<OrderFilterDto>(OrderHubMethods.InterpretFilter, text);
+        }
+
         public Task<Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>> SendAsync(OrderEditionRequest request)
         {
             return _connection.InvokeAsync<Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>>(OrderHubMethods.HandleOrderEdition, request);

@@ -13,6 +13,7 @@ using Oms.Server.DataAccess.NHibernate.Repositories;
 using Oms.Server.Domain.Interfaces.Repository;
 using Oms.Server.Core.Services;
 using Oms.Server.Core.Services.Acceptance;
+using Oms.Server.Core.Services.Filtering;
 using Oms.Transport.Contracts;
 
 XmlConfigurator.Configure(LogManager.GetRepository(Assembly.GetEntryAssembly()), new FileInfo(Path.Combine(AppContext.BaseDirectory, "log4net.config")));
@@ -23,6 +24,9 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<IRepositoryFacade, RepositoryFacade>();
 builder.Services.AddSingleton<IAcceptanceService, AcceptanceService>();
 builder.Services.AddSingleton<IOrderManagementService, OrderManagementService>();
+// Free-text blotter filters need a TypeSafe API key (environment variable TYPESAFE_API_KEY); without it they are off.
+if (!string.IsNullOrEmpty(builder.Configuration["TYPESAFE_API_KEY"]))
+    builder.Services.AddSingleton<IFilterInterpreter>(new TypeSafeFilterInterpreter(builder.Configuration["TYPESAFE_API_KEY"]));
 builder.Services.AddSingleton<OrderServiceContract>();
 builder.Services.AddSingleton<IOrderServiceContract>(sp => sp.GetRequiredService<OrderServiceContract>());
 

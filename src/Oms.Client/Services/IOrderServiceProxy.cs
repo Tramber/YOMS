@@ -25,6 +25,9 @@ namespace Oms.Client.Services
 
         Task<List<FundDto>> GetFundsAsync();
 
+        /// <summary>Asks the server what a free-text filter restricts the orders to; null when the server cannot interpret it.</summary>
+        Task<OrderFilterDto> InterpretFilterAsync(string text);
+
         /// <summary>Creates, stashes or updates orders: one outcome per submitted order.</summary>
         Task<Response<Tuple<OrderDto, GenericResultDto>, EditionCommand>> SendAsync(OrderEditionRequest request);
 

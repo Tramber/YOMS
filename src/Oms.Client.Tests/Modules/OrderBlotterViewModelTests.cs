@@ -438,5 +438,21 @@ namespace Oms.Client.Tests.Modules
             Assert.That(_edited, Is.Empty);
             _notifications.Received(1).Process("Edit", "Select a single order to edit", NotificationType.Error);
         }
+
+        [Test]
+        public async Task Free_text_filter_is_interpreted_by_the_server_and_hides_the_other_rows()
+        {
+            _proxy.GetOrdersAsync().Returns(Task.FromResult(new List<OrderDto>
+            {
+                new OrderDto { Id = 1, Way = OrderDtoWay.Buy }, new OrderDto { Id = 2, Way = OrderDtoWay.Sell }
+            }));
+            await _blotter.LoadAsync();
+            _proxy.InterpretFilterAsync("buys").Returns(Task.FromResult(new OrderFilterDto { Way = OrderDtoWay.Buy }));
+
+            _blotter.FilterText = "buys";
+            await _blotter.InterpretFilterCommand.ExecuteAsync(null);
+
+            Assert.That(_blotter.OrdersView.Cast<OrderAdapter>().Select(o => o.Id), Is.EqualTo(new[] { 1 }));
+        }
     }
 }
